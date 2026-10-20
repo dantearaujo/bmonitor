@@ -1,10 +1,12 @@
 // Gera o fundo da janela do .dmg (660 × 400 pt, em 1x e 2x): instrução de arrastar para
 // Aplicativos, uma seta entre os dois ícones e o passo de primeira abertura do beta.
 // Neutros do macOS em modo claro; sem cor, como o resto do app (DESIGN.md).
-// Uso: swift scripts/make-dmg-background.swift <pasta-de-saída>
+// Uso: swift scripts/make-dmg-background.swift <pasta-de-saída> [--notarized]
+//   --notarized tira o rodapé do "Abrir Mesmo Assim", que um app notarizado não precisa.
 import AppKit
 
 let out = URL(fileURLWithPath: CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : ".")
+let notarized = CommandLine.arguments.contains("--notarized")
 try FileManager.default.createDirectory(at: out, withIntermediateDirectories: true)
 
 // Medidas em pontos, origem no topo (como o Finder posiciona os ícones).
@@ -59,12 +61,14 @@ func render(scale: CGFloat) -> NSBitmapImageRep {
     text("Drag bmonitor to Applications", .systemFont(ofSize: 13, weight: .regular), secondary, centerY: 72)
 
     // Rodapé: o passo em que o beta trava, sem notarização.
-    ctx.setFillColor(NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.06).cgColor)
-    ctx.fill(CGRect(x: 0, y: size.height - 74, width: size.width, height: 74))
-    text("Na primeira abertura: Ajustes do Sistema › Privacidade e Segurança › Abrir Mesmo Assim",
-         .systemFont(ofSize: 11, weight: .medium), secondary, centerY: size.height - 46)
-    text("First launch: System Settings › Privacy & Security › Open Anyway",
-         .systemFont(ofSize: 11, weight: .regular), secondary, centerY: size.height - 28)
+    if !notarized {
+        ctx.setFillColor(NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.06).cgColor)
+        ctx.fill(CGRect(x: 0, y: size.height - 74, width: size.width, height: 74))
+        text("Na primeira abertura: Ajustes do Sistema › Privacidade e Segurança › Abrir Mesmo Assim",
+             .systemFont(ofSize: 11, weight: .medium), secondary, centerY: size.height - 46)
+        text("First launch: System Settings › Privacy & Security › Open Anyway",
+             .systemFont(ofSize: 11, weight: .regular), secondary, centerY: size.height - 28)
+    }
 
     NSGraphicsContext.restoreGraphicsState()
     return rep

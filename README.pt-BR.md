@@ -11,7 +11,7 @@ Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
 <p align="center"><sub>Versão mais recente · Apple Silicon · macOS 15 ou mais novo · <a href="#instalar">como instalar</a></sub></p>
 
-<p align="center"><b>⚠️ Beta público (0.9.1).</b> Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
+<p align="center"><b>⚠️ Beta público (0.9.2).</b> Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
 
 O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
 
@@ -39,13 +39,8 @@ Você se grava com um iPhone no tripé. O bmonitor transforma o Mac ao lado no m
 
 1. [Baixe o bmonitor.dmg](https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg), sempre a versão mais recente. As versões anteriores ficam em [Releases](https://github.com/dantearaujo/bmonitor/releases).
 2. Abra o `.dmg` e arraste o **bmonitor** para **Aplicativos**.
-3. Abra o bmonitor. Este beta ainda não é notarizado pela Apple, então o macOS bloqueia a primeira abertura:
-   - abra **Ajustes do Sistema › Privacidade e Segurança**;
-   - role até o aviso sobre o bmonitor e clique em **Abrir Mesmo Assim**;
-   - confirme com a sua senha ou o Touch ID.
+3. Abra o bmonitor. O macOS pede para confirmar a abertura de um app baixado da internet: clique em **Abrir**. O bmonitor é assinado e notarizado pela Apple.
 4. Quando o macOS pedir para o bmonitor **encontrar dispositivos na rede local**, clique em **Permitir**. Sem isso, o app não enxerga o iPhone.
-
-A notarização chega na versão 1.0, e aí o app abre com dois cliques.
 
 ## Configurar o iPhone
 

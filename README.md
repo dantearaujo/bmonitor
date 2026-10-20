@@ -11,7 +11,7 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <p align="center"><sub>Latest version · Apple Silicon · macOS 15 or later · <a href="#install">how to install</a></sub></p>
 
-<p align="center"><b>⚠️ Public beta (0.9.1).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
+<p align="center"><b>⚠️ Public beta (0.9.2).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 
 The app speaks English and Brazilian Portuguese, following your Mac's language.
 
@@ -39,13 +39,8 @@ You record yourself with an iPhone on a tripod. bmonitor turns the Mac next to i
 
 1. [Download bmonitor.dmg](https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg), always the latest version. Older versions live in [Releases](https://github.com/dantearaujo/bmonitor/releases).
 2. Open the `.dmg` and drag **bmonitor** to **Applications**.
-3. Open bmonitor. This beta is not notarized by Apple yet, so macOS blocks the first launch:
-   - open **System Settings › Privacy & Security**;
-   - scroll down to the message about bmonitor and click **Open Anyway**;
-   - confirm with your password or Touch ID.
+3. Open bmonitor. macOS asks to confirm opening an app downloaded from the internet: click **Open**. bmonitor is signed and notarized by Apple.
 4. When macOS asks to let bmonitor **find devices on your local network**, click **Allow**. Without this, the app can't see the iPhone.
-
-Notarization arrives in 1.0, and then the app opens with a double click.
 
 ## Set up the iPhone
 
