@@ -21,7 +21,9 @@
 <link rel="icon" type="image/png" href="/assets/icon.png">
 <link rel="apple-touch-icon" href="/assets/icon.png">
 <link rel="preload" as="image" href="/assets/creator-desk.webp" fetchpriority="high">
+<link rel="alternate" type="text/plain" title="LLM summary" href="/llms.txt">
 <link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">{{jsonld}}</script>
 <script defer src="/main.js"></script>
 </head>
 <body>
@@ -50,10 +52,12 @@
       <a href="#setup">{{nav_setup}}</a>
       <a href="#faq">{{nav_faq}}</a>
       <a href="https://github.com/dantearaujo/bmonitor">GitHub</a>
-      <a href="https://www.buymeacoffee.com/dantearaujo">{{nav_support}}</a>
       <a class="lang" href="{{alt_path}}" hreflang="{{alt_lang}}" lang="{{alt_lang}}" aria-label="{{lang_switch_label}}">{{lang_switch_short}}</a>
     </nav>
-    <a class="btn btn-dark btn-sm" href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">{{nav_download}}</a>
+    <div class="nav-cta">
+      <a class="btn btn-coffee btn-sm" href="https://www.buymeacoffee.com/dantearaujo"><svg class="ic"><use href="#i-cup"/></svg><span>{{nav_coffee}}</span></a>
+      <a class="btn btn-dark btn-sm" href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">{{nav_download}}</a>
+    </div>
   </div>
 </header>
 
@@ -243,12 +247,15 @@
   <section class="faq" id="faq">
     <h2 class="sec-title">{{faq_title}}</h2>
     <dl class="qa">
+      <div><dt>{{q9}}</dt><dd>{{a9}}</dd></div>
+      <div><dt>{{q10}}</dt><dd>{{a10}}</dd></div>
       <div><dt>{{q1}}</dt><dd>{{a1}}</dd></div>
       <div><dt>{{q2}}</dt><dd>{{a2}}</dd></div>
       <div><dt>{{q3}}</dt><dd>{{a3}}</dd></div>
       <div><dt>{{q4}}</dt><dd>{{a4}}</dd></div>
       <div><dt>{{q5}}</dt><dd>{{a5}}</dd></div>
       <div><dt>{{q6}}</dt><dd>{{a6}}</dd></div>
+      <div><dt>{{q11}}</dt><dd>{{a11}}</dd></div>
       <div><dt>{{q7}}</dt><dd>{{a7}}</dd></div>
       <div><dt>{{q8}}</dt><dd>{{a8}}</dd></div>
     </dl>

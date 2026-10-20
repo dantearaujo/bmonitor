@@ -70,6 +70,9 @@ symbol .fill { fill: currentColor; stroke: none; }
 .nav nav { display: flex; gap: 26px; font-size: 14px; }
 .nav nav a { color: var(--ink); opacity: 0.82; }
 .nav nav a:hover { opacity: 1; text-decoration: none; }
+.nav-cta { display: flex; align-items: center; gap: 10px; }
+.nav-cta .btn-coffee { padding: 6px 14px; font-size: 14px; gap: 6px; }
+.nav-cta .btn-coffee .ic { width: 1.05em; height: 1.05em; stroke-width: 2; }
 .nav .lang { font-weight: 600; font-size: 12px; letter-spacing: 0.02em; border: 1px solid var(--line); border-radius: 6px; padding: 1px 6px; align-self: center; }
 
 /* Hero */
@@ -333,6 +336,11 @@ kbd { display: inline-grid; place-items: center; min-width: calc(var(--u) * 38);
   .cta .btn-dark { width: 100%; justify-content: center; max-width: 340px; }
   .hero-meta { max-width: 300px; margin-left: auto; margin-right: auto; }
   .foot-in nav { flex-wrap: wrap; gap: 8px 18px; }
+  .nav-in { gap: 14px; }
+  .btn-link { white-space: normal; text-align: center; }
+  .nav-cta { gap: 8px; }
+  .nav-cta .btn-coffee span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .nav-cta .btn-coffee { padding: 6px 9px; }
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
