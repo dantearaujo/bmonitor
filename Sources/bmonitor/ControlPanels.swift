@@ -1,0 +1,431 @@
+import MonitorCore
+import SwiftUI
+
+// Painéis dos popovers. Os valores vêm das listas que a câmera publica (`supportedISOs`,
+// `supportedShutters`, faixas de WB, tint e zoom); nada aqui inventa valor aceito.
+
+struct PanelSection<Content: View>: View {
+    let title: String
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.secondary)
+            content
+        }
+    }
+}
+
+/// Grade de valores para escolher um: o escolhido fica invertido.
+struct ChoiceGrid<Value: Hashable>: View {
+    let values: [Value]
+    let selected: Value?
+    var columns = 4
+    let label: (Value) -> String
+    var marked: (Value) -> Bool = { _ in false }
+    let choose: (Value) -> Void
+
+    var body: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: columns), spacing: 6) {
+            ForEach(values, id: \.self) { value in
+                Button { choose(value) } label: {
+                    HStack(spacing: 4) {
+                        Text(label(value))
+                        if marked(value) { FlickerFreeMark() }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(ChoiceStyle(isOn: value == selected))
+            }
+        }
+    }
+}
+
+struct ISOPanel: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            PanelSection(title: "Exposição automática") {
+                Picker(
+                    "Exposição automática",
+                    selection: Binding(
+                        get: { model.state.autoExposure },
+                        set: { model.set("/video/autoExposure", ["mode": $0]) })
+                ) {
+                    Text("Manual").tag("Off")
+                    Text("Contínua").tag("Continuous")
+                    Text("Uma vez").tag("OneShot")
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            PanelSection(title: "ISO") {
+                ChoiceGrid(
+                    values: model.state.supportedISOs, selected: model.state.iso, columns: 5, label: String.init
+                ) { model.setISO($0) }
+            }
+            if model.state.autoExposure != "Off" {
+                Text("Escolher um ISO desliga a exposição automática.").font(.callout).foregroundStyle(.secondary)
+            }
+        }
+    }
+}
+
+struct ShutterPanel: View {
+    @Bindable var model: AppModel
+    @State private var byAngle = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Picker("Unidade", selection: $byAngle) {
+                Text("Velocidade").tag(false)
+                Text("Ângulo").tag(true)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            PanelSection(title: byAngle ? "Ângulo do obturador" : "Velocidade do obturador") {
+                ChoiceGrid(
+                    values: byAngle
+                        ? model.state.shutterAngles.map(Shutter.angle) : model.state.shutterSpeeds.map(Shutter.speed),
+                    selected: model.state.shutter, columns: 4, label: \.label,
+                    marked: model.state.isFlickerFree
+                ) { model.setShutter($0) }
+            }
+            HStack(spacing: 6) {
+                FlickerFreeMark()
+                Text("sem cintilação de luz da rede")
+            }
+            .font(.callout)
+            .foregroundStyle(.secondary)
+        }
+        .onAppear {
+            if case .angle = model.state.shutter { byAngle = true }
+        }
+    }
+}
+
+/// Marca das velocidades que não cintilam com a luz da rede elétrica.
+struct FlickerFreeMark: View {
+    var body: some View {
+        Image(systemName: "lightbulb.fill")
+            .font(.system(size: 9, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("sem cintilação")
+    }
+}
+
+/// Slider que segue a câmera quando parado e manda o valor enquanto é arrastado.
+struct CameraSlider: View {
+    let value: Double?
+    let range: ClosedRange<Double>
+    var step: Double = 1
+    let send: (Double) -> Void
+
+    @State private var local = 0.0
+    @State private var editing = false
+
+    var body: some View {
+        // Sem `step` no Slider: o macOS desenharia uma marca por passo. O passo vale no envio.
+        Slider(value: $local, in: range) { editing = $0 }
+            .onAppear { local = value ?? range.lowerBound }
+            .onChange(of: value) { _, new in
+                if !editing, let new { local = new }
+            }
+            .onChange(of: local) { _, new in
+                if editing { send((new / step).rounded() * step) }
+            }
+    }
+}
+
+struct WhiteBalancePanel: View {
+    @Bindable var model: AppModel
+
+    /// Presets de luz do app da Blackmagic: valores lidos do próprio app em 20/10
+    /// (cada toque no iPhone mudou WB e tint juntos).
+    private static let presets: [(symbol: String, title: String, kelvin: Int, tint: Int)] = [
+        ("sun.max", "Sol", 5600, 10),
+        ("cloud", "Nublado", 6500, 10),
+        ("lightbulb", "Lâmpada", 3200, 0),
+        ("light.panel", "Fluorescente", 4000, 15),
+        ("circle.lefthalf.filled", "Luz mista", 4500, 15),
+    ]
+
+    var body: some View {
+        let range = model.state.whiteBalanceRange
+        VStack(alignment: .leading, spacing: 16) {
+            PanelSection(title: "Luz") {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
+                    ForEach(Self.presets, id: \.title) { preset in
+                        Button { model.applyPreset(kelvin: preset.kelvin, tint: preset.tint) } label: {
+                            VStack(spacing: 4) {
+                                // Altura fixa: os símbolos têm alturas diferentes e desalinhavam os nomes.
+                                Image(systemName: preset.symbol).font(.system(size: 17)).frame(height: 20)
+                                Text(preset.title).font(.system(size: 11, weight: .semibold))
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 50)
+                        }
+                        .buttonStyle(
+                            ChoiceStyle(
+                                isOn: model.state.whiteBalance == preset.kelvin && model.state.tint == preset.tint))
+                        .help("\(preset.kelvin) K, tint \(preset.tint > 0 ? "+" : "")\(preset.tint)")
+                    }
+                }
+                // Ação, não escolha: fora da grade de presets e com cara de botão.
+                Button {
+                    model.set("/video/whiteBalance/doAuto", nil, awaitsEvent: false)
+                } label: {
+                    Label("Medir o branco agora", systemImage: "wand.and.stars")
+                }
+                .buttonStyle(.bordered)
+                .help("A câmera mede o branco da cena uma vez")
+            }
+            PanelSection(title: "Balanço de branco") {
+                Text(verbatim: model.state.whiteBalance.map { "\($0) K" } ?? "—").font(Theme.value(28))
+                CameraSlider(
+                    value: model.state.whiteBalance.map(Double.init),
+                    range: Double(range.lowerBound)...Double(range.upperBound), step: 50
+                ) { model.set("/video/whiteBalance", ["whiteBalance": Int($0)], awaitsEvent: false) }
+            }
+            Text("A API remota do iPhone não tem WB automático contínuo nem trava; “Medir o branco agora” é o automático disponível.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+struct TintPanel: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        let range = model.state.tintRange
+        VStack(alignment: .leading, spacing: 16) {
+            PanelSection(title: "Tint (verde ↔ magenta)") {
+                Text(verbatim: model.state.tint.map { $0 > 0 ? "+\($0)" : "\($0)" } ?? "—").font(Theme.value(28))
+                CameraSlider(
+                    value: model.state.tint.map(Double.init),
+                    range: Double(range.lowerBound)...Double(range.upperBound)
+                ) { model.set("/video/whiteBalanceTint", ["whiteBalanceTint": Int($0)], awaitsEvent: false) }
+            }
+            Button("Zerar") { model.setTint(0) }
+                .buttonStyle(.bordered)
+        }
+    }
+}
+
+struct FocusPanel: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            PanelSection(title: "Foco automático") {
+                Picker(
+                    "Foco automático",
+                    selection: Binding(
+                        get: { model.autoFocusEnabled ? model.autoFocusMode : "Manual" },
+                        set: { mode in
+                            if mode == "Manual" {
+                                model.setAutoFocus(enabled: false, mode: model.autoFocusMode)
+                            } else {
+                                model.setAutoFocus(enabled: true, mode: mode)
+                            }
+                        })
+                ) {
+                    // Sem "OneShot": em 20/10 esse modo fechou o Blackmagic Camera no iPhone.
+                    // "Focar agora" e o clique no vídeo fazem o foco único sem esse risco.
+                    Text("Contínuo").tag("Continuous")
+                    Text("Manual").tag("Manual")
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+            }
+            Button("Focar agora (\(Shortcut.focusNow.glyph))") { model.focusNow() }
+                .buttonStyle(.bordered)
+            PanelSection(title: "Distância de foco") {
+                CameraSlider(value: model.state.focus, range: 0...1, step: 0.005) { model.setFocus($0) }
+                Text("Mexer na distância passa para foco manual.").font(.callout).foregroundStyle(.secondary)
+            }
+            Text("Clique no vídeo para focar num ponto.").font(.callout).foregroundStyle(.secondary)
+        }
+    }
+}
+
+struct LensPanel: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        let lenses = model.state.lenses.filter(\.isAvailable)
+        let ordered = lenses.filter { $0.facing != "front" }.sorted { $0.focalLength < $1.focalLength }
+            + lenses.filter { $0.facing == "front" }
+        VStack(alignment: .leading, spacing: 16) {
+            PanelSection(title: "Lente") {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
+                    ForEach(ordered) { lens in
+                        Button { model.setLens(lens.id) } label: {
+                            VStack(spacing: 3) {
+                                LensIcon(lens: lens, rank: ordered.firstIndex(of: lens) ?? 0).frame(width: 26, height: 26)
+                                Text(lens.facing == "front" ? "Frontal" : lens.shortName)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .lineLimit(1)
+                                Text(verbatim: lens.isWideFront ? "ampla \(lens.focalLength) mm" : "\(lens.focalLength) mm")
+                                    .font(.system(size: 10))
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 66)
+                        }
+                        .buttonStyle(ChoiceStyle(isOn: lens.id == model.state.activeLensID, inset: 3))
+                    }
+                }
+            }
+            PanelSection(title: zoomTitle) {
+                CameraSlider(value: model.state.zoomNormalized, range: 0...1, step: 0.005) {
+                    model.set("/lens/zoom", ["normalised": $0], awaitsEvent: false)
+                }
+            }
+            Toggle(
+                "Estabilização óptica",
+                isOn: Binding(
+                    get: { model.state.stabilization },
+                    set: { model.set("/lens/opticalImageStabilization", ["enabled": $0]) })
+            )
+            .toggleStyle(.switch)
+        }
+    }
+
+    private var zoomTitle: String {
+        guard let focal = model.state.zoomFocalLength else { return "Zoom" }
+        if let range = model.state.zoomRange {
+            return "Zoom · \(Int(focal.rounded())) mm (\(Int(range.lowerBound))–\(Int(range.upperBound)))"
+        }
+        return "Zoom · \(Int(focal.rounded())) mm"
+    }
+}
+
+/// Ícone da lente: traseiras como anéis que crescem com a distância focal, como no app da
+/// Blackmagic; frontais com o rosto de quem está diante do iPhone.
+struct LensIcon: View {
+    let lens: Lens
+    let rank: Int
+
+    var body: some View {
+        if lens.facing == "front" {
+            // Mesma família e peso dos anéis das traseiras: círculo com rosto.
+            Image(systemName: lens.isWideFront ? "person.2.circle" : "person.crop.circle")
+                .font(.system(size: 19, weight: .regular))
+        } else {
+            let diameter = 12 + CGFloat(min(rank, 5)) * 3
+            ZStack {
+                Circle().strokeBorder(lineWidth: 1.5).frame(width: diameter, height: diameter)
+                Circle().frame(width: diameter * 0.38, height: diameter * 0.38)
+            }
+        }
+    }
+}
+
+extension Lens {
+    /// Frontal grande-angular ("LensFrontUltraWide").
+    var isWideFront: Bool { facing == "front" && id.contains("UltraWide") }
+
+    /// Rótulo curto da barra, sem quebra: "0.5×", "4×", "Frontal", "Frontal ampla".
+    var shortName: String {
+        if facing == "front" { return isWideFront ? "Frontal ampla" : "Frontal" }
+        return zoomFactor.replacingOccurrences(of: "x", with: "×")
+    }
+}
+
+struct GridPanel: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        PanelSection(title: "Grade") {
+            VStack(spacing: 6) {
+                ForEach(AppModel.GridStyle.allCases) { style in
+                    Button { model.grid = style } label: {
+                        HStack(spacing: 10) {
+                            GridOverlay(style: style, thumbnail: true)
+                                .frame(width: 36, height: 22)
+                                .background(.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 3))
+                            Text(style.title)
+                            Spacer()
+                        }
+                    }
+                    .buttonStyle(ChoiceStyle(isOn: model.grid == style))
+                }
+            }
+        }
+    }
+}
+
+struct AudioPanel: View {
+    @Bindable var model: AppModel
+    @State private var confirmSilence = false
+
+    var body: some View {
+        let current = model.state.audioInputs[0]
+        let inputs = model.state.availableAudioInputs.filter { $0 != "None" }
+        VStack(alignment: .leading, spacing: 16) {
+            PanelSection(title: "Nível (dBFS)") {
+                LiveAudioMeter(model: model, large: true)
+            }
+            PanelSection(title: "Origem de áudio no iPhone") {
+                VStack(spacing: 6) {
+                    ForEach(inputs, id: \.self) { input in
+                        Button { model.setAudioInput(input) } label: {
+                            Text(input).frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .buttonStyle(ChoiceStyle(isOn: input == current))
+                    }
+                }
+            }
+            if model.state.availableAudioInputs.contains("None") {
+                Divider()
+                // Separado no fim da lista: um clique aqui deixa a gravação sem som. Vermelho só
+                // quando escolhido, porque aí é o alarme.
+                Button {
+                    if model.state.recording { confirmSilence = true } else { model.setAudioInput("None") }
+                } label: {
+                    Label("Sem áudio", systemImage: "mic.slash").frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .buttonStyle(ChoiceStyle(isOn: current == "None", fill: Theme.rec))
+                .confirmationDialog("Gravar sem áudio?", isPresented: $confirmSilence) {
+                    Button("Desligar o áudio", role: .destructive) { model.setAudioInput("None") }
+                } message: {
+                    Text("O clipe que está sendo gravado fica sem som a partir de agora.")
+                }
+            }
+            Text("Um microfone sem fio aparece aqui quando o iPhone o reconhece.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+            Divider()
+            // Local, não muda a câmera: com o iPhone na mesma sala, som no Mac dá microfonia.
+            Toggle("Ouvir no Mac (\(Shortcut.mute.glyph))", isOn: Binding(get: { !model.muted }, set: { model.muted = !$0 }))
+                .toggleStyle(.switch)
+        }
+    }
+}
+
+/// Opção de uma lista: a escolhida fica preenchida na cor de destaque do sistema.
+struct ChoiceStyle: ButtonStyle {
+    var isOn: Bool
+    /// Cor do preenchimento quando escolhida (vermelho para "Sem áudio").
+    var fill: Color = .accentColor
+    /// Respiro lateral; os botões de lente usam menos para "ampla 19 mm" caber inteiro.
+    var inset: CGFloat = 8
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13, weight: .semibold).monospacedDigit())
+            .foregroundStyle(isOn ? Color.white : .primary)
+            .padding(.horizontal, inset)
+            .frame(minHeight: 28)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(isOn ? fill : .white.opacity(configuration.isPressed ? 0.2 : hovering ? 0.14 : 0.08)))
+            .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .onHover { hovering = $0 }
+    }
+}

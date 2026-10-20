@@ -1,0 +1,21 @@
+# bmonitor
+
+App nativo de macOS (Swift, SwiftUI) que monitora e controla um iPhone rodando o Blackmagic Camera pela Wi‑Fi. Visão geral, instalação e o que o app muda no iPhone estão no `README.md`; o sistema visual está em `DESIGN.md`.
+
+## Como rodar
+
+- Requer `brew install srt` (o módulo `CSRT` acha a libsrt pelo pkg-config).
+- `swift build -c release && swift test`. Os testes de demux e áudio precisam de `Tests/MonitorCoreTests/Fixtures/stream.ts`, que não vai para o repo; sem ele, são pulados (ver `StreamFixture.swift`).
+- App instalado: `scripts/build-app.sh --install --dmg` monta `bmonitor.app` (libsrt e OpenSSL dentro do pacote, ícone de `scripts/make-icon.swift`, assinatura ad hoc), copia para `/Applications` e gera o `.dmg`.
+- Capturas de revisão: `bmonitor --open-panel <iso|shutter|whiteBalance|tint|focus|lens|audio|grid>` abre o popover ao conectar; `--show-shortcuts` abre a tela de atalhos; `--simulate-camera-gone`, `--simulate-lost`, `--simulate-loss`, `--simulate-recording` e `--simulate-remaining <segundos>` mostram esses estados com a câmera ligada; `--skip-bonjour` testa a volta ao último iPhone. Abra uma instância por vez e espere a anterior devolver a plataforma.
+- `latency-probe --camera <ip-do-iphone>` mede o atraso do receptor sem interface.
+
+## O que o código precisa respeitar
+
+- O caminho de vídeo é **sem fila**: cada quadro sai do demux assim que o pacote TS com enchimento fecha o PES, decodifica de forma síncrona e vai para a camada com `DisplayImmediately`. Qualquer buffer novo no caminho soma atraso visível; meça vidro a vidro antes e depois.
+- O som segue a mesma regra, com uma exceção: o `AudioMonitor` agenda uma folga de dois quadros AAC (~43 ms) ao começar e descarta acima de 6 na fila (~128 ms). Mudo não toca a saída do Mac.
+- O app muda a plataforma de livestream ativa do iPhone. Toda saída do app devolve a plataforma original e para o stream (SIGINT, SIGTERM e fechar a janela já fazem isso; `kill -9` não). A original fica em disco (`originalLivestreamPlatform`).
+- Reenviar a plataforma customizada com o mesmo nome faz o Blackmagic Camera mostrar "Platforms Import Failed": envie só quando faltar ou quando o endereço mudar.
+- Se o stream começa sem o Mac escutando, o iPhone fica em `Interrupted` e não tenta de novo: mande `stop` e `start`.
+- O iPhone impõe 60 ms de buffer SRT e descarta parâmetros na URL da plataforma.
+- Formatos de PUT que divergem da documentação da Blackmagic: foco e zoom só com `normalised`; shutter em ângulo exige antes `PUT /video/shutter/measurement`; `/lens/focus/autoFocus` com `mode: OneShot` fechou o Blackmagic Camera e não é oferecido.
