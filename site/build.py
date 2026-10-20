@@ -91,8 +91,10 @@ def main():
         shutil.copy2(SRC / f, DIST / f)
     (DIST / "CNAME").write_text("bmonitor.app\n")
 
-    # Para LLMs e buscadores: llms.txt escrito à mão, llms-full.txt é o README inteiro.
-    shutil.copy2(SRC / "llms.txt", DIST / "llms.txt")
+    # Para LLMs e buscadores: os .txt da raiz de src (llms.txt escrito à mão e a chave do IndexNow)
+    # vão como estão; llms-full.txt é o README inteiro.
+    for f in SRC.glob("*.txt"):
+        shutil.copy2(f, DIST / f.name)
     readme = (ROOT.parent / "README.md").read_text()
     (DIST / "llms-full.txt").write_text(f"# bmonitor: full documentation\n\nSource: {REPO} (README.md). Website: {SITE}/\n\n{readme}")
     bots = "".join(f"User-agent: {b}\nAllow: /\n\n" for b in AI_BOTS)
