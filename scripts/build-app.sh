@@ -1,9 +1,11 @@
 #!/bin/zsh
 # Monta "bmonitor.app" com a libsrt e o OpenSSL dentro do pacote (uma atualização do
 # Homebrew não quebra o app), ícone gerado por scripts/make-icon.swift e assinatura ad hoc.
-# Uso: scripts/build-app.sh [--notarize] [--install] [--dmg]
+# Uso: scripts/build-app.sh [--notarize] [--install] [--dmg] [--appcast]
 #   --notarize notariza o app (e o .dmg, com --dmg) e anexa o selo da Apple; exige o .env
 #   --install copia para /Applications; --dmg gera .build/dist/bmonitor-<versão>.dmg
+#   --appcast (com --dmg) gera .build/dist/appcast.xml, assinado com a chave do Sparkle do Keychain
+# VERSION e BUILD podem vir do ambiente (teste de atualização com uma versão "antiga").
 # Assinatura: com SIGNING_IDENTITY no .env (Developer ID), assina com hardened runtime e
 # carimbo de tempo; sem .env, assina ad hoc (serve para compilar e testar localmente).
 # O .env (fora do git) traz SIGNING_IDENTITY e NOTARY_PROFILE, o perfil do notarytool no Keychain.
@@ -13,8 +15,14 @@ cd "$(dirname "$0")/.."
 NAME="bmonitor"
 APP=".build/dist/$NAME.app"
 BUNDLE_ID="com.dantearaujo.bmonitor"
-VERSION="0.9.2"
-BUILD=$(git rev-list --count HEAD 2>/dev/null || echo 0)
+VERSION="${VERSION:-0.9.3}"
+BUILD="${BUILD:-$(git rev-list --count HEAD 2>/dev/null || echo 0)}"
+TAG="v$VERSION-beta"
+# Sparkle: o app lê o feed da release mais recente e só aceita atualização assinada com a chave
+# privada do Keychain (conta "bmonitor"; cópia no 1Password). A pública é pública: fica aqui.
+FEED_URL="https://github.com/dantearaujo/bmonitor/releases/latest/download/appcast.xml"
+SPARKLE_PUBLIC_KEY="Q2Xta7e1dk4Y++tjbOMq04jUAze5kRIJNdobA2M7LMM="
+SPARKLE=.build/artifacts/sparkle/Sparkle
 
 swift build -c release
 mkdir -p .build/icon
@@ -51,6 +59,7 @@ for lib in "$SRT" "$SSL" "$CRYPTO"; do
 done
 relink "$BIN" "$SRT"
 install_name_tool -add_rpath "@executable_path/../Frameworks" "$BIN"
+ditto "$SPARKLE/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework" "$FW/Sparkle.framework"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>
@@ -76,6 +85,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSHighResolutionCapable</key><true/>
     <key>NSLocalNetworkUsageDescription</key>
     <string>O bmonitor procura o iPhone com o Blackmagic Camera na rede local para mostrar o vídeo e controlar a câmera.</string>
+    <key>SUFeedURL</key><string>$FEED_URL</string>
+    <key>SUPublicEDKey</key><string>$SPARKLE_PUBLIC_KEY</string>
+    <key>SUEnableAutomaticChecks</key><true/>
+    <key>SUScheduledCheckInterval</key><integer>86400</integer>
     <key>NSBonjourServices</key>
     <array>
         <string>_http._tcp</string>
@@ -102,6 +115,13 @@ else
     SIGN=(codesign --force --sign -)
 fi
 for f in "$FW"/*.dylib; do "${SIGN[@]}" "$f"; done
+# Sparkle: cada executável interno, depois o framework (ordem da documentação do Sparkle).
+SP="$FW/Sparkle.framework/Versions/B"
+"${SIGN[@]}" "$SP/XPCServices/Installer.xpc"
+"${SIGN[@]}" --preserve-metadata=entitlements "$SP/XPCServices/Downloader.xpc"
+"${SIGN[@]}" "$SP/Autoupdate"
+"${SIGN[@]}" "$SP/Updater.app"
+"${SIGN[@]}" "$FW/Sparkle.framework"
 "${SIGN[@]}" "$APP"
 codesign --verify --deep --strict "$APP"
 
@@ -160,6 +180,15 @@ for arg in "$@"; do
         # baixa sempre a release marcada como "latest".
         cp "$DMG" ".build/dist/$NAME.dmg"
         echo "dmg: $DMG e .build/dist/$NAME.dmg ($(du -h "$DMG" | cut -f1))"
+        ;;
+    --appcast)
+        # Feed com a versão deste build. Rode depois de --dmg: assina o .dmg final (já com selo).
+        rm -rf .build/appcast && mkdir -p .build/appcast
+        cp ".build/dist/$NAME-$VERSION.dmg" .build/appcast/
+        "$SPARKLE/bin/generate_appcast" --account bmonitor \
+            --download-url-prefix "https://github.com/dantearaujo/bmonitor/releases/download/$TAG/" .build/appcast
+        cp .build/appcast/appcast.xml .build/dist/appcast.xml
+        echo "appcast: .build/dist/appcast.xml (release $TAG)"
         ;;
     esac
 done

@@ -126,3 +126,4 @@
 "A câmera recusou o valor (HTTP %lld). Escolha outro." = "The camera rejected the value (HTTP %lld). Pick another one.";
 "A câmera respondeu HTTP %lld. Tente de novo." = "The camera answered HTTP %lld. Try again.";
 "Sem resposta da câmera. Confira se o Blackmagic Camera está aberto e na mesma rede Wi‑Fi." = "No answer from the camera. Check that Blackmagic Camera is open and on the same Wi‑Fi network.";
+"Procurar atualizações…" = "Check for Updates…";

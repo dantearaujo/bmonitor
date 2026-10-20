@@ -11,7 +11,7 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <p align="center"><sub>Latest version · Apple Silicon · macOS 15 or later · <a href="#install">how to install</a></sub></p>
 
-<p align="center"><b>⚠️ Public beta (0.9.2).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
+<p align="center"><b>⚠️ Public beta (0.9.3).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 
 The app speaks English and Brazilian Portuguese, following your Mac's language.
 
@@ -25,6 +25,7 @@ You record yourself with an iPhone on a tripod. bmonitor turns the Mac next to i
 - **Audio:** the active microphone's name and an L/R peak meter styled after Blackmagic's own (green, yellow, red), plus the camera's sound on the Mac, muted by default.
 - **Remote control:** start and stop recording, ISO, shutter (speed or angle), white balance with light presets, tint, focus (click the video to focus there), zoom, lens, stabilization, and audio input.
 - **Keyboard:** one key per control (`I` ISO, `S` shutter, `W` white balance, `T` tint, `L` lens, `A` audio, `M` mute, `G` grid, `F` focus now), `⌘R` to record, `⌘→` to rotate. `⌘/` shows them all.
+- **Updates itself:** bmonitor checks for a new version once a day and asks before installing. You can also use **bmonitor › Check for Updates…**.
 - **Readable from 3 m:** status lives in the top corners and stays large. The control bar appears when you move the mouse and hides after 3 s.
 
 ## Requirements

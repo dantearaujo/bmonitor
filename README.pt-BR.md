@@ -11,7 +11,7 @@ Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
 <p align="center"><sub>Versão mais recente · Apple Silicon · macOS 15 ou mais novo · <a href="#instalar">como instalar</a></sub></p>
 
-<p align="center"><b>⚠️ Beta público (0.9.2).</b> Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
+<p align="center"><b>⚠️ Beta público (0.9.3).</b> Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
 
 O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
 
@@ -25,6 +25,7 @@ Você se grava com um iPhone no tripé. O bmonitor transforma o Mac ao lado no m
 - **Áudio:** o nome do microfone ativo e um medidor de pico L/R no estilo do medidor da própria Blackmagic (verde, amarelo e vermelho), além do som da câmera no Mac, que começa mudo.
 - **Controle remoto:** iniciar e parar a gravação, ISO, shutter (velocidade ou ângulo), balanço de branco com presets de luz, tint, foco (clique no vídeo para focar ali), zoom, lente, estabilização e origem do áudio.
 - **Teclado:** uma tecla por controle (`I` ISO, `S` shutter, `W` balanço de branco, `T` tint, `L` lente, `A` áudio, `M` mudo, `G` grade, `F` focar agora), `⌘R` para gravar e `⌘→` para girar. `⌘/` mostra todos.
+- **Atualiza sozinho:** o bmonitor procura versão nova uma vez por dia e pergunta antes de instalar. Também dá para usar **bmonitor › Procurar atualizações…**.
 - **Legível a 3 m:** o status fica nos cantos de cima, em letra grande. A barra de controles aparece quando você mexe o mouse e some depois de 3 s.
 
 ## Requisitos

@@ -1,10 +1,16 @@
 import AppKit
+import Sparkle
 import SwiftUI
 
 @main
 struct MonitorApp: App {
     @NSApplicationDelegateAdaptor private var delegate: AppDelegate
     @State private var model: AppModel
+    /// Atualização automática pelo Sparkle: o feed e a chave pública vêm do Info.plist do .app.
+    /// O binário solto (swift run) não tem Info.plist, então o atualizador não liga nele.
+    private let updater = SPUStandardUpdaterController(
+        startingUpdater: Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil,
+        updaterDelegate: nil, userDriverDelegate: nil)
 
     init() {
         setvbuf(stdout, nil, _IOLBF, 0)
@@ -17,6 +23,13 @@ struct MonitorApp: App {
         WindowGroup("bmonitor") {
             MonitorView(model: model)
                 .frame(minWidth: 480, minHeight: 270)
+                .onAppear {
+                    // Desenvolvimento: `--check-updates-now` procura atualização em segundo plano ao abrir,
+                    // para testar o Sparkle de ponta a ponta sem clicar no menu.
+                    if CommandLine.arguments.contains("--check-updates-now") {
+                        updater.updater.checkForUpdatesInBackground()
+                    }
+                }
         }
         // Janela comum, ao lado do roteiro e de outras janelas; nada de Space próprio.
         .defaultSize(width: 960, height: 540)
@@ -43,6 +56,10 @@ struct MonitorApp: App {
                     ForEach(AppModel.GridStyle.allCases) { Text($0.title).tag($0) }
                 }
                 Button("Girar 90°") { model.rotate() }.keyboardShortcut(.rotate)
+            }
+            CommandGroup(after: .appInfo) {
+                Button("Procurar atualizações…") { updater.checkForUpdates(nil) }
+                    .disabled(Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") == nil)
             }
             CommandGroup(replacing: .help) {
                 Button("Atalhos do teclado") { model.toggleShortcuts() }.keyboardShortcut(.help)
