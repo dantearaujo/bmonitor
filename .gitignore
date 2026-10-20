@@ -3,3 +3,9 @@
 *.xcodeproj
 .impeccable/review/
 .env
+
+# Arquivos privados de design da página, symlinks para projects/dante/bmonitor-design no AIOS
+site/PRODUCT.md
+site/DESIGN.md
+site/.impeccable
+site/dist/

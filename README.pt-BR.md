@@ -7,6 +7,14 @@
 <p align="center">Monitore e controle pelo Mac um iPhone rodando o <b>Blackmagic Camera</b>.<br>
 Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
+<p align="center"><img alt="Plataforma" src="https://img.shields.io/badge/platform-macOS%2014%2B-blue" />&nbsp;<img alt="Swift" src="https://img.shields.io/badge/swift-6.0-orange" />&nbsp;<img alt="Licença" src="https://img.shields.io/badge/license-MIT-green" />&nbsp;<img alt="Versão mais recente" src="https://img.shields.io/github/v/release/dantearaujo/bmonitor" /></p>
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/dantearaujo">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="42" alt="Buy Me a Coffee" />
+  </a>
+</p>
+
 <h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Baixar o bmonitor para Mac</a></h3>
 
 <p align="center"><sub>Versão mais recente · macOS 14 Sonoma ou mais novo · Apple Silicon e Intel · <a href="#instalar">como instalar</a></sub></p>
@@ -98,6 +106,10 @@ Para desenvolver, o pacote Swift usa a libsrt do Homebrew. Já o script de empac
 ## Como funciona
 
 O Mac conversa com a API REST e WebSocket do Blackmagic Camera (porta 4444) para ler o estado e mandar os controles. Para vídeo e áudio, ele aponta a transmissão da câmera (SRT, MPEG‑TS com HEVC e AAC) para si mesmo, separa e decodifica cada quadro com o VideoToolbox, sem fila de espera. Do vidro da câmera ao vidro da tela, isso mede cerca de 0,3 s, a maior parte do lado do iPhone.
+
+## Apoie
+
+O bmonitor é grátis e tem licença MIT. Se ele te poupou uma ida até o tripé, você pode [me pagar um café](https://www.buymeacoffee.com/dantearaujo).
 
 ## Licença
 

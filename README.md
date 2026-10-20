@@ -7,6 +7,14 @@
 <p align="center">Monitor and remote-control an iPhone running <b>Blackmagic Camera</b> from your Mac.<br>
 Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
+<p align="center"><img alt="Platform" src="https://img.shields.io/badge/platform-macOS%2014%2B-blue" />&nbsp;<img alt="Swift" src="https://img.shields.io/badge/swift-6.0-orange" />&nbsp;<img alt="License" src="https://img.shields.io/badge/license-MIT-green" />&nbsp;<img alt="Latest release" src="https://img.shields.io/github/v/release/dantearaujo/bmonitor" /></p>
+
+<p align="center">
+  <a href="https://www.buymeacoffee.com/dantearaujo">
+    <img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" height="42" alt="Buy Me a Coffee" />
+  </a>
+</p>
+
 <h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Download bmonitor for Mac</a></h3>
 
 <p align="center"><sub>Latest version · macOS 14 Sonoma or later · Apple Silicon and Intel · <a href="#install">how to install</a></sub></p>
@@ -98,6 +106,10 @@ For development, the Swift package links Homebrew's libsrt. The packaging script
 ## How it works
 
 The Mac talks to Blackmagic Camera's REST and WebSocket API (port 4444) for status and controls. For video and audio, it points the camera's live stream (SRT, MPEG‑TS with HEVC and AAC) at itself, then demuxes and decodes every frame with VideoToolbox with no buffering queue. Glass to glass, that measures about 0.3 s, most of it on the iPhone side.
+
+## Support
+
+bmonitor is free and MIT-licensed. If it saved you a trip to the tripod, you can [buy me a coffee](https://www.buymeacoffee.com/dantearaujo).
 
 ## License
 
