@@ -14,6 +14,13 @@ App nativo de macOS (Swift, SwiftUI) que monitora e controla um iPhone rodando o
 - Atualização automática (Sparkle): `scripts/build-app.sh --notarize --dmg --appcast` também gera `.build/dist/appcast.xml`, assinado com a chave EdDSA do Keychain (conta `bmonitor`; cópia no 1Password). Suba o `appcast.xml` em toda release: o app lê `releases/latest/download/appcast.xml`. `--check-updates-now` testa a busca ao abrir. O número de build (`CFBundleVersion`) é a contagem de commits e precisa crescer a cada release.
 - Release: suba os dois `.dmg` (`bmonitor-<versão>.dmg` e `bmonitor.dmg`) e o `appcast.xml` e marque a release como "latest", não como pré-release. O botão de download do README aponta para `releases/latest/download/bmonitor.dmg`, que ignora pré-releases.
 
+## Site (bmonitor.app)
+
+- `site/` é a landing page estática. `python3 site/build.py` gera `site/dist/` (ignorado): inglês em `/` e português em `/pt/`, a partir de `site/src/index.html` e dos textos em `site/i18n/en.json` e `pt.json`. O build falha se os dois JSON tiverem chaves diferentes. Para ver localmente: `python3 -m http.server -d site/dist`.
+- Todo push em `main` que mexe em `site/` publica pelo workflow `.github/workflows/pages.yml` no GitHub Pages, domínio `bmonitor.app` (DNS na Cloudflare, sem proxy).
+- A cópia da página segue o `README.md`: recurso, requisito ou número novo entra nos dois. A janela do app na página é desenhada em HTML no layout do `DESIGN.md` da raiz; mudou a interface do app, confira se a página ainda bate.
+- `site/PRODUCT.md`, `site/DESIGN.md` e `site/.impeccable/` são symlinks ignorados para a pasta privada de design no AIOS (`projects/dante/bmonitor-design/site/`). Mudança visual na página passa pela skill `impeccable`.
+
 ## O que o código precisa respeitar
 
 - O caminho de vídeo é **sem fila**: cada quadro sai do demux assim que o pacote TS com enchimento fecha o PES, decodifica de forma síncrona e vai para a camada com `DisplayImmediately`. Qualquer buffer novo no caminho soma atraso visível; meça vidro a vidro antes e depois.
