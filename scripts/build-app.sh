@@ -93,15 +93,14 @@ for arg in "$@"; do
         echo "instalado em /Applications/$NAME.app"
         ;;
     --dmg)
-        # Janela de arrastar para Aplicativos: o app e um atalho para /Applications.
-        STAGE=.build/dmg
+        # Janela de arrastar para Aplicativos com fundo próprio (dmgbuild grava o layout no
+        # .DS_Store do volume, sem automatizar o Finder).
         DMG=".build/dist/$NAME-$VERSION.dmg"
-        rm -rf "$STAGE" "$DMG"
-        mkdir -p "$STAGE"
-        cp -R "$APP" "$STAGE/"
-        ln -s /Applications "$STAGE/Applications"
-        hdiutil create -volname "$NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
-        rm -rf "$STAGE"
+        rm -f "$DMG"
+        [[ -x .build/venv/bin/dmgbuild ]] || { python3 -m venv .build/venv && .build/venv/bin/pip install -q dmgbuild; }
+        swift scripts/make-dmg-background.swift .build/dmg-bg >/dev/null
+        .build/venv/bin/dmgbuild -s scripts/dmg-settings.py -D app="$APP" \
+            -D background=.build/dmg-bg/background.png -D icon=.build/icon/AppIcon.icns "$NAME" "$DMG" >/dev/null
         # Cópia sem versão no nome: o link fixo do README (releases/latest/download/bmonitor.dmg)
         # baixa sempre a release marcada como "latest".
         cp "$DMG" ".build/dist/$NAME.dmg"
