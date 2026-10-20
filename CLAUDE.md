@@ -4,7 +4,7 @@ App nativo de macOS (Swift, SwiftUI) que monitora e controla um iPhone rodando o
 
 ## Como rodar
 
-- Requer `brew install srt` (o módulo `CSRT` acha a libsrt pelo pkg-config).
+- Requer `brew install srt cmake`. Para desenvolver, o módulo `CSRT` acha a libsrt do Homebrew pelo pkg-config. O app empacotado não usa a do Homebrew (ela exige a versão do macOS da máquina que compilou): `scripts/build-deps.sh` compila libsrt 1.5.7 e OpenSSL 4.0.3 universais, macOS 14+, com nomes @rpath, e `build-app.sh` compila o app universal contra elas e recusa qualquer binário que peça mais que o macOS 14.
 - `swift build -c release && swift test`. Os testes de demux e áudio precisam de `Tests/MonitorCoreTests/Fixtures/stream.ts`, que não vai para o repo; sem ele, são pulados (ver `StreamFixture.swift`).
 - App instalado: `scripts/build-app.sh --install --dmg` monta `bmonitor.app` (libsrt e OpenSSL dentro do pacote, ícone de `scripts/make-icon.swift`, assinatura ad hoc), copia para `/Applications` e gera o `.dmg`.
 - Capturas de revisão: `bmonitor --open-panel <iso|shutter|whiteBalance|tint|focus|lens|audio|grid>` abre o popover ao conectar; `--show-shortcuts` abre a tela de atalhos; `--simulate-camera-gone`, `--simulate-lost`, `--simulate-loss`, `--simulate-recording` e `--simulate-remaining <segundos>` mostram esses estados com a câmera ligada; `--skip-bonjour` testa a volta ao último iPhone. Abra uma instância por vez e espere a anterior devolver a plataforma.

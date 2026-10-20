@@ -15,7 +15,7 @@ cd "$(dirname "$0")/.."
 NAME="bmonitor"
 APP=".build/dist/$NAME.app"
 BUNDLE_ID="com.dantearaujo.bmonitor"
-VERSION="${VERSION:-0.9.3}"
+VERSION="${VERSION:-0.9.4}"
 BUILD="${BUILD:-$(git rev-list --count HEAD 2>/dev/null || echo 0)}"
 TAG="v$VERSION-beta"
 # Sparkle: o app lê o feed da release mais recente e só aceita atualização assinada com a chave
@@ -24,41 +24,33 @@ FEED_URL="https://github.com/dantearaujo/bmonitor/releases/latest/download/appca
 SPARKLE_PUBLIC_KEY="Q2Xta7e1dk4Y++tjbOMq04jUAze5kRIJNdobA2M7LMM="
 SPARKLE=.build/artifacts/sparkle/Sparkle
 
-swift build -c release
+# libsrt e OpenSSL compilados aqui (universal, macOS 14+), não os do Homebrew: os do Homebrew
+# exigem a versão do macOS da máquina que compilou.
+scripts/build-deps.sh
+DEPS_LIB="$PWD/.build/deps/universal/lib"
+export PKG_CONFIG_PATH="$DEPS_LIB/pkgconfig" PKG_CONFIG_LIBDIR="$DEPS_LIB/pkgconfig"
+swift build -c release --arch arm64 --arch x86_64
+BIN_PATH=$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)
 mkdir -p .build/icon
 swift scripts/make-icon.swift .build/icon >/dev/null
 
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/Resources"
-cp .build/release/bmonitor "$APP/Contents/MacOS/"
+cp "$BIN_PATH/bmonitor" "$APP/Contents/MacOS/"
 cp .build/icon/AppIcon.icns "$APP/Contents/Resources/"
 cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
 # Traduções: português é a base (chaves no código); en.lproj traduz para inglês.
 cp -R Localization/*.lproj "$APP/Contents/Resources/"
 
-# Bibliotecas do Homebrew para dentro do pacote, com os caminhos trocados para @rpath.
+# Bibliotecas para dentro do pacote; build-deps.sh já as deixou com nomes @rpath.
 BIN="$APP/Contents/MacOS/bmonitor"
-SRT=$(otool -L "$BIN" | awk '/libsrt/{print $1}')
-SSL=$(otool -L "$SRT" | awk '/libssl/{print $1}')
-CRYPTO=$(otool -L "$SRT" | awk '/libcrypto/{print $1}')
-for lib in "$SRT" "$SSL" "$CRYPTO"; do
-    cp "$lib" "$APP/Contents/Frameworks/"
-    chmod u+w "$APP/Contents/Frameworks/$(basename "$lib")"
-done
 FW="$APP/Contents/Frameworks"
-relink() {  # relink <arquivo> <biblioteca>: troca toda referência à biblioteca por @rpath
-    local file=$1 lib=$(basename "$2")
-    for ref in $(otool -L "$file" | awk 'NR>1{print $1}' | grep "$lib" || true); do
-        install_name_tool -change "$ref" "@rpath/$lib" "$file" 2>/dev/null
-    done
-}
-for lib in "$SRT" "$SSL" "$CRYPTO"; do
-    f="$FW/$(basename "$lib")"
-    install_name_tool -id "@rpath/$(basename "$lib")" "$f" 2>/dev/null
-    for dep in "$SSL" "$CRYPTO"; do relink "$f" "$dep"; done
+for lib in libsrt.1.5.dylib libssl.4.dylib libcrypto.4.dylib; do
+    cp "$DEPS_LIB/$lib" "$FW/"
+    chmod u+w "$FW/$lib"
 done
-relink "$BIN" "$SRT"
-install_name_tool -add_rpath "@executable_path/../Frameworks" "$BIN"
+otool -l "$BIN" | grep -q "@executable_path/../Frameworks" \
+    || install_name_tool -add_rpath "@executable_path/../Frameworks" "$BIN"
 ditto "$SPARKLE/Sparkle.xcframework/macos-arm64_x86_64/Sparkle.framework" "$FW/Sparkle.framework"
 
 cat > "$APP/Contents/Info.plist" <<PLIST
@@ -80,7 +72,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     </array>
     <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundleVersion</key><string>$BUILD</string>
-    <key>LSMinimumSystemVersion</key><string>15.0</string>
+    <key>LSMinimumSystemVersion</key><string>14.0</string>
     <key>LSApplicationCategoryType</key><string>public.app-category.video</string>
     <key>NSHighResolutionCapable</key><true/>
     <key>NSLocalNetworkUsageDescription</key>
@@ -145,11 +137,20 @@ if $NOTARIZE; then
     xcrun stapler staple -q "$APP"
 fi
 
-# Conferência: nenhuma referência ao Homebrew pode sobrar.
+# Conferência: nenhuma referência ao Homebrew, e nenhum binário pedindo mais que o macOS 14.
 if otool -L "$BIN" "$FW"/*.dylib | grep -q /opt/homebrew; then
     echo "erro: ainda há referência ao Homebrew" >&2
     exit 1
 fi
+for f in "$BIN" "$FW"/*.dylib "$FW/Sparkle.framework/Versions/B/Sparkle"; do
+    for arch in $(lipo -archs "$f"); do
+        minos=$(otool -arch "$arch" -l "$f" | awk '/LC_BUILD_VERSION/{b=1} b&&/minos/{print $2; exit}')
+        if [[ -n "$minos" && "${minos%%.*}" -gt 14 ]]; then
+            echo "erro: $(basename "$f") ($arch) exige macOS $minos" >&2
+            exit 1
+        fi
+    done
+done
 echo "pronto: $APP (versão $VERSION, build $BUILD)"
 
 for arg in "$@"; do

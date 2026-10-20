@@ -80,6 +80,13 @@ struct HUDItemStyle: ButtonStyle {
                 Capsule().fill(.white.opacity(configuration.isPressed ? 0.28 : isOn ? 0.2 : hovering ? 0.12 : 0)))
             .contentShape(Capsule())
             .onHover { hovering = $0 }
-            .pointerStyle(.link)
+            .linkPointer()
+    }
+}
+
+extension View {
+    /// Cursor de link sobre os botões da barra; o modificador só existe a partir do macOS 15.
+    @ViewBuilder func linkPointer() -> some View {
+        if #available(macOS 15.0, *) { pointerStyle(.link) } else { self }
     }
 }

@@ -9,9 +9,9 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Download bmonitor for Mac</a></h3>
 
-<p align="center"><sub>Latest version · Apple Silicon · macOS 15 or later · <a href="#install">how to install</a></sub></p>
+<p align="center"><sub>Latest version · macOS 14 Sonoma or later · Apple Silicon and Intel · <a href="#install">how to install</a></sub></p>
 
-<p align="center"><b>⚠️ Public beta (0.9.3).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
+<p align="center"><b>⚠️ Public beta (0.9.4).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 
 The app speaks English and Brazilian Portuguese, following your Mac's language.
 
@@ -32,7 +32,7 @@ You record yourself with an iPhone on a tripod. bmonitor turns the Mac next to i
 
 | | |
 |---|---|
-| Mac | Apple Silicon, macOS 15 Sequoia or later (tested on macOS 26 Tahoe; macOS 15 untested in this beta) |
+| Mac | macOS 14 Sonoma or later, Apple Silicon or Intel (tested on macOS 26 Tahoe with Apple Silicon; earlier macOS versions and Intel Macs are untested in this beta, so please report how it goes) |
 | iPhone | [Blackmagic Camera](https://apps.apple.com/app/blackmagic-camera/id6449580241) (free), tested with version 3.5 |
 | Network | Mac and iPhone on the **same Wi‑Fi network** |
 
@@ -87,13 +87,13 @@ bmonitor collects nothing. It talks only to the iPhone on your local network: no
 ## Build from source
 
 ```sh
-brew install srt
+brew install srt cmake
 swift build -c release
 swift test
 scripts/build-app.sh --install --dmg   # bmonitor.app in /Applications and a .dmg in .build/dist
 ```
 
-The packaging script bundles libsrt and OpenSSL inside the app, generates the icon (`scripts/make-icon.swift`), and signs ad hoc. `DESIGN.md` documents the interface. Code comments are in Portuguese.
+For development, the Swift package links Homebrew's libsrt. The packaging script instead builds libsrt and OpenSSL from source as universal libraries for macOS 14 and up (`scripts/build-deps.sh`), bundles them inside the app, generates the icon (`scripts/make-icon.swift`), and signs ad hoc. `DESIGN.md` documents the interface. Code comments are in Portuguese.
 
 ## How it works
 

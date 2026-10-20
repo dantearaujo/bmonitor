@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "bmonitor",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v14)],
     dependencies: [
         // Atualização automática fora da App Store.
         .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.6.0")
@@ -15,7 +15,7 @@ let package = Package(
             name: "bmonitor", dependencies: ["MonitorCore", .product(name: "Sparkle", package: "Sparkle")]),
         .executableTarget(name: "latency-probe", dependencies: ["MonitorCore"]),
         .testTarget(
-            name: "MonitorCoreTests", dependencies: ["MonitorCore"],
+            name: "MonitorCoreTests", dependencies: ["MonitorCore", "CSRT"],
             resources: [.copy("Fixtures")]),
     ],
     swiftLanguageModes: [.v5]

@@ -9,9 +9,9 @@ Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
 <h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Baixar o bmonitor para Mac</a></h3>
 
-<p align="center"><sub>Versão mais recente · Apple Silicon · macOS 15 ou mais novo · <a href="#instalar">como instalar</a></sub></p>
+<p align="center"><sub>Versão mais recente · macOS 14 Sonoma ou mais novo · Apple Silicon e Intel · <a href="#instalar">como instalar</a></sub></p>
 
-<p align="center"><b>⚠️ Beta público (0.9.3).</b> Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
+<p align="center"><b>⚠️ Beta público (0.9.4).</b> Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
 
 O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
 
@@ -32,7 +32,7 @@ Você se grava com um iPhone no tripé. O bmonitor transforma o Mac ao lado no m
 
 | | |
 |---|---|
-| Mac | Apple Silicon, macOS 15 Sequoia ou mais novo (testado no macOS 26 Tahoe; o macOS 15 ainda não foi testado neste beta) |
+| Mac | macOS 14 Sonoma ou mais novo, Apple Silicon ou Intel (testado no macOS 26 Tahoe com Apple Silicon; versões anteriores do macOS e Macs Intel ainda não foram testados neste beta, conte como foi) |
 | iPhone | [Blackmagic Camera](https://apps.apple.com/app/blackmagic-camera/id6449580241) (gratuito), testado na versão 3.5 |
 | Rede | Mac e iPhone na **mesma rede Wi‑Fi** |
 
@@ -87,13 +87,13 @@ O bmonitor não coleta nada. Ele conversa só com o iPhone na sua rede local: se
 ## Compilar a partir do código
 
 ```sh
-brew install srt
+brew install srt cmake
 swift build -c release
 swift test
 scripts/build-app.sh --install --dmg   # bmonitor.app em /Applications e um .dmg em .build/dist
 ```
 
-O script de empacotamento põe a libsrt e o OpenSSL dentro do app, gera o ícone (`scripts/make-icon.swift`) e assina ad hoc. O `DESIGN.md` documenta a interface. Os comentários do código estão em português.
+Para desenvolver, o pacote Swift usa a libsrt do Homebrew. Já o script de empacotamento compila a libsrt e o OpenSSL a partir do código-fonte, universais e para macOS 14 em diante (`scripts/build-deps.sh`), põe as duas dentro do app, gera o ícone (`scripts/make-icon.swift`) e assina ad hoc. O `DESIGN.md` documenta a interface. Os comentários do código estão em português.
 
 ## Como funciona
 
