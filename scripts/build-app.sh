@@ -102,7 +102,10 @@ for arg in "$@"; do
         ln -s /Applications "$STAGE/Applications"
         hdiutil create -volname "$NAME" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
         rm -rf "$STAGE"
-        echo "dmg: $DMG ($(du -h "$DMG" | cut -f1))"
+        # Cópia sem versão no nome: o link fixo do README (releases/latest/download/bmonitor.dmg)
+        # baixa sempre a release marcada como "latest".
+        cp "$DMG" ".build/dist/$NAME.dmg"
+        echo "dmg: $DMG e .build/dist/$NAME.dmg ($(du -h "$DMG" | cut -f1))"
         ;;
     esac
 done

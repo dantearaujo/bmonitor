@@ -9,6 +9,7 @@ App nativo de macOS (Swift, SwiftUI) que monitora e controla um iPhone rodando o
 - App instalado: `scripts/build-app.sh --install --dmg` monta `bmonitor.app` (libsrt e OpenSSL dentro do pacote, ícone de `scripts/make-icon.swift`, assinatura ad hoc), copia para `/Applications` e gera o `.dmg`.
 - Capturas de revisão: `bmonitor --open-panel <iso|shutter|whiteBalance|tint|focus|lens|audio|grid>` abre o popover ao conectar; `--show-shortcuts` abre a tela de atalhos; `--simulate-camera-gone`, `--simulate-lost`, `--simulate-loss`, `--simulate-recording` e `--simulate-remaining <segundos>` mostram esses estados com a câmera ligada; `--skip-bonjour` testa a volta ao último iPhone. Abra uma instância por vez e espere a anterior devolver a plataforma.
 - `latency-probe --camera <ip-do-iphone>` mede o atraso do receptor sem interface.
+- Release: suba os dois `.dmg` (`bmonitor-<versão>.dmg` e `bmonitor.dmg`) e marque a release como "latest", não como pré-release. O botão de download do README aponta para `releases/latest/download/bmonitor.dmg`, que ignora pré-releases.
 
 ## O que o código precisa respeitar
 
