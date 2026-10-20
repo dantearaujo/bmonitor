@@ -17,7 +17,7 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Download bmonitor for Mac</a></h3>
 
-<p align="center"><sub>Latest version · macOS 14 Sonoma or later · Apple Silicon and Intel · <a href="#install">how to install</a></sub></p>
+<p align="center"><sub>Latest version · macOS 14 Sonoma or later · Apple Silicon and Intel · <a href="#install">how to install</a> · <a href="https://bmonitor.app">bmonitor.app</a></sub></p>
 
 <p align="center"><b>⚠️ Public beta (0.9.4).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 

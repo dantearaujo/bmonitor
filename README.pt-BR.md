@@ -17,7 +17,7 @@ Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
 <h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Baixar o bmonitor para Mac</a></h3>
 
-<p align="center"><sub>Versão mais recente · macOS 14 Sonoma ou mais novo · Apple Silicon e Intel · <a href="#instalar">como instalar</a></sub></p>
+<p align="center"><sub>Versão mais recente · macOS 14 Sonoma ou mais novo · Apple Silicon e Intel · <a href="#instalar">como instalar</a> · <a href="https://bmonitor.app/pt/">bmonitor.app</a></sub></p>
 
 <p align="center"><b>⚠️ Beta público (0.9.4).</b> Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
 
