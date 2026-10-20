@@ -5,6 +5,10 @@
 <p align="center">Monitor and remote-control an iPhone running <b>Blackmagic Camera</b> from your Mac.<br>
 Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
+<h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Download bmonitor for Mac</a></h3>
+
+<p align="center"><sub>Latest version · Apple Silicon · macOS 15 or later · <a href="#install">how to install</a> · <a href="#resumo-em-português">baixar e instalar (português)</a></sub></p>
+
 <p align="center"><b>⚠️ Public beta (0.9).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 
 > 🇧🇷 **Resumo em português** no [fim da página](#resumo-em-português). The app interface is in Brazilian Portuguese in this beta; English arrives in 1.0.
@@ -31,7 +35,7 @@ You record yourself with an iPhone on a tripod. bmonitor turns the Mac next to i
 
 ## Install
 
-1. Download `bmonitor-0.9.0.dmg` from [Releases](https://github.com/dantearaujo/bmonitor/releases).
+1. [Download bmonitor.dmg](https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg), always the latest version. Older versions live in [Releases](https://github.com/dantearaujo/bmonitor/releases).
 2. Open the `.dmg` and drag **bmonitor** to **Applications**.
 3. Open bmonitor. This beta is not notarized by Apple yet, so macOS blocks the first launch:
    - open **System Settings › Privacy & Security**;
@@ -111,7 +115,7 @@ O **bmonitor** transforma o Mac em monitor e controle remoto de um iPhone com o 
 
 **É beta (0.9):** foi testado em um Mac e um iPhone. Relate problemas nas [issues](https://github.com/dantearaujo/bmonitor/issues).
 
-**Instalar:** baixe o `.dmg` em [Releases](https://github.com/dantearaujo/bmonitor/releases) e arraste o app para Aplicativos. Na primeira abertura, o macOS bloqueia, porque o beta ainda não é notarizado. Vá em **Ajustes do Sistema › Privacidade e Segurança** e clique em **Abrir Mesmo Assim**. Depois, permita o acesso à **rede local**.
+**Instalar:** [baixe o bmonitor.dmg](https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg) (sempre a versão mais recente) e arraste o app para Aplicativos. Na primeira abertura, o macOS bloqueia, porque o beta ainda não é notarizado. Vá em **Ajustes do Sistema › Privacidade e Segurança** e clique em **Abrir Mesmo Assim**. Depois, permita o acesso à **rede local**.
 
 **No iPhone, uma vez:**
 - **Remote Camera Control** em **Remote Camera**;
