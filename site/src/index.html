@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="https://bmonitor.app{{path}}">
+<link rel="alternate" hreflang="en" href="https://bmonitor.app/">
+<link rel="alternate" hreflang="pt-BR" href="https://bmonitor.app/pt/">
+<link rel="alternate" hreflang="x-default" href="https://bmonitor.app/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="bmonitor">
+<meta property="og:locale" content="{{og_locale}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="https://bmonitor.app{{path}}">
+<meta property="og:image" content="https://bmonitor.app/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f5f5f7">
+<link rel="icon" type="image/png" href="/assets/icon.png">
+<link rel="apple-touch-icon" href="/assets/icon.png">
+<link rel="preload" as="image" href="/assets/creator-desk.webp" fetchpriority="high">
+<link rel="stylesheet" href="/style.css">
+<script defer src="/main.js"></script>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></symbol>
+  <symbol id="i-chev-r" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></symbol>
+  <symbol id="i-chev-l" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></symbol>
+  <symbol id="i-github" viewBox="0 0 24 24"><path class="fill" d="M12 2.5a9.5 9.5 0 0 0-3 18.52c.47.09.65-.2.65-.46v-1.62c-2.64.57-3.2-1.27-3.2-1.27-.43-1.1-1.06-1.39-1.06-1.39-.86-.59.07-.58.07-.58.95.07 1.45.98 1.45.98.85 1.45 2.22 1.03 2.76.79.09-.61.33-1.03.6-1.27-2.11-.24-4.33-1.05-4.33-4.7 0-1.04.37-1.89.98-2.55-.1-.24-.42-1.21.09-2.52 0 0 .8-.26 2.61.97a9.1 9.1 0 0 1 4.76 0c1.81-1.23 2.61-.97 2.61-.97.51 1.31.19 2.28.09 2.52.61.66.98 1.51.98 2.55 0 3.66-2.23 4.46-4.35 4.7.34.29.65.87.65 1.76v2.6c0 .26.17.56.66.46A9.5 9.5 0 0 0 12 2.5Z"/></symbol>
+  <symbol id="i-mic" viewBox="0 0 24 24"><rect class="fill" x="9" y="3" width="6" height="11" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v3.5"/></symbol>
+  <symbol id="i-signal" viewBox="0 0 24 24"><path d="M12 20v-6M8.5 9.5a5 5 0 0 1 7 0M5.5 6.5a9.2 9.2 0 0 1 13 0"/><circle class="fill" cx="12" cy="12.5" r="1.6"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24"><path class="fill" d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="m15.5 9.5 5 5m0-5-5 5"/></symbol>
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M9.33 4v16M14.67 4v16M4 9.33h16M4 14.67h16"/></symbol>
+  <symbol id="i-rotate" viewBox="0 0 24 24"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4.5v4h-4"/></symbol>
+  <symbol id="i-cup" viewBox="0 0 24 24"><path d="M5 9h11v5.5a4.5 4.5 0 0 1-4.5 4.5h-2A4.5 4.5 0 0 1 5 14.5zM16 10.5h1.25a2.25 2.25 0 0 1 0 4.5H16M8 3.5c0 1.2 1 1.3 1 2.5M12 3.5c0 1.2 1 1.3 1 2.5"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M3.5 9.5a12 12 0 0 1 17 0M6.5 12.7a7.6 7.6 0 0 1 11 0M9.5 15.8a3.4 3.4 0 0 1 5 0"/><circle class="fill" cx="12" cy="18.6" r="1.3"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<a class="skip" href="#main">{{skip}}</a>
+
+<header class="nav">
+  <div class="nav-in">
+    <a class="brand" href="{{path}}"><img src="/assets/icon.png" alt="" width="28" height="28">bmonitor</a>
+    <nav aria-label="Main">
+      <a href="#features">{{nav_features}}</a>
+      <a href="#setup">{{nav_setup}}</a>
+      <a href="#faq">{{nav_faq}}</a>
+      <a href="https://github.com/dantearaujo/bmonitor">GitHub</a>
+      <a href="https://www.buymeacoffee.com/dantearaujo">{{nav_support}}</a>
+      <a class="lang" href="{{alt_path}}" hreflang="{{alt_lang}}" lang="{{alt_lang}}" aria-label="{{lang_switch_label}}">{{lang_switch_short}}</a>
+    </nav>
+    <a class="btn btn-dark btn-sm" href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">{{nav_download}}</a>
+  </div>
+</header>
+
+<main id="main">
+  <section class="hero">
+    <img class="hero-icon" src="/assets/icon.png" alt="" width="132" height="132">
+    <p class="hero-name">bmonitor</p>
+    <h1 class="hero-title">{{hero_title}}</h1>
+    <p class="hero-sub">{{hero_sub}}</p>
+    <div class="cta">
+      <a class="btn btn-dark" href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg"><svg class="ic"><use href="#i-download"/></svg>{{cta_download}}</a>
+      <a class="btn btn-link" href="https://github.com/dantearaujo/bmonitor">{{cta_github}}<svg class="ic"><use href="#i-chev-r"/></svg></a>
+    </div>
+    <p class="hero-meta">{{hero_meta}}</p>
+
+    <figure class="laptop">
+      <div class="lid">
+        <div class="screen">
+          <div class="menubar" aria-hidden="true">
+            <span class="mb-app">bmonitor</span><span>{{screen_menu_file}}</span><span>{{screen_menu_edit}}</span><span>{{screen_menu_view}}</span><span>{{screen_menu_camera}}</span><span>{{screen_menu_window}}</span><span>{{screen_menu_help}}</span>
+            <span class="mb-right"><svg class="ic"><use href="#i-wifi"/></svg><span class="mb-batt"><i></i></span><span class="mb-clock" data-clock>9:41</span></span>
+          </div>
+          <div class="desk">
+            <aside class="script" aria-hidden="true">
+              <div class="script-bar"><i></i><i></i><i></i><span>{{screen_script_title}}</span></div>
+              <div class="script-body">{{screen_script_body}}</div>
+            </aside>
+            <div class="app is-rec" data-app>
+              <div class="video" data-video>
+                <img src="/assets/creator-desk.webp" alt="{{illustration_note}}" width="2048" height="1152">
+                <span class="tally" aria-hidden="true"></span>
+                <span class="lights" aria-hidden="true"><i></i><i></i><i></i></span>
+                <span class="reticle" data-reticle aria-hidden="true"></span>
+              </div>
+              <div class="hud" aria-hidden="true">
+                <div class="cap cap-rec">
+                  <span class="dot"></span><b class="rec-word" data-recword>REC</b><span class="tc" data-tc>00:12:48:06</span>
+                  <span class="sep"></span>
+                  <svg class="ic"><use href="#i-mic"/></svg><span class="mic opt">{{hud_mic}}</span>
+                  <span class="meter" data-meter><i></i><i></i></span>
+                </div>
+                <div class="cap cap-health">
+                  <span class="big">42</span><span>{{hud_min}}</span>
+                  <span class="sep"></span>
+                  <svg class="ic"><use href="#i-signal"/></svg><span>30 {{hud_fps}}</span>
+                </div>
+              </div>
+              <div class="bar" data-bar>
+                <div class="vi"><small>ISO</small><b>250</b></div>
+                <div class="vi"><small>Shutter</small><b>1/60</b></div>
+                <div class="vi"><small>WB</small><b>5600 K</b></div>
+                <div class="vi opt"><small>Tint</small><b>+10</b></div>
+                <div class="vi opt"><small>{{hud_focus}}</small><b>AF</b></div>
+                <span class="bsep"></span>
+                <button class="rec-btn" type="button" data-rec aria-pressed="true" aria-label="{{hud_record}}"><span></span></button>
+                <span class="bsep"></span>
+                <div class="vi"><small>{{hud_lens}} · 24 mm</small><b>1×</b></div>
+                <div class="vi opt"><small>{{hud_audio}}</small><b>{{meter_name}}</b></div>
+                <span class="ib"><svg class="ic"><use href="#i-speaker"/></svg></span>
+                <span class="ib opt"><svg class="ic"><use href="#i-grid"/></svg></span>
+                <span class="ib opt"><svg class="ic"><use href="#i-rotate"/></svg></span>
+              </div>
+            </div>
+          </div>
+          <div class="dock" aria-hidden="true">
+            <img src="/assets/icon.png" alt="" width="64" height="64"><span class="dk-script"><i></i><i></i><i></i></span><span class="dk-sep"></span><span class="dk-folder"></span>
+          </div>
+        </div>
+        <span class="notch" aria-hidden="true"></span>
+      </div>
+      <div class="base" aria-hidden="true"></div>
+      <figcaption>{{hud_hint}} <span>{{illustration_note}}</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="facts" aria-label="{{facts_title}}">
+    <ul>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{fact_1}}</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{fact_2}}</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{fact_3}}</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{fact_4}}</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{fact_5}}</li>
+    </ul>
+  </section>
+
+  <section class="compare">
+    <h2 class="sec-title center">{{compare_title}}</h2>
+    <p class="sec-sub center">{{compare_sub}}</p>
+    <div class="cmp">
+      <figure class="cmp-before">
+        <div class="shot"><img src="/assets/tripod-far.webp" alt="" width="2048" height="1152"></div>
+        <figcaption>{{compare_before}}</figcaption>
+      </figure>
+      <span class="cmp-link" aria-hidden="true"><svg class="ic"><use href="#i-signal"/></svg>{{compare_link}}</span>
+      <figure class="cmp-after">
+        <div class="mini-app">
+          <img src="/assets/creator-desk.webp" alt="" loading="lazy" width="2048" height="1152">
+          <span class="mini-cap l"><span class="dot"></span>REC <span class="tc">00:12:48</span></span>
+          <span class="mini-cap r">42 min</span>
+          <span class="mini-bar"><i>ISO 250</i><i>1/60</i><i>5600 K</i><span class="mini-rec"></span><i>1×</i><i>AF</i></span>
+        </div>
+        <figcaption>{{compare_after}}</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="features" id="features">
+    <div class="feat-head">
+      <h2 class="sec-title">{{features_title}}</h2>
+    </div>
+    <div class="rail" data-rail tabindex="0">
+      <article class="card">
+        <div class="media m-status">
+          <img src="/assets/creator-lamp.webp" alt="" width="2048" height="1152">
+          <div class="m-caps">
+            <span class="cap cap-rec"><span class="dot"></span><b class="rec-word">REC</b><span class="tc" data-tc>00:12:48:06</span></span>
+            <span class="cap"><span class="big">42</span>{{hud_min}}</span>
+          </div>
+        </div>
+        <p><b>{{feat_1_lead}}</b> {{feat_1_body}}</p>
+      </article>
+      <article class="card">
+        <div class="media m-focus" data-focus-demo>
+          <img src="/assets/creator-lamp.webp" alt="" width="2048" height="1152">
+          <span class="reticle on"></span>
+        </div>
+        <p><b>{{feat_2_lead}}</b> {{feat_2_body}}</p>
+      </article>
+      <article class="card">
+        <div class="media m-pop">
+          <div class="popover">
+            <div class="pop-head"><b>{{popover_iso}}</b><span class="switch"><span>{{popover_auto}}</span><i></i></span></div>
+            <div class="chips">
+              <span>100</span><span>125</span><span>160</span><span>200</span><span class="on">250</span><span>320</span><span>400</span><span>500</span><span>640</span><span>800</span><span>1000</span><span>1250</span>
+            </div>
+          </div>
+        </div>
+        <p><b>{{feat_3_lead}}</b> {{feat_3_body}}</p>
+      </article>
+      <article class="card">
+        <div class="media m-meter">
+          <div class="meter-big" data-meter-big>
+            <p><svg class="ic"><use href="#i-mic"/></svg>{{meter_name}}</p>
+            <div class="mb-row"><span>L</span><div class="track"><i></i><b></b></div></div>
+            <div class="mb-row"><span>R</span><div class="track"><i></i><b></b></div></div>
+            <div class="scale"><span>-40</span><span>-20</span><span>-9</span><span>0</span></div>
+          </div>
+        </div>
+        <p><b>{{feat_4_lead}}</b> {{feat_4_body}}</p>
+      </article>
+      <article class="card">
+        <div class="media m-keys">
+          <dl class="keys">
+            <div><dt><kbd>I</kbd></dt><dd>{{key_iso}}</dd></div>
+            <div><dt><kbd>S</kbd></dt><dd>{{key_shutter}}</dd></div>
+            <div><dt><kbd>W</kbd></dt><dd>{{key_wb}}</dd></div>
+            <div><dt><kbd>T</kbd></dt><dd>{{key_tint}}</dd></div>
+            <div><dt><kbd>L</kbd></dt><dd>{{key_lens}}</dd></div>
+            <div><dt><kbd>A</kbd></dt><dd>{{key_audio}}</dd></div>
+            <div><dt><kbd>M</kbd></dt><dd>{{key_mute}}</dd></div>
+            <div><dt><kbd>G</kbd></dt><dd>{{key_grid}}</dd></div>
+            <div><dt><kbd>F</kbd></dt><dd>{{key_focus}}</dd></div>
+            <div><dt><kbd>⌘</kbd><kbd>R</kbd></dt><dd>{{key_record}}</dd></div>
+          </dl>
+        </div>
+        <p><b>{{feat_5_lead}}</b> {{feat_5_body}}</p>
+      </article>
+    </div>
+    <div class="rail-nav">
+      <button type="button" data-rail-prev aria-label="{{feat_prev}}"><svg class="ic"><use href="#i-chev-l"/></svg></button>
+      <button type="button" data-rail-next aria-label="{{feat_next}}"><svg class="ic"><use href="#i-chev-r"/></svg></button>
+    </div>
+  </section>
+
+  <section class="setup" id="setup">
+    <h2 class="sec-title center">{{setup_title}}</h2>
+    <p class="sec-sub center">{{setup_sub}}</p>
+    <ol class="steps">
+      <li><h3>{{step_1_title}}</h3><p>{{step_1_body}}</p></li>
+      <li><h3>{{step_2_title}}</h3><p>{{step_2_body}}</p></li>
+      <li><h3>{{step_3_title}}</h3><p>{{step_3_body}}</p></li>
+      <li><h3>{{step_4_title}}</h3><p>{{step_4_body}}</p></li>
+    </ol>
+    <p class="center"><a class="btn btn-link" href="{{readme_url}}">{{setup_link}}<svg class="ic"><use href="#i-chev-r"/></svg></a></p>
+  </section>
+
+  <section class="faq" id="faq">
+    <h2 class="sec-title">{{faq_title}}</h2>
+    <dl class="qa">
+      <div><dt>{{q1}}</dt><dd>{{a1}}</dd></div>
+      <div><dt>{{q2}}</dt><dd>{{a2}}</dd></div>
+      <div><dt>{{q3}}</dt><dd>{{a3}}</dd></div>
+      <div><dt>{{q4}}</dt><dd>{{a4}}</dd></div>
+      <div><dt>{{q5}}</dt><dd>{{a5}}</dd></div>
+      <div><dt>{{q6}}</dt><dd>{{a6}}</dd></div>
+      <div><dt>{{q7}}</dt><dd>{{a7}}</dd></div>
+      <div><dt>{{q8}}</dt><dd>{{a8}}</dd></div>
+    </dl>
+  </section>
+
+  <section class="close">
+    <img src="/assets/icon.png" alt="" width="88" height="88" loading="lazy">
+    <h2 class="close-title">{{close_title}}</h2>
+    <div class="cta">
+      <a class="btn btn-dark" href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg"><svg class="ic"><use href="#i-download"/></svg>{{cta_download}}</a>
+      <a class="btn btn-link" href="https://github.com/dantearaujo/bmonitor">{{cta_github}}<svg class="ic"><use href="#i-chev-r"/></svg></a>
+    </div>
+    <p class="hero-meta">{{close_meta}}</p>
+    <p class="support">{{support_text}} <a class="btn btn-coffee" href="https://www.buymeacoffee.com/dantearaujo"><svg class="ic"><use href="#i-cup"/></svg>{{support_cta}}</a></p>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <p>© 2026 bmonitor · {{footer_made}}</p>
+    <nav aria-label="Footer">
+      <a href="https://github.com/dantearaujo/bmonitor">GitHub</a>
+      <a href="https://github.com/dantearaujo/bmonitor/releases">{{footer_releases}}</a>
+      <a href="https://github.com/dantearaujo/bmonitor/issues">{{footer_issues}}</a>
+      <a href="https://www.buymeacoffee.com/dantearaujo">Buy Me a Coffee</a>
+    </nav>
+  </div>
+  <p class="legal">{{footer_legal}}</p>
+</footer>
+</body>
+</html>
