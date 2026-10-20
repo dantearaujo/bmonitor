@@ -46,7 +46,7 @@ struct ISOPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            PanelSection(title: "Exposição automática") {
+            PanelSection(title: String(localized: "Exposição automática")) {
                 Picker(
                     "Exposição automática",
                     selection: Binding(
@@ -84,7 +84,7 @@ struct ShutterPanel: View {
             }
             .pickerStyle(.segmented)
             .labelsHidden()
-            PanelSection(title: byAngle ? "Ângulo do obturador" : "Velocidade do obturador") {
+            PanelSection(title: byAngle ? String(localized: "Ângulo do obturador") : String(localized: "Velocidade do obturador")) {
                 ChoiceGrid(
                     values: byAngle
                         ? model.state.shutterAngles.map(Shutter.angle) : model.state.shutterSpeeds.map(Shutter.speed),
@@ -154,14 +154,14 @@ struct WhiteBalancePanel: View {
     var body: some View {
         let range = model.state.whiteBalanceRange
         VStack(alignment: .leading, spacing: 16) {
-            PanelSection(title: "Luz") {
+            PanelSection(title: String(localized: "Luz")) {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 3), spacing: 6) {
                     ForEach(Self.presets, id: \.title) { preset in
                         Button { model.applyPreset(kelvin: preset.kelvin, tint: preset.tint) } label: {
                             VStack(spacing: 4) {
                                 // Altura fixa: os símbolos têm alturas diferentes e desalinhavam os nomes.
                                 Image(systemName: preset.symbol).font(.system(size: 17)).frame(height: 20)
-                                Text(preset.title).font(.system(size: 11, weight: .semibold))
+                                Text(LocalizedStringKey(preset.title)).font(.system(size: 11, weight: .semibold))
                             }
                             .frame(maxWidth: .infinity, minHeight: 50)
                         }
@@ -180,7 +180,7 @@ struct WhiteBalancePanel: View {
                 .buttonStyle(.bordered)
                 .help("A câmera mede o branco da cena uma vez")
             }
-            PanelSection(title: "Balanço de branco") {
+            PanelSection(title: String(localized: "Balanço de branco")) {
                 Text(verbatim: model.state.whiteBalance.map { "\($0) K" } ?? "—").font(Theme.value(28))
                 CameraSlider(
                     value: model.state.whiteBalance.map(Double.init),
@@ -201,7 +201,7 @@ struct TintPanel: View {
     var body: some View {
         let range = model.state.tintRange
         VStack(alignment: .leading, spacing: 16) {
-            PanelSection(title: "Tint (verde ↔ magenta)") {
+            PanelSection(title: String(localized: "Tint (verde ↔ magenta)")) {
                 Text(verbatim: model.state.tint.map { $0 > 0 ? "+\($0)" : "\($0)" } ?? "—").font(Theme.value(28))
                 CameraSlider(
                     value: model.state.tint.map(Double.init),
@@ -219,7 +219,7 @@ struct FocusPanel: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            PanelSection(title: "Foco automático") {
+            PanelSection(title: String(localized: "Foco automático")) {
                 Picker(
                     "Foco automático",
                     selection: Binding(
@@ -242,7 +242,7 @@ struct FocusPanel: View {
             }
             Button("Focar agora (\(Shortcut.focusNow.glyph))") { model.focusNow() }
                 .buttonStyle(.bordered)
-            PanelSection(title: "Distância de foco") {
+            PanelSection(title: String(localized: "Distância de foco")) {
                 CameraSlider(value: model.state.focus, range: 0...1, step: 0.005) { model.setFocus($0) }
                 Text("Mexer na distância passa para foco manual.").font(.callout).foregroundStyle(.secondary)
             }
@@ -259,16 +259,16 @@ struct LensPanel: View {
         let ordered = lenses.filter { $0.facing != "front" }.sorted { $0.focalLength < $1.focalLength }
             + lenses.filter { $0.facing == "front" }
         VStack(alignment: .leading, spacing: 16) {
-            PanelSection(title: "Lente") {
+            PanelSection(title: String(localized: "Lente")) {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 4), spacing: 6) {
                     ForEach(ordered) { lens in
                         Button { model.setLens(lens.id) } label: {
                             VStack(spacing: 3) {
                                 LensIcon(lens: lens, rank: ordered.firstIndex(of: lens) ?? 0).frame(width: 26, height: 26)
-                                Text(lens.facing == "front" ? "Frontal" : lens.shortName)
+                                Text(lens.facing == "front" ? String(localized: "Frontal") : lens.shortName)
                                     .font(.system(size: 12, weight: .semibold))
                                     .lineLimit(1)
-                                Text(verbatim: lens.isWideFront ? "ampla \(lens.focalLength) mm" : "\(lens.focalLength) mm")
+                                Text(verbatim: lens.isWideFront ? String(localized: "ampla \(lens.focalLength) mm") : "\(lens.focalLength) mm")
                                     .font(.system(size: 10))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
@@ -331,7 +331,7 @@ extension Lens {
 
     /// Rótulo curto da barra, sem quebra: "0.5×", "4×", "Frontal", "Frontal ampla".
     var shortName: String {
-        if facing == "front" { return isWideFront ? "Frontal ampla" : "Frontal" }
+        if facing == "front" { return isWideFront ? String(localized: "Frontal ampla") : String(localized: "Frontal") }
         return zoomFactor.replacingOccurrences(of: "x", with: "×")
     }
 }
@@ -340,7 +340,7 @@ struct GridPanel: View {
     @Bindable var model: AppModel
 
     var body: some View {
-        PanelSection(title: "Grade") {
+        PanelSection(title: String(localized: "Grade")) {
             VStack(spacing: 6) {
                 ForEach(AppModel.GridStyle.allCases) { style in
                     Button { model.grid = style } label: {
@@ -367,10 +367,10 @@ struct AudioPanel: View {
         let current = model.state.audioInputs[0]
         let inputs = model.state.availableAudioInputs.filter { $0 != "None" }
         VStack(alignment: .leading, spacing: 16) {
-            PanelSection(title: "Nível (dBFS)") {
+            PanelSection(title: String(localized: "Nível (dBFS)")) {
                 LiveAudioMeter(model: model, large: true)
             }
-            PanelSection(title: "Origem de áudio no iPhone") {
+            PanelSection(title: String(localized: "Origem de áudio no iPhone")) {
                 VStack(spacing: 6) {
                     ForEach(inputs, id: \.self) { input in
                         Button { model.setAudioInput(input) } label: {

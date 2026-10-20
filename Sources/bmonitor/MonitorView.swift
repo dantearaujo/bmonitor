@@ -18,7 +18,7 @@ struct MonitorView: View {
                 case .searching:
                     SearchingCard(model: model)
                 case .connecting(let host):
-                    MessageCard(title: "Conectando", detail: host, spinning: true)
+                    MessageCard(title: String(localized: "Conectando"), detail: host, spinning: true)
                 case .connected:
                     VideoLayerView(layer: model.displayLayer, quarterTurns: model.quarterTurns)
                     if model.videoFrozen {
@@ -42,14 +42,16 @@ struct MonitorView: View {
                     switch model.signal {
                     case .cameraGone:
                         MessageCard(
-                            title: "Sem câmera", detail: "Abra o Blackmagic Camera no iPhone. Reconecto sozinho.",
+                            title: String(localized: "Sem câmera"),
+                            detail: String(localized: "Abra o Blackmagic Camera no iPhone. Reconecto sozinho."),
                             spinning: true)
                     case .lost:
                         MessageCard(
-                            title: "Vídeo parado", detail: model.streamError ?? "Pedindo o vídeo de novo ao iPhone.",
+                            title: String(localized: "Vídeo parado"),
+                            detail: model.streamError ?? String(localized: "Pedindo o vídeo de novo ao iPhone."),
                             spinning: true)
                     case .waiting:
-                        MessageCard(title: "Aguardando vídeo", detail: model.streamError, spinning: true)
+                        MessageCard(title: String(localized: "Aguardando vídeo"), detail: model.streamError, spinning: true)
                     case .ok, .lossy:
                         EmptyView()
                     }
@@ -346,7 +348,7 @@ struct ControlBar: View {
         }
         ValueButton(model: model, panel: .focus) {
             ValueItem(
-                label: "Foco", value: focusText, pending: model.pending.contains("/lens/focus"),
+                label: String(localized: "Foco"), value: focusText, pending: model.pending.contains("/lens/focus"),
                 failed: model.hasFailed("/lens/focus", "/lens/focus/autoFocus", "/lens/focus/doAutoFocus"),
                 compact: compact, tight: tight)
         } content: {
@@ -357,7 +359,9 @@ struct ControlBar: View {
     @ViewBuilder private func cameraAndWindow(compact: Bool, tight: Bool = false) -> some View {
         ValueButton(model: model, panel: .lens) {
             ValueItem(
-                label: compact ? "Lente" : state.zoomFocalLength.map { "Lente · \(Int($0.rounded())) mm" } ?? "Lente",
+                label: compact
+                    ? String(localized: "Lente")
+                    : state.zoomFocalLength.map { String(localized: "Lente · \(Int($0.rounded())) mm") } ?? String(localized: "Lente"),
                 value: model.activeLens?.shortName ?? state.lens ?? "—",
                 pending: model.pending.contains("/lens/cameras/active"),
                 failed: model.hasFailed("/lens/cameras/active", "/lens/zoom", "/lens/opticalImageStabilization"),
@@ -367,11 +371,11 @@ struct ControlBar: View {
         }
         ValueButton(model: model, panel: .audio) {
             ValueItem(
-                label: "Áudio", value: compact ? shortAudioName : audioName,
+                label: String(localized: "Áudio"), value: compact ? shortAudioName : audioName,
                 pending: model.pending.contains("/audio/channel/0/input"),
                 failed: model.failed.contains("/audio/channel/0/input"), tint: noAudio ? Theme.rec : nil,
                 compact: compact, tight: tight)
-                .help(compact ? "Áudio: \(audioName)" : "")
+                .help(compact ? String(localized: "Áudio: \(audioName)") : "")
         } content: {
             AudioPanel(model: model)
         }
@@ -380,8 +384,11 @@ struct ControlBar: View {
                 .font(.system(size: 15, weight: .medium)).frame(width: tight ? 28 : 34, height: tight ? 28 : 34)
         }
         .buttonStyle(HUDItemStyle(isOn: !model.muted))
-        .help(model.muted ? "Ligar o som da câmera no Mac (\(Shortcut.mute.glyph))" : "Silenciar o som no Mac (\(Shortcut.mute.glyph))")
-        .accessibilityLabel(model.muted ? "Som no Mac desligado" : "Som no Mac ligado")
+        .help(
+            model.muted
+                ? String(localized: "Ligar o som da câmera no Mac (\(Shortcut.mute.glyph))")
+                : String(localized: "Silenciar o som no Mac (\(Shortcut.mute.glyph))"))
+        .accessibilityLabel(model.muted ? String(localized: "Som no Mac desligado") : String(localized: "Som no Mac ligado"))
         separator
         ValueButton(model: model, panel: .grid, isOn: model.grid != .off) {
             Image(systemName: "squareshape.split.3x3").font(.system(size: 15, weight: .medium)).frame(width: tight ? 28 : 34, height: tight ? 28 : 34)
@@ -411,7 +418,7 @@ struct ControlBar: View {
     }
 
     private var audioName: String {
-        let inputs = Set(state.audioInputs.values.map { $0 == "None" ? "Sem áudio" : $0 })
+        let inputs = Set(state.audioInputs.values.map { $0 == "None" ? String(localized: "Sem áudio") : $0 })
         return inputs.isEmpty ? "—" : inputs.sorted().joined(separator: " · ")
     }
 }
@@ -431,7 +438,7 @@ struct AudioStatus: View {
             HStack(spacing: 6) {
                 Image(systemName: alarm ? "mic.slash.fill" : "mic.fill").font(.system(size: 14, weight: .semibold))
                 if showsName {
-                    Text(none ? "Sem áudio" : missing ? "Sem som" : micName)
+                    Text(none ? String(localized: "Sem áudio") : missing ? String(localized: "Sem som") : micName)
                         .font(.system(size: 15, weight: .semibold))
                         .lineLimit(1)
                         .truncationMode(.tail)
@@ -441,10 +448,15 @@ struct AudioStatus: View {
                 LiveAudioMeter(model: model)
             }
             .foregroundStyle(alarm ? Theme.rec : gone ? .secondary : .primary)
-            .help(alarm ? (none ? "O iPhone está gravando sem áudio" : "O som parou de chegar do iPhone") : "Áudio: \(fullName)")
+            .help(
+                alarm
+                    ? (none
+                        ? String(localized: "O iPhone está gravando sem áudio")
+                        : String(localized: "O som parou de chegar do iPhone"))
+                    : String(localized: "Áudio: \(fullName)"))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Áudio")
-            .accessibilityValue(none ? "Sem áudio" : fullName)
+            .accessibilityValue(none ? String(localized: "Sem áudio") : fullName)
         }
     }
 
@@ -598,8 +610,11 @@ struct RecordButton: View {
             .frame(width: 44, height: 44)
         }
         .buttonStyle(HUDItemStyle())
-        .help(recording ? "Parar gravação (\(Shortcut.record.glyph))" : "Gravar (\(Shortcut.record.glyph))")
-        .accessibilityLabel(recording ? "Parar gravação" : "Gravar")
+        .help(
+            recording
+                ? String(localized: "Parar gravação (\(Shortcut.record.glyph))")
+                : String(localized: "Gravar (\(Shortcut.record.glyph))"))
+        .accessibilityLabel(recording ? String(localized: "Parar gravação") : String(localized: "Gravar"))
     }
 }
 
@@ -720,7 +735,7 @@ struct SearchingCard: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 10) {
                 ProgressView().controlSize(.small)
-                Text(model.cameras.count > 1 ? "Escolha a câmera" : "Procurando o iPhone")
+                Text(model.cameras.count > 1 ? String(localized: "Escolha a câmera") : String(localized: "Procurando o iPhone"))
                     .font(.title3.weight(.semibold))
             }
             if model.cameras.count > 1 {

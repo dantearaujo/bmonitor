@@ -21,6 +21,8 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/Resourc
 cp .build/release/bmonitor "$APP/Contents/MacOS/"
 cp .build/icon/AppIcon.icns "$APP/Contents/Resources/"
 cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
+# Traduções: português é a base (chaves no código); en.lproj traduz para inglês.
+cp -R Localization/*.lproj "$APP/Contents/Resources/"
 
 # Bibliotecas do Homebrew para dentro do pacote, com os caminhos trocados para @rpath.
 BIN="$APP/Contents/MacOS/bmonitor"
@@ -57,6 +59,12 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleExecutable</key><string>bmonitor</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
+    <key>CFBundleDevelopmentRegion</key><string>pt-BR</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>en</string>
+        <string>pt-BR</string>
+    </array>
     <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundleVersion</key><string>$BUILD</string>
     <key>LSMinimumSystemVersion</key><string>15.0</string>

@@ -23,7 +23,7 @@ struct MonitorApp: App {
         .windowStyle(.hiddenTitleBar)
         .commands {
             CommandMenu("Câmera") {
-                Button(model.state.recording ? "Parar gravação" : "Gravar") { model.toggleRecord() }
+                Button(model.state.recording ? String(localized: "Parar gravação") : String(localized: "Gravar")) { model.toggleRecord() }
                     .keyboardShortcut(.record)
                     .disabled(model.phase != .connected)
                 Button("Focar agora") { model.focusNow() }.keyboardShortcut(.focusNow)
@@ -35,9 +35,9 @@ struct MonitorApp: App {
                 Button("Lente…") { model.togglePanel(.lens) }.keyboardShortcut(.lens)
                 Button("Origem de áudio…") { model.togglePanel(.audio) }.keyboardShortcut(.audio)
                 Divider()
-                Button(model.muted ? "Ligar o som no Mac" : "Silenciar o som no Mac") { model.muted.toggle() }
+                Button(model.muted ? String(localized: "Ligar o som no Mac") : String(localized: "Silenciar o som no Mac")) { model.muted.toggle() }
                     .keyboardShortcut(.mute)
-                Button(model.grid == .off ? "Mostrar grade" : "Esconder grade") { model.toggleGrid() }
+                Button(model.grid == .off ? String(localized: "Mostrar grade") : String(localized: "Esconder grade")) { model.toggleGrid() }
                     .keyboardShortcut(.grid)
                 Picker("Tipo de grade", selection: $model.grid) {
                     ForEach(AppModel.GridStyle.allCases) { Text($0.title).tag($0) }

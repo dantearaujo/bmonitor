@@ -24,12 +24,12 @@ final class AppModel {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .off: "Sem grade"
-            case .thirds: "Terços"
-            case .thirdsCenter: "Terços e centro"
-            case .phi: "Proporção áurea"
-            case .cross: "Cruz central"
-            case .dot: "Ponto central"
+            case .off: String(localized: "Sem grade")
+            case .thirds: String(localized: "Terços")
+            case .thirdsCenter: String(localized: "Terços e centro")
+            case .phi: String(localized: "Proporção áurea")
+            case .cross: String(localized: "Cruz central")
+            case .dot: String(localized: "Ponto central")
             }
         }
     }
@@ -364,7 +364,9 @@ final class AppModel {
             try? await Task.sleep(for: .seconds(3))
             guard !Task.isCancelled else { return }
             self?.markFailed(
-                key, "A câmera não confirmou em 3 s. Confira se o Blackmagic Camera está aberto na tela de câmera.")
+                key,
+                String(
+                    localized: "A câmera não confirmou em 3 s. Confira se o Blackmagic Camera está aberto na tela de câmera."))
         }
     }
 
@@ -383,10 +385,10 @@ final class AppModel {
     private static func describe(_ error: Error) -> String {
         if let http = error as? CameraAPI.HTTPError {
             return http.status == 400 || http.status == 500
-                ? "A câmera recusou o valor (HTTP \(http.status)). Escolha outro."
-                : "A câmera respondeu HTTP \(http.status). Tente de novo."
+                ? String(localized: "A câmera recusou o valor (HTTP \(http.status)). Escolha outro.")
+                : String(localized: "A câmera respondeu HTTP \(http.status). Tente de novo.")
         }
-        return "Sem resposta da câmera. Confira se o Blackmagic Camera está aberto e na mesma rede Wi‑Fi."
+        return String(localized: "Sem resposta da câmera. Confira se o Blackmagic Camera está aberto e na mesma rede Wi‑Fi.")
     }
 
     private func refreshAutoFocus(after delay: Double = 0) {

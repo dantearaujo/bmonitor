@@ -24,18 +24,18 @@ enum Shortcut: CaseIterable {
 
     var title: String {
         switch self {
-        case .record: "Gravar ou parar"
-        case .focusNow: "Focar agora"
+        case .record: String(localized: "Gravar ou parar")
+        case .focusNow: String(localized: "Focar agora")
         case .iso: "ISO"
         case .shutter: "Shutter"
-        case .whiteBalance: "Balanço de branco"
+        case .whiteBalance: String(localized: "Balanço de branco")
         case .tint: "Tint"
-        case .lens: "Lente e zoom"
-        case .audio: "Origem de áudio"
-        case .mute: "Som da câmera no Mac (ligar ou mudo)"
-        case .grid: "Mostrar ou esconder a grade"
-        case .rotate: "Girar 90°"
-        case .help: "Atalhos do teclado"
+        case .lens: String(localized: "Lente e zoom")
+        case .audio: String(localized: "Origem de áudio")
+        case .mute: String(localized: "Som da câmera no Mac (ligar ou mudo)")
+        case .grid: String(localized: "Mostrar ou esconder a grade")
+        case .rotate: String(localized: "Girar 90°")
+        case .help: String(localized: "Atalhos do teclado")
         }
     }
 
@@ -76,9 +76,17 @@ struct ShortcutsOverlay: View {
     }
 
     private let sections: [(title: String, rows: [Row])] = [
-        ("Gravação e foco", rows([.record, .focusNow]) + [Row(keys: "Clique", title: "Focar no ponto do vídeo")]),
-        ("Abrir controle", rows([.iso, .shutter, .whiteBalance, .tint, .lens, .audio])),
-        ("No Mac", rows([.mute, .grid, .rotate]) + [Row(keys: "esc", title: "Fechar o controle aberto")] + rows([.help])),
+        (
+            String(localized: "Gravação e foco"),
+            rows([.record, .focusNow])
+                + [Row(keys: String(localized: "Clique"), title: String(localized: "Focar no ponto do vídeo"))]
+        ),
+        (String(localized: "Abrir controle"), rows([.iso, .shutter, .whiteBalance, .tint, .lens, .audio])),
+        (
+            String(localized: "No Mac"),
+            rows([.mute, .grid, .rotate]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]
+                + rows([.help])
+        ),
     ]
 
     var body: some View {
