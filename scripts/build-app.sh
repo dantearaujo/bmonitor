@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 NAME="bmonitor"
 APP=".build/dist/$NAME.app"
 BUNDLE_ID="com.dantearaujo.bmonitor"
-VERSION="0.9.0"
+VERSION="0.9.1"
 BUILD=$(git rev-list --count HEAD 2>/dev/null || echo 0)
 
 swift build -c release

@@ -1,0 +1,110 @@
+<p align="center"><a href="README.md">🇺🇸 Read in English</a></p>
+
+<p align="center"><img src="docs/icon.png" width="128" alt="ícone do bmonitor"></p>
+
+<h1 align="center">bmonitor</h1>
+
+<p align="center">Monitore e controle pelo Mac um iPhone rodando o <b>Blackmagic Camera</b>.<br>
+Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
+
+<h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Baixar o bmonitor para Mac</a></h3>
+
+<p align="center"><sub>Versão mais recente · Apple Silicon · macOS 15 ou mais novo · <a href="#instalar">como instalar</a></sub></p>
+
+<p align="center"><b>⚠️ Beta público (0.9.1).</b> Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
+
+O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
+
+---
+
+## O que ele faz
+
+Você se grava com um iPhone no tripé. O bmonitor transforma o Mac ao lado no monitor e no controle remoto da câmera, sem precisar de um segundo iPhone ou iPad.
+
+- **Monitor:** vídeo ao vivo numa janela comum do Mac, deitada ou em pé, com aviso de gravação (borda vermelha), timecode, tempo de gravação restante e estado do sinal. Grades de enquadramento: terços, proporção áurea, cruz central e outras.
+- **Áudio:** o nome do microfone ativo e um medidor de pico L/R no estilo do medidor da própria Blackmagic (verde, amarelo e vermelho), além do som da câmera no Mac, que começa mudo.
+- **Controle remoto:** iniciar e parar a gravação, ISO, shutter (velocidade ou ângulo), balanço de branco com presets de luz, tint, foco (clique no vídeo para focar ali), zoom, lente, estabilização e origem do áudio.
+- **Teclado:** uma tecla por controle (`I` ISO, `S` shutter, `W` balanço de branco, `T` tint, `L` lente, `A` áudio, `M` mudo, `G` grade, `F` focar agora), `⌘R` para gravar e `⌘→` para girar. `⌘/` mostra todos.
+- **Legível a 3 m:** o status fica nos cantos de cima, em letra grande. A barra de controles aparece quando você mexe o mouse e some depois de 3 s.
+
+## Requisitos
+
+| | |
+|---|---|
+| Mac | Apple Silicon, macOS 15 Sequoia ou mais novo (testado no macOS 26 Tahoe; o macOS 15 ainda não foi testado neste beta) |
+| iPhone | [Blackmagic Camera](https://apps.apple.com/app/blackmagic-camera/id6449580241) (gratuito), testado na versão 3.5 |
+| Rede | Mac e iPhone na **mesma rede Wi‑Fi** |
+
+## Instalar
+
+1. [Baixe o bmonitor.dmg](https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg), sempre a versão mais recente. As versões anteriores ficam em [Releases](https://github.com/dantearaujo/bmonitor/releases).
+2. Abra o `.dmg` e arraste o **bmonitor** para **Aplicativos**.
+3. Abra o bmonitor. Este beta ainda não é notarizado pela Apple, então o macOS bloqueia a primeira abertura:
+   - abra **Ajustes do Sistema › Privacidade e Segurança**;
+   - role até o aviso sobre o bmonitor e clique em **Abrir Mesmo Assim**;
+   - confirme com a sua senha ou o Touch ID.
+4. Quando o macOS pedir para o bmonitor **encontrar dispositivos na rede local**, clique em **Permitir**. Sem isso, o app não enxerga o iPhone.
+
+A notarização chega na versão 1.0, e aí o app abre com dois cliques.
+
+## Configurar o iPhone
+
+Faça uma vez no app Blackmagic Camera:
+
+1. Abra o Blackmagic Camera e entre nos ajustes dele.
+2. Em **Remote Camera Control**, escolha **Remote Camera**. Se ele perguntar para que a câmera fica disponível, permita controle e monitoramento.
+3. Em **Network Access**, ligue o **servidor HTTP**.
+4. Libere o Blackmagic Camera na rede local: no iOS, **Ajustes › Privacidade e Segurança › Rede Local › Blackmagic Camera** ligado.
+
+A cada gravação:
+
+- conecte o iPhone e o Mac na mesma Wi‑Fi;
+- deixe o Blackmagic Camera aberto **na tela de câmera**;
+- desligue o bloqueio automático (no iOS, **Ajustes › Tela e Brilho › Bloqueio Automático › Nunca**), senão o stream para quando a tela bloqueia.
+
+Depois, abra o bmonitor. Ele acha o iPhone sozinho e mostra o vídeo em poucos segundos. Com mais de um iPhone na rede, ele pergunta qual usar.
+
+## O que o bmonitor muda no seu iPhone
+
+O bmonitor recebe o vídeo pelo recurso de **live** do Blackmagic Camera, o mesmo usado para transmitir para o YouTube e outras plataformas:
+
+- Na primeira conexão, ele cria no Blackmagic Camera uma plataforma de transmissão chamada **Mac Monitor SRT**. Ele só envia de novo se o endereço do seu Mac mudar.
+- Enquanto o bmonitor está aberto, essa é a plataforma ativa e o iPhone transmite para o seu Mac.
+- Quando você fecha o bmonitor (`⌘Q`, fechando a janela ou com Ctrl‑C no terminal), ele para a transmissão e **devolve a plataforma que você usava antes**.
+- Se o bmonitor for fechado à força ou travar, o iPhone continua apontando para o Mac. Abra o bmonitor e feche normalmente uma vez, e a sua plataforma original volta.
+
+A gravação continua no iPhone, na qualidade escolhida lá. A transmissão para o Mac não muda os ajustes de gravação.
+
+## Se algo não funcionar
+
+| Sintoma | O que conferir |
+|---|---|
+| "Procurando o iPhone" não termina | Mesma Wi‑Fi nos dois; Blackmagic Camera aberto na tela de câmera; Remote Camera Control em Remote Camera; servidor HTTP ligado; rede local liberada para **os dois** apps (no Mac: Ajustes do Sistema › Privacidade e Segurança › Rede Local). VPNs e redes de convidados costumam impedir que os aparelhos se vejam. |
+| Conecta, mas fica em "Aguardando vídeo" | Um firewall no Mac pode estar bloqueando a transmissão que chega (porta UDP 9000). Libere o bmonitor em Ajustes do Sistema › Rede › Firewall. |
+| "Sem câmera" | Blackmagic Camera fechado ou iPhone bloqueado. Abra de novo; o bmonitor reconecta sozinho. |
+| O vídeo engasga | Wi‑Fi fraca. Chegue mais perto do roteador ou use a rede de 5 GHz. O aviso "Perdas", no canto de cima à direita, mostra pacotes perdidos. |
+
+## Privacidade
+
+O bmonitor não coleta nada. Ele conversa só com o iPhone na sua rede local: sem conta, sem estatística de uso e sem acesso à internet.
+
+## Compilar a partir do código
+
+```sh
+brew install srt
+swift build -c release
+swift test
+scripts/build-app.sh --install --dmg   # bmonitor.app em /Applications e um .dmg em .build/dist
+```
+
+O script de empacotamento põe a libsrt e o OpenSSL dentro do app, gera o ícone (`scripts/make-icon.swift`) e assina ad hoc. O `DESIGN.md` documenta a interface. Os comentários do código estão em português.
+
+## Como funciona
+
+O Mac conversa com a API REST e WebSocket do Blackmagic Camera (porta 4444) para ler o estado e mandar os controles. Para vídeo e áudio, ele aponta a transmissão da câmera (SRT, MPEG‑TS com HEVC e AAC) para si mesmo, separa e decodifica cada quadro com o VideoToolbox, sem fila de espera. Do vidro da câmera ao vidro da tela, isso mede cerca de 0,3 s, a maior parte do lado do iPhone.
+
+## Licença
+
+MIT, veja [LICENSE](LICENSE). Bibliotecas incluídas e marcas: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+O bmonitor é um projeto independente, sem ligação nem endosso da Blackmagic Design.

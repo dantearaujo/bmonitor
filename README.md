@@ -1,3 +1,5 @@
+<p align="center"><a href="README.pt-BR.md">🇧🇷 Leia em português</a></p>
+
 <p align="center"><img src="docs/icon.png" width="128" alt="bmonitor icon"></p>
 
 <h1 align="center">bmonitor</h1>
@@ -7,11 +9,11 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <h3 align="center"><a href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg">⬇️ Download bmonitor for Mac</a></h3>
 
-<p align="center"><sub>Latest version · Apple Silicon · macOS 15 or later · <a href="#install">how to install</a> · <a href="#resumo-em-português">baixar e instalar (português)</a></sub></p>
+<p align="center"><sub>Latest version · Apple Silicon · macOS 15 or later · <a href="#install">how to install</a></sub></p>
 
-<p align="center"><b>⚠️ Public beta (0.9).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
+<p align="center"><b>⚠️ Public beta (0.9.1).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 
-> 🇧🇷 **Resumo em português** no [fim da página](#resumo-em-português). The app interface is in Brazilian Portuguese in this beta; English arrives in 1.0.
+The app speaks English and Brazilian Portuguese, following your Mac's language.
 
 ---
 
@@ -77,10 +79,10 @@ Recording stays on the iPhone, in the quality you chose there. The stream to the
 
 | Symptom | What to check |
 |---|---|
-| "Procurando o iPhone" never ends | Same Wi‑Fi on both; Blackmagic Camera open on the camera screen; Remote Camera Control set to Remote Camera; HTTP server on; Local Network allowed for **both** apps (Mac: System Settings › Privacy & Security › Local Network). VPNs and guest networks often block devices from seeing each other. |
-| Connects, but "Aguardando vídeo" stays | A firewall on the Mac may be blocking the incoming stream (UDP port 9000). Allow bmonitor in System Settings › Network › Firewall. |
-| "Sem câmera" | Blackmagic Camera closed or the iPhone locked. Open it again; bmonitor reconnects by itself. |
-| Video stutters | Weak Wi‑Fi. Move closer to the router or use 5 GHz. The "Perdas" status in the top right shows lost packets. |
+| "Searching for iPhone" never ends | Same Wi‑Fi on both; Blackmagic Camera open on the camera screen; Remote Camera Control set to Remote Camera; HTTP server on; Local Network allowed for **both** apps (Mac: System Settings › Privacy & Security › Local Network). VPNs and guest networks often block devices from seeing each other. |
+| Connects, but "Waiting for video" stays | A firewall on the Mac may be blocking the incoming stream (UDP port 9000). Allow bmonitor in System Settings › Network › Firewall. |
+| "No camera" | Blackmagic Camera closed or the iPhone locked. Open it again; bmonitor reconnects by itself. |
+| Video stutters | Weak Wi‑Fi. Move closer to the router or use 5 GHz. The "Packet loss" status in the top right shows lost packets. |
 
 ## Privacy
 
@@ -107,24 +109,3 @@ MIT, see [LICENSE](LICENSE). Bundled libraries and trademarks: [THIRD_PARTY_NOTI
 
 bmonitor is an independent project, not affiliated with or endorsed by Blackmagic Design.
 
----
-
-## Resumo em português
-
-O **bmonitor** transforma o Mac em monitor e controle remoto de um iPhone com o Blackmagic Camera, pela Wi‑Fi, com cerca de 0,3 s de atraso. Você vê o vídeo e o áudio, confere se está gravando e ajusta ISO, shutter, WB, tint, foco, zoom e lente sem tocar no iPhone.
-
-**É beta (0.9):** foi testado em um Mac e um iPhone. Relate problemas nas [issues](https://github.com/dantearaujo/bmonitor/issues).
-
-**Instalar:** [baixe o bmonitor.dmg](https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg) (sempre a versão mais recente) e arraste o app para Aplicativos. Na primeira abertura, o macOS bloqueia, porque o beta ainda não é notarizado. Vá em **Ajustes do Sistema › Privacidade e Segurança** e clique em **Abrir Mesmo Assim**. Depois, permita o acesso à **rede local**.
-
-**No iPhone, uma vez:**
-- **Remote Camera Control** em **Remote Camera**;
-- **servidor HTTP** ligado em **Network Access**;
-- Blackmagic Camera liberado em Ajustes › Privacidade e Segurança › Rede Local.
-
-**A cada gravação:**
-- mesma Wi‑Fi no Mac e no iPhone;
-- app aberto na tela de câmera;
-- bloqueio automático desligado.
-
-**O que muda no iPhone:** o bmonitor cria uma plataforma de live chamada **Mac Monitor SRT**. Ao fechar o app, ele devolve a plataforma que você usava. A gravação continua no iPhone, na qualidade escolhida lá.
