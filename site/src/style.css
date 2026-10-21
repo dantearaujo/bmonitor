@@ -118,7 +118,7 @@ symbol .fill { fill: currentColor; stroke: none; }
 /* The bmonitor window, drawn at the app's own layout (1 unit = 1 pt of a 1280 pt window) */
 .app { --u: calc(100cqw / 1280); position: absolute; right: 1.8cqw; top: 2.4cqw; width: 79cqw; aspect-ratio: 16 / 9; border-radius: calc(var(--u) * 16); overflow: hidden; background: var(--video); box-shadow: 0 2.2cqw 5cqw rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08); container-type: inline-size; color: #fff; cursor: default; }
 .app * { --u: calc(100cqw / 1280); }
-.video { position: absolute; inset: 0; cursor: crosshair; }
+.video { position: absolute; inset: 0; border-radius: inherit; cursor: crosshair; }
 .video img { width: 100%; height: 100%; object-fit: cover; }
 .tally { position: absolute; inset: 0; border: calc(var(--u) * 3) solid var(--rec); border-radius: inherit; opacity: 0; transition: opacity 0.2s ease; pointer-events: none; }
 .app.is-rec .tally { opacity: 1; }
