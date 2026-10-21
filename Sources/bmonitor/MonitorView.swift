@@ -305,6 +305,7 @@ struct ControlBar: View {
                 HStack(spacing: 2) { exposure(compact: true) }.padding(5).hudGlass(Capsule())
                 HStack(spacing: 2) {
                     RecordButton(model: model)
+                    copyButton(tight: true)
                     separator
                     cameraAndWindow(compact: true)
                 }
@@ -320,11 +321,31 @@ struct ControlBar: View {
             exposure(compact: compact, tight: tight)
             separator
             RecordButton(model: model)
+            copyButton(tight: tight)
             separator
             cameraAndWindow(compact: compact, tight: tight)
         }
         .padding(compact ? 5 : 6)
         .hudGlass(Capsule())
+    }
+
+    /// Cópia no Mac colada no gravar: aceso, cada take vai também para o Mac. O clique direito
+    /// escolhe a pasta e abre as cópias no Finder.
+    private func copyButton(tight: Bool) -> some View {
+        Button { model.savesCopy.toggle() } label: {
+            Image(systemName: "laptopcomputer.and.arrow.down")
+                .font(.system(size: 15, weight: .medium)).frame(width: tight ? 28 : 34, height: tight ? 28 : 34)
+        }
+        .buttonStyle(HUDItemStyle(isOn: model.savesCopy))
+        .help(
+            model.savesCopy
+                ? String(localized: "Cada take também vai para o Mac, em \(model.copyFolder.lastPathComponent). Clique com o botão direito para trocar a pasta.")
+                : String(localized: "Salvar também no Mac uma cópia de cada take"))
+        .accessibilityLabel(model.savesCopy ? String(localized: "Cópia no Mac ligada") : String(localized: "Cópia no Mac desligada"))
+        .contextMenu {
+            Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
+            Button("Mostrar cópias no Finder") { model.showCopies() }
+        }
     }
 
     private var separator: some View {
