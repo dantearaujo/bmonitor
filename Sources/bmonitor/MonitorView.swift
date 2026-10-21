@@ -384,7 +384,9 @@ struct ControlBar: View {
             ZStack {
                 Circle().fill(model.savesCopy ? Color.white.opacity(0.92) : .clear).frame(width: 36, height: 36)
                 Circle().strokeBorder(.white.opacity(model.savesCopy ? 0 : 0.35), lineWidth: 2).frame(width: 36, height: 36)
-                Image(systemName: "laptopcomputer.and.arrow.down").font(.system(size: 14, weight: .semibold))
+                // A base do notebook é a parte larga e fica embaixo: em 14 pt as quinas ficavam a 4 pt do
+                // anel e o topo a 9 pt. Menor e 1,4 pt acima, o peso fica no meio do círculo (medido).
+                Image(systemName: "laptopcomputer.and.arrow.down").font(.system(size: 13, weight: .semibold)).offset(y: -1.4)
                     .foregroundStyle(model.savesCopy ? Color.black : .white.opacity(0.75))
             }
             // Grupo próprio: sem ele, a vibrancy do vidro tinge o branco e o preto.
@@ -492,7 +494,10 @@ struct ControlBar: View {
         }
         .help("Grade")
         Button { model.rotate() } label: {
-            Image(systemName: "rotate.right").font(.system(size: 15, weight: .medium)).frame(width: Theme.barItem, height: Theme.barItem)
+            // O desenho do símbolo fica 1,9 pt à esquerda e 0,9 pt abaixo do centro (medido):
+            // compensa para ficar no meio do círculo como os vizinhos.
+            Image(systemName: "rotate.right").font(.system(size: 15, weight: .medium)).offset(x: 1.6, y: -0.5)
+                .frame(width: Theme.barItem, height: Theme.barItem)
         }
         .buttonStyle(HUDItemStyle())
         .help("Girar 90°: a janela fica em pé (\(Shortcut.rotate.glyph))")
