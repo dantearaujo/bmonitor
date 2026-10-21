@@ -16,7 +16,8 @@ App nativo de macOS (Swift, SwiftUI) que monitora e controla um iPhone rodando o
 
 ## Site (bmonitor.app)
 
-- `site/` é a landing page estática. `python3 site/build.py` gera `site/dist/` (ignorado): inglês em `/` e português em `/pt/`, a partir de `site/src/index.html` e dos textos em `site/i18n/en.json` e `pt.json`. O build falha se os dois JSON tiverem chaves diferentes. Para ver localmente: `python3 -m http.server -d site/dist`.
+- `site/` é o site estático. `python3 site/build.py` gera `site/dist/` (ignorado). Cada página tem um modelo em `site/src/` (`index.html`, `guide.html`) e textos por idioma: a inicial em `site/i18n/en.json` e `pt.json` (inglês em `/`, português em `/pt/`), as outras em `site/i18n/<página>/<idioma>.json`, por cima dos da inicial; o caminho sai da chave `path`. Menu, rodapé e ícones ficam em `site/src/partials/` (`{{>nome}}`). O build falha se os idiomas de uma página tiverem chaves diferentes. Para ver localmente: `python3 -m http.server -d site/dist`.
+- O guia comparativo (`/iphone-back-camera-monitor/`, `/pt/monitor-camera-traseira-iphone/`) compara seis jeitos de se ver gravando. Fato sobre outro produto entra com fonte na lista do fim da página; número do teste do Dante sai atribuído a ele.
 - Todo push em `main` que mexe em `site/` publica pelo workflow `.github/workflows/pages.yml` no GitHub Pages, domínio `bmonitor.app` (DNS na Cloudflare, sem proxy).
 - A cópia da página segue o `README.md`: recurso, requisito ou número novo entra nos dois. A janela do app na página é desenhada em HTML no layout do `DESIGN.md` da raiz; mudou a interface do app, confira se a página ainda bate.
 - `site/PRODUCT.md`, `site/DESIGN.md` e `site/.impeccable/` são symlinks ignorados para a pasta privada de design no AIOS (`projects/dante/bmonitor-design/site/`). Mudança visual na página passa pela skill `impeccable`.

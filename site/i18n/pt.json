@@ -12,7 +12,7 @@
   "lang_switch_label": "English",
   "lang_switch_short": "EN",
   "hero_title": "Monitore a câmera do iPhone<br>pelo Mac.",
-  "hero_sub": "Grave com a câmera principal do iPhone e se veja no Mac que já está na sua mesa. O bmonitor monitora e controla o app grátis Blackmagic Camera pela Wi‑Fi, com cerca de 0,3&nbsp;s de atraso.",
+  "hero_sub": "Grave com a câmera principal do iPhone e se veja no Mac que já está na sua mesa, na horizontal ou na vertical. O bmonitor monitora e controla o app grátis Blackmagic Camera pela Wi‑Fi, com cerca de 0,3&nbsp;s de atraso.",
   "cta_download": "Baixar para macOS",
   "cta_github": "Ver no GitHub",
   "hero_meta": "Grátis e de código aberto · macOS 14 ou mais novo · Apple Silicon e Intel · Beta público",
@@ -43,7 +43,7 @@
   "fact_4": "Português e inglês",
   "fact_5": "Licença MIT",
   "compare_title": "Ainda levanta até o tripé<br>para conferir o quadro?",
-  "compare_sub": "Para se ver gravando com a câmera principal, você prenderia um monitor de selfie no iPhone ou usaria outro iPhone, um iPad ou o Apple Watch com o monitoramento remoto do próprio Blackmagic Camera. O bmonitor transforma o Mac da sua mesa nesse monitor.",
+  "compare_sub": "Para se ver com a câmera principal, você prenderia uma tela de selfie no iPhone ou usaria o modo remoto do Blackmagic Camera em outro aparelho. O bmonitor transforma o Mac da sua mesa num monitor e só isso, feito para ser lido do tripé. <a href=\"/pt/monitor-camera-traseira-iphone/\">Compare todas as opções</a>.",
   "compare_before": "<b>Antes</b> · o quadro no iPhone, a dois metros",
   "compare_after": "<b>Depois</b> · o mesmo quadro no Mac, com todos os controles",
   "compare_link": "Wi‑Fi · ~0,3 s",
@@ -113,7 +113,10 @@
   "a9": "Ponha o iPhone no tripé com o app Blackmagic Camera, abra o bmonitor no Mac e o Mac vira o seu monitor: enquadramento, foco, som e status da gravação, legíveis a uns 3 m. Sem comprar tela de prender no celular e sem um segundo iPhone ou iPad.",
   "q10": "Como monitorar a câmera do iPhone no Mac?",
   "a10": "Grave com o Blackmagic Camera no iPhone e abra o bmonitor no Mac, os dois na mesma Wi‑Fi. Você vê o quadro e ouve o som ao vivo, e pelo Mac começa a gravação e muda ISO, shutter, balanço de branco, foco, zoom e lente. A Câmera de Continuidade é outra coisa: ela transforma o iPhone em webcam para apps do Mac e não monitora uma gravação no iPhone.",
-  "q11": "Qual a diferença para o monitoramento remoto da própria Blackmagic?",
-  "a11": "O Blackmagic Camera pode ser monitorado e controlado por um segundo iPhone ou iPad com o Blackmagic Camera, ou pelo app dele no Apple Watch. O bmonitor faz isso pelo Mac, numa janela comum que fica ao lado do seu roteiro.",
-  "nav_coffee": "Me pague um café"
+  "q11": "Qual a diferença para o Blackmagic Camera no Mac?",
+  "a11": "O Blackmagic Camera também roda em Macs Apple Silicon com macOS 15 ou mais novo e monitora um iPhone remoto. É o app completo de câmera do iPad no Mac, e controla várias câmeras ao mesmo tempo. O bmonitor faz uma coisa só: uma janela nativa de Mac com menos atraso no teste do autor, o som da câmera no Mac, modo vertical, status legível a 3 m e uma tecla por controle. Também roda em Mac Intel e no macOS 14. <a href=\"/pt/monitor-camera-traseira-iphone/\">Veja a comparação completa</a>.",
+  "nav_coffee": "Me pague um café",
+  "nav_guide": "Comparar",
+  "feat_6_lead": "Grave na vertical.",
+  "feat_6_body": "Gire o monitor com ⌘→ e enquadre Reels, TikTok e Shorts do jeito que as pessoas vão assistir."
 }

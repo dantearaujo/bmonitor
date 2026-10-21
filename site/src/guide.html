@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="https://bmonitor.app{{path}}">
+{{alternates}}
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="bmonitor">
+<meta property="og:locale" content="{{og_locale}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="https://bmonitor.app{{path}}">
+<meta property="og:image" content="https://bmonitor.app/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f5f5f7">
+<link rel="icon" type="image/png" href="/assets/icon.png">
+<link rel="apple-touch-icon" href="/assets/icon.png">
+<link rel="alternate" type="text/plain" title="LLM summary" href="/llms.txt">
+<link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">{{jsonld}}</script>
+<script defer src="/main.js"></script>
+</head>
+<body class="guide">
+{{>sprite}}
+
+<a class="skip" href="#main">{{skip}}</a>
+
+{{>nav}}
+
+<main id="main">
+  <header class="doc-head">
+    <nav class="crumb" aria-label="Breadcrumb"><a href="{{home}}">bmonitor</a><svg class="ic" aria-hidden="true"><use href="#i-chev-r"/></svg><span aria-current="page">{{g_crumb}}</span></nav>
+    <h1 class="doc-title">{{g_h1}}</h1>
+    <p class="byline">{{g_byline}}</p>
+  </header>
+
+  <section class="answer" aria-labelledby="short">
+    <h2 id="short">{{g_short_title}}</h2>
+    <p>{{g_short}}</p>
+  </section>
+
+  <section class="cmp-sec" aria-labelledby="glance">
+    <h2 class="sec-title" id="glance">{{g_table_title}}</h2>
+    <div class="cmp-wrap">
+      <table class="ctable">
+        <caption>{{g_table_caption}}</caption>
+        <thead>
+          <tr>
+            <th scope="col">{{g_col_0}}</th>
+            <th scope="col">{{g_col_1}}</th>
+            <th scope="col">{{g_col_2}}</th>
+            <th scope="col">{{g_col_3}}</th>
+            <th scope="col">{{g_col_4}}</th>
+            <th scope="col">{{g_col_5}}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th scope="row"><a href="#{{g_r1_id}}">{{g_r1_name}}</a></th>
+            <td data-label="{{g_col_1}}">{{g_r1_c1}}</td>
+            <td data-label="{{g_col_2}}">{{g_r1_c2}}</td>
+            <td data-label="{{g_col_3}}">{{g_r1_c3}}</td>
+            <td data-label="{{g_col_4}}">{{g_r1_c4}}</td>
+            <td data-label="{{g_col_5}}">{{g_r1_c5}}</td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="#{{g_r2_id}}">{{g_r2_name}}</a></th>
+            <td data-label="{{g_col_1}}">{{g_r2_c1}}</td>
+            <td data-label="{{g_col_2}}">{{g_r2_c2}}</td>
+            <td data-label="{{g_col_3}}">{{g_r2_c3}}</td>
+            <td data-label="{{g_col_4}}">{{g_r2_c4}}</td>
+            <td data-label="{{g_col_5}}">{{g_r2_c5}}</td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="#{{g_r3_id}}">{{g_r3_name}}</a></th>
+            <td data-label="{{g_col_1}}">{{g_r3_c1}}</td>
+            <td data-label="{{g_col_2}}">{{g_r3_c2}}</td>
+            <td data-label="{{g_col_3}}">{{g_r3_c3}}</td>
+            <td data-label="{{g_col_4}}">{{g_r3_c4}}</td>
+            <td data-label="{{g_col_5}}">{{g_r3_c5}}</td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="#{{g_r4_id}}">{{g_r4_name}}</a></th>
+            <td data-label="{{g_col_1}}">{{g_r4_c1}}</td>
+            <td data-label="{{g_col_2}}">{{g_r4_c2}}</td>
+            <td data-label="{{g_col_3}}">{{g_r4_c3}}</td>
+            <td data-label="{{g_col_4}}">{{g_r4_c4}}</td>
+            <td data-label="{{g_col_5}}">{{g_r4_c5}}</td>
+          </tr>
+          <tr>
+            <th scope="row"><a href="#{{g_r5_id}}">{{g_r5_name}}</a></th>
+            <td data-label="{{g_col_1}}">{{g_r5_c1}}</td>
+            <td data-label="{{g_col_2}}">{{g_r5_c2}}</td>
+            <td data-label="{{g_col_3}}">{{g_r5_c3}}</td>
+            <td data-label="{{g_col_4}}">{{g_r5_c4}}</td>
+            <td data-label="{{g_col_5}}">{{g_r5_c5}}</td>
+          </tr>
+          <tr class="is-us">
+            <th scope="row"><a href="#{{g_r6_id}}">{{g_r6_name}}</a></th>
+            <td data-label="{{g_col_1}}">{{g_r6_c1}}</td>
+            <td data-label="{{g_col_2}}">{{g_r6_c2}}</td>
+            <td data-label="{{g_col_3}}">{{g_r6_c3}}</td>
+            <td data-label="{{g_col_4}}">{{g_r6_c4}}</td>
+            <td data-label="{{g_col_5}}">{{g_r6_c5}}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="opts">
+      <article class="opt" id="{{g_r1_id}}">
+        <h3>{{g_r1_name}}</h3>
+        <div class="opt-body">
+          {{g_s1_body}}
+          <dl class="verdict">
+            <div><dt>{{g_good}}</dt><dd>{{g_s1_good}}</dd></div>
+            <div><dt>{{g_falls}}</dt><dd>{{g_s1_falls}}</dd></div>
+          </dl>
+        </div>
+      </article>
+      <article class="opt" id="{{g_r2_id}}">
+        <h3>{{g_r2_name}}</h3>
+        <div class="opt-body">
+          {{g_s2_body}}
+          <dl class="verdict">
+            <div><dt>{{g_good}}</dt><dd>{{g_s2_good}}</dd></div>
+            <div><dt>{{g_falls}}</dt><dd>{{g_s2_falls}}</dd></div>
+          </dl>
+        </div>
+      </article>
+      <article class="opt" id="{{g_r3_id}}">
+        <h3>{{g_r3_name}}</h3>
+        <div class="opt-body">
+          {{g_s3_body}}
+          <dl class="verdict">
+            <div><dt>{{g_good}}</dt><dd>{{g_s3_good}}</dd></div>
+            <div><dt>{{g_falls}}</dt><dd>{{g_s3_falls}}</dd></div>
+          </dl>
+        </div>
+      </article>
+      <article class="opt" id="{{g_r4_id}}">
+        <h3>{{g_r4_name}}</h3>
+        <div class="opt-body">
+          {{g_s4_body}}
+          <dl class="verdict">
+            <div><dt>{{g_good}}</dt><dd>{{g_s4_good}}</dd></div>
+            <div><dt>{{g_falls}}</dt><dd>{{g_s4_falls}}</dd></div>
+          </dl>
+        </div>
+      </article>
+      <article class="opt" id="{{g_r5_id}}">
+        <h3>{{g_r5_name}}</h3>
+        <div class="opt-body">
+          {{g_s5_body}}
+          <dl class="verdict">
+            <div><dt>{{g_good}}</dt><dd>{{g_s5_good}}</dd></div>
+            <div><dt>{{g_falls}}</dt><dd>{{g_s5_falls}}</dd></div>
+          </dl>
+        </div>
+      </article>
+      <article class="opt" id="{{g_r6_id}}">
+        <h3>{{g_r6_name}}</h3>
+        <div class="opt-body">
+          {{g_s6_body}}
+          <dl class="verdict">
+            <div><dt>{{g_good}}</dt><dd>{{g_s6_good}}</dd></div>
+            <div><dt>{{g_falls}}</dt><dd>{{g_s6_falls}}</dd></div>
+          </dl>
+        </div>
+      </article>
+  </section>
+
+  <section class="pick" aria-labelledby="pick">
+    <h2 class="sec-title" id="pick">{{g_pick_title}}</h2>
+    <ul class="pick-list">{{g_pick}}</ul>
+  </section>
+
+  <section class="close">
+    <img src="/assets/icon.png" alt="" width="88" height="88" loading="lazy">
+    <h2 class="close-title">{{g_cta_title}}</h2>
+    <div class="cta">
+      <a class="btn btn-dark" href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg"><svg class="ic"><use href="#i-download"/></svg>{{cta_download}}</a>
+      <a class="btn btn-link" href="{{home}}">{{g_cta_more}}<svg class="ic"><use href="#i-chev-r"/></svg></a>
+    </div>
+    <p class="hero-meta">{{hero_meta}}</p>
+  </section>
+
+  <section class="sources" aria-labelledby="sources">
+    <h2 id="sources">{{g_sources_title}}</h2>
+    <ol>{{g_sources}}</ol>
+  </section>
+</main>
+
+{{>foot}}
+</body>
+</html>
