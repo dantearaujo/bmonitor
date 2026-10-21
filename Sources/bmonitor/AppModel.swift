@@ -69,6 +69,17 @@ final class AppModel {
         }
     }
     var quarterTurns: Int { didSet { UserDefaults.standard.set(quarterTurns, forKey: "quarterTurns") } }
+    /// Cópia de cada take no Mac, a partir do stream. Desligada por padrão.
+    var savesCopy: Bool {
+        didSet {
+            UserDefaults.standard.set(savesCopy, forKey: "savesCopy")
+            if savesCopy, state.recording { beginCopy() }
+            if !savesCopy { session?.recorder.end() }
+        }
+    }
+    var copyFolder: URL { didSet { UserDefaults.standard.set(copyFolder.path, forKey: "copyFolder") } }
+    /// O último arquivo de cópia que falhou e por quê; some quando um take salva.
+    var copyFailure: String?
     /// Som da câmera no Mac. Começa mudo na primeira abertura (microfonia com a câmera na
     /// mesma sala); depois vale o último estado.
     var muted: Bool {
@@ -100,6 +111,10 @@ final class AppModel {
         safeZone = UserDefaults.standard.string(forKey: "safeZone").flatMap(SafeZone.init(rawValue:))
         quarterTurns = UserDefaults.standard.integer(forKey: "quarterTurns")
         muted = UserDefaults.standard.object(forKey: "muted") as? Bool ?? true
+        savesCopy = UserDefaults.standard.bool(forKey: "savesCopy")
+        copyFolder =
+            UserDefaults.standard.string(forKey: "copyFolder").map { URL(fileURLWithPath: $0, isDirectory: true) }
+            ?? FileManager.default.urls(for: .moviesDirectory, in: .userDomainMask)[0].appendingPathComponent("bmonitor")
         discovery.onChange = { [weak self] cameras in
             DispatchQueue.main.async { self?.camerasChanged(cameras) }
         }
@@ -175,6 +190,7 @@ final class AppModel {
         let layer = displayLayer
         session.onFrame = { VideoEnqueue.enqueue($0, into: layer) }
         session.audio.isMuted = muted
+        session.recorder.onFinish = { [weak self] url, error in self?.copyFinished(url, error) }
         self.api = api
         self.events = events
         self.session = session
@@ -362,6 +378,45 @@ final class AppModel {
         }
     }
 
+    // MARK: - Cópia no Mac
+
+    func chooseCopyFolder() {
+        let panel = NSOpenPanel()
+        panel.canChooseDirectories = true
+        panel.canChooseFiles = false
+        panel.canCreateDirectories = true
+        panel.directoryURL = copyFolder
+        panel.prompt = String(localized: "Escolher")
+        panel.message = String(localized: "Onde salvar a cópia de cada take")
+        if panel.runModal() == .OK, let url = panel.url { copyFolder = url }
+    }
+
+    func showCopies() {
+        try? FileManager.default.createDirectory(at: copyFolder, withIntermediateDirectories: true)
+        NSWorkspace.shared.open(copyFolder)
+    }
+
+    /// Um arquivo por take: "bmonitor 2026-10-21 14.32.05 TC 01.00.12.03.mov". Dois-pontos
+    /// viram ponto porque o Finder não aceita ":" em nome de arquivo.
+    private func beginCopy() {
+        guard let session else { return }
+        let date = Date().formatted(.verbatim(
+            "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)).\(minute: .twoDigits).\(second: .twoDigits)",
+            timeZone: .current, calendar: .current))
+        let timecode = state.timecode().replacingOccurrences(of: ":", with: ".")
+        let url = copyFolder.appendingPathComponent("bmonitor \(date) TC \(timecode).mov")
+        print("cópia no Mac: take \(state.clipName ?? "sem nome") no iPhone")
+        session.recorder.begin(url: url, quarterTurns: quarterTurns)
+    }
+
+    private func copyFinished(_ url: URL, _ error: Error?) {
+        if let error {
+            copyFailure = String(localized: "A cópia \(url.lastPathComponent) não foi salva: \(error.localizedDescription)")
+        } else {
+            copyFailure = nil
+        }
+    }
+
     /// Para o stream e devolve a plataforma original. Bloqueia; chamado no encerramento.
     func shutdown() {
         events?.stop()
@@ -485,7 +540,11 @@ final class AppModel {
 
     private func apply(_ property: String, _ value: [String: Any]) {
         let previousSize = state.videoSize
+        let wasRecording = state.recording
         state.apply(property: property, value: value)
+        if savesCopy, state.recording != wasRecording, !Self.simulatesRecording {
+            if state.recording { beginCopy() } else { session?.recorder.end() }
+        }
         if let simulated = Self.simulatedRemaining { state.remainingRecordTime = simulated }
         if Self.simulatesRecording { state.recording = true }
         pending.remove(property)

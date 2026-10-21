@@ -217,6 +217,7 @@ struct HealthChip: View {
 
     var body: some View {
         HStack(spacing: tight ? 10 : 14) {
+            copy
             remaining
             signal
         }
@@ -239,6 +240,20 @@ struct HealthChip: View {
                 .foregroundStyle(level == .critical ? Theme.rec : level == .warning ? Theme.warn : .primary)
                 .help("Tempo de gravação restante no iPhone")
         }
+    }
+
+    /// A cópia no Mac só aparece gravando, ou quando a última falhou.
+    @ViewBuilder private var copy: some View {
+        if let failure = model.copyFailure {
+            copyLabel("exclamationmark.triangle.fill").foregroundStyle(Theme.rec).help(failure)
+        } else if model.savesCopy, model.state.recording, model.signal != .cameraGone {
+            copyLabel("laptopcomputer.and.arrow.down")
+                .help("Copiando o stream para o Mac: 1080p, 8 Mb/s. O arquivo original fica no iPhone.")
+        }
+    }
+
+    @ViewBuilder private func copyLabel(_ symbol: String) -> some View {
+        if compact { Image(systemName: symbol) } else { Label("Mac", systemImage: symbol) }
     }
 
     @ViewBuilder private var signal: some View {

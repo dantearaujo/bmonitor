@@ -16,6 +16,8 @@ public final class StreamSession {
     public var onFrame: ((CVPixelBuffer) -> Void)?
     /// Medidor e escuta do som que vem no mesmo stream.
     public let audio = AudioMonitor()
+    /// Cópia do stream no Mac. Recebe tudo depois da tela e do som; só grava quando pedem.
+    public let recorder = TakeRecorder()
 
     private let api: CameraAPI
     private let listener: SRTListener
@@ -39,8 +41,12 @@ public final class StreamSession {
             self?.countFrame()
             self?.onFrame?(image)
         }
+        decoder.onSample = { [recorder] in recorder.appendVideo($0, keyframe: $1) }
         demuxer.onVideo = { [weak self] in self?.decoder.decode($0) }
-        demuxer.onAudio = { [weak self] in self?.audioDecoder.decode($0) }
+        demuxer.onAudio = { [weak self] in
+            self?.audioDecoder.decode($0)
+            self?.recorder.appendAudio($0)
+        }
         audioDecoder.onBuffer = { [audio] in audio.play($0) }
         listener.onPayload = { [weak self] in self?.demuxer.feed($0) }
     }
@@ -103,6 +109,7 @@ public final class StreamSession {
 
     /// Versão bloqueante de `stop()` para o encerramento do app.
     public func stopBlocking(timeout: TimeInterval = 4) {
+        recorder.endBlocking()
         let done = DispatchSemaphore(value: 0)
         Task.detached { [self] in
             await stop()

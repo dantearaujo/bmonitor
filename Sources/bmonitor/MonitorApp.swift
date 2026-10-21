@@ -42,6 +42,10 @@ struct MonitorApp: App {
                     .disabled(model.phase != .connected)
                 Button("Focar agora") { model.focusNow() }.keyboardShortcut(.focusNow)
                 Divider()
+                Toggle("Salvar cópia de cada take no Mac", isOn: $model.savesCopy)
+                Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
+                Button("Mostrar cópias no Finder") { model.showCopies() }
+                Divider()
                 Button("ISO…") { model.togglePanel(.iso) }.keyboardShortcut(.iso)
                 Button("Shutter…") { model.togglePanel(.shutter) }.keyboardShortcut(.shutter)
                 Button("Balanço de branco…") { model.togglePanel(.whiteBalance) }.keyboardShortcut(.whiteBalance)

@@ -7,6 +7,8 @@ import VideoToolbox
 /// B-frames, então essa ordem já é a de exibição e nada precisa ser segurado.
 public final class HEVCDecoder {
     public var onFrame: ((CVPixelBuffer) -> Void)?
+    /// O quadro ainda codificado e se ele é quadro-chave, depois de ir para a tela.
+    public var onSample: ((CMSampleBuffer, Bool) -> Void)?
 
     private var vps: Data?
     private var sps: Data?
@@ -24,9 +26,12 @@ public final class HEVCDecoder {
     public func decode(_ unit: VideoAccessUnit) {
         var sample = Data()
         var parametersChanged = false
+        var keyframe = false
         for nal in Self.nalUnits(unit.data) {
             guard let header = nal.first else { continue }
-            switch (header >> 1) & 0x3F {
+            let type = (header >> 1) & 0x3F
+            if (16...21).contains(type) { keyframe = true }  // IRAP: IDR, CRA, BLA
+            switch type {
             case 32: if vps != nal { vps = nal; parametersChanged = true }
             case 33: if sps != nal { sps = nal; parametersChanged = true }
             case 34: if pps != nal { pps = nal; parametersChanged = true }
@@ -67,6 +72,7 @@ public final class HEVCDecoder {
             guard status == noErr, let image else { return }
             self?.onFrame?(image)
         }
+        onSample?(buffer, keyframe)
     }
 
     private func rebuildSession() {

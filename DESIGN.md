@@ -225,6 +225,7 @@ A forma dominante é a cápsula: as duas cápsulas de status, a barra de control
 
 ### Chips
 - **Opção de popover:** cantos de 7 pt, altura mínima 28 pt, respiro lateral 8 pt (3 pt nas lentes), branco 8% em repouso. Escolhida, preenche com a cor de destaque e o texto fica branco. A única exceção de cor é "Sem áudio", que preenche em vermelho quando escolhida, porque aí é alarme; fica separada no fim da lista por um divisor e pede confirmação se a câmera está gravando.
+- **Cópia no Mac:** na cápsula da direita, antes do tempo restante, `laptopcomputer.and.arrow.down` com "Mac" só enquanto a câmera grava e a cópia está ligada; em janela estreita fica só o ícone. Se a última cópia falhou, vira triângulo vermelho até um take salvar, com o erro na dica. O texto da dica diz que é o stream (1080p, 8 Mb/s), não o original.
 - **Marca de sem cintilação:** lâmpada do SF Symbols (`lightbulb.fill`, 9 pt, secundária) ao lado do valor de shutter, a mesma na legenda do próprio popover.
 
 ### Cards / Containers

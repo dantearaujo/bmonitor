@@ -137,3 +137,12 @@
 "A câmera respondeu HTTP %lld. Tente de novo." = "The camera answered HTTP %lld. Try again.";
 "Sem resposta da câmera. Confira se o Blackmagic Camera está aberto e na mesma rede Wi‑Fi." = "No answer from the camera. Check that Blackmagic Camera is open and on the same Wi‑Fi network.";
 "Procurar atualizações…" = "Check for Updates…";
+
+/* Cópia no Mac */
+"Salvar cópia de cada take no Mac" = "Save a Copy of Each Take on the Mac";
+"Escolher pasta das cópias…" = "Choose Folder for Copies…";
+"Mostrar cópias no Finder" = "Show Copies in Finder";
+"Escolher" = "Choose";
+"Onde salvar a cópia de cada take" = "Where to save a copy of each take";
+"A cópia %@ não foi salva: %@" = "The copy %@ wasn't saved: %@";
+"Copiando o stream para o Mac: 1080p, 8 Mb/s. O arquivo original fica no iPhone." = "Copying the stream to the Mac: 1080p, 8 Mb/s. The original file stays on the iPhone.";
