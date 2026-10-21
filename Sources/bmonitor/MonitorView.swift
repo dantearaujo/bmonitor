@@ -28,6 +28,9 @@ struct MonitorView: View {
                     if model.grid != .off {
                         GridOverlay(style: model.grid).frame(width: rect.width, height: rect.height).position(rect.center)
                     }
+                    if let zone = model.safeZone {
+                        SafeZoneOverlay(zone: zone).frame(width: rect.width, height: rect.height).position(rect.center)
+                    }
                     // Sem câmera, o estado de gravação é desconhecido: a borda não afirma nada.
                     if model.state.recording, model.signal != .cameraGone {
                         // Tally: de longe, a borda vermelha diz que está gravando.
@@ -390,7 +393,7 @@ struct ControlBar: View {
                 : String(localized: "Silenciar o som no Mac (\(Shortcut.mute.glyph))"))
         .accessibilityLabel(model.muted ? String(localized: "Som no Mac desligado") : String(localized: "Som no Mac ligado"))
         separator
-        ValueButton(model: model, panel: .grid, isOn: model.grid != .off) {
+        ValueButton(model: model, panel: .grid, isOn: model.grid != .off || model.safeZone != nil) {
             Image(systemName: "squareshape.split.3x3").font(.system(size: 15, weight: .medium)).frame(width: tight ? 28 : 34, height: tight ? 28 : 34)
                 .accessibilityLabel("Grade")
         } content: {
@@ -660,9 +663,37 @@ struct GridOverlay: View {
             case .dot:
                 let r: CGFloat = thumbnail ? 2.5 : 3
                 path.addEllipse(in: CGRect(x: center.x - r, y: center.y - r, width: r * 2, height: r * 2))
+            case .eyeLine:
+                // Talking head: olhos no terço de cima, rosto no eixo do meio.
+                horizontal(CGFloat(1) / 3)
+                vertical(0.5)
             }
             context.stroke(path, with: .color(.black.opacity(0.3)), lineWidth: 2)
             context.stroke(path, with: .color(.white.opacity(thumbnail ? 0.9 : 0.55)), lineWidth: thumbnail ? 1 : 0.75)
+        }
+        .allowsHitTesting(false)
+    }
+}
+
+/// Área segura de uma rede: escurece o que a interface dela cobre e, com o vídeo deitado, o que
+/// fica fora do recorte vertical do meio. O contorno marca onde o texto e o rosto ficam visíveis.
+struct SafeZoneOverlay: View {
+    let zone: SafeZone
+    /// Miniatura do popover: contorno mais forte para ler em 36 pt.
+    var thumbnail = false
+
+    var body: some View {
+        Canvas { context, size in
+            let frame = SafeZone.verticalFrame(in: size)
+            var outside = Path(CGRect(origin: .zero, size: size))
+            outside.addRect(frame)
+            context.fill(outside, with: .color(.black.opacity(0.55)), style: FillStyle(eoFill: true))
+            var covered = Path()
+            zone.covered(in: frame).forEach { covered.addRect($0) }
+            context.fill(covered, with: .color(.black.opacity(0.35)))
+            let visible = Path(frame).subtracting(covered)
+            context.stroke(visible, with: .color(.black.opacity(0.3)), lineWidth: 2)
+            context.stroke(visible, with: .color(.white.opacity(thumbnail ? 0.9 : 0.55)), lineWidth: thumbnail ? 1 : 0.75)
         }
         .allowsHitTesting(false)
     }

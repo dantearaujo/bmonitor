@@ -19,7 +19,7 @@ final class AppModel {
     enum Panel: String { case iso, shutter, whiteBalance, tint, focus, lens, audio, grid }
 
     enum GridStyle: String, CaseIterable, Identifiable {
-        case off, thirds, thirdsCenter, phi, cross, dot
+        case off, thirds, thirdsCenter, phi, cross, dot, eyeLine
 
         var id: String { rawValue }
         var title: String {
@@ -30,6 +30,7 @@ final class AppModel {
             case .phi: String(localized: "Proporção áurea")
             case .cross: String(localized: "Cruz central")
             case .dot: String(localized: "Ponto central")
+            case .eyeLine: String(localized: "Linha dos olhos")
             }
         }
     }
@@ -58,6 +59,13 @@ final class AppModel {
         didSet {
             UserDefaults.standard.set(grid.rawValue, forKey: "grid")
             if grid != .off { UserDefaults.standard.set(grid.rawValue, forKey: "lastGrid") }
+        }
+    }
+    /// Área segura de uma rede sobre o quadro vertical; nil esconde.
+    var safeZone: SafeZone? {
+        didSet {
+            UserDefaults.standard.set(safeZone?.rawValue, forKey: "safeZone")
+            if let safeZone { UserDefaults.standard.set(safeZone.rawValue, forKey: "lastSafeZone") }
         }
     }
     var quarterTurns: Int { didSet { UserDefaults.standard.set(quarterTurns, forKey: "quarterTurns") } }
@@ -89,6 +97,7 @@ final class AppModel {
         grid =
             UserDefaults.standard.string(forKey: "grid").flatMap(GridStyle.init(rawValue:))
             ?? (UserDefaults.standard.bool(forKey: "showGrid") ? .thirds : .off)
+        safeZone = UserDefaults.standard.string(forKey: "safeZone").flatMap(SafeZone.init(rawValue:))
         quarterTurns = UserDefaults.standard.integer(forKey: "quarterTurns")
         muted = UserDefaults.standard.object(forKey: "muted") as? Bool ?? true
         discovery.onChange = { [weak self] cameras in
@@ -324,6 +333,11 @@ final class AppModel {
         grid = grid != .off ? .off : UserDefaults.standard.string(forKey: "lastGrid").flatMap(GridStyle.init(rawValue:)) ?? .thirds
     }
 
+    /// Z: liga e desliga a área segura, voltando à última rede usada.
+    func toggleSafeZone() {
+        safeZone = safeZone != nil ? nil : UserDefaults.standard.string(forKey: "lastSafeZone").flatMap(SafeZone.init(rawValue:)) ?? .meta
+    }
+
     /// F: foco automático único no centro.
     func focusNow() {
         set("/lens/focus/doAutoFocus", nil, awaitsEvent: false)
@@ -547,6 +561,18 @@ enum WindowShaper {
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.25
             titlebar.animator().alphaValue = visible ? 1 : 0
+        }
+    }
+}
+
+extension SafeZone: Identifiable {
+    public var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .meta: String(localized: "Instagram e Facebook")
+        case .tiktok: "TikTok"
+        case .shorts: "YouTube Shorts"
+        case .profileGrid: String(localized: "Grid do perfil (3:4)")
         }
     }
 }

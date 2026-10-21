@@ -247,6 +247,9 @@ A barra aparece e some com fade de 0,25 s ease-out e desliza 12 pt; some 3 s dep
 ### Tally e estados do quadro
 Gravando, uma borda vermelha de 3 pt contorna o quadro. Sem câmera, a borda some, porque o estado é desconhecido. Quadro parado escurece com véu preto 60% até o vídeo voltar.
 
+### Grade e área segura
+As duas ficam sobre o quadro e podem ser somadas. A grade é traço branco 55% de 0,75 pt sobre preto 30% de 2 pt (terços, terços e centro, proporção áurea, cruz, ponto, linha dos olhos). A área segura de uma rede escurece com preto 35% o que a interface dela cobre e contorna o que fica visível no mesmo traço da grade; com o vídeo deitado, o que fica fora do recorte 9:16 do meio escurece com preto 55%. As medidas moram em `SafeZone` (MonitorCore), com fonte e data, e um teste confere cada número. Escolha no popover da grade, em seções separadas, e `Z` liga e desliga.
+
 ### Keycap
 Tecla desenhada da tela de atalhos: 12 pt semibold, placa branca 12% com contorno 0,5 pt a 18%, cantos de 5 pt, mínimo 26 × 22 pt, coluna fixa de 56 pt para os nomes alinharem entre seções.
 

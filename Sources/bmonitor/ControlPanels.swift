@@ -340,20 +340,42 @@ struct GridPanel: View {
     @Bindable var model: AppModel
 
     var body: some View {
-        PanelSection(title: String(localized: "Grade")) {
-            VStack(spacing: 6) {
-                ForEach(AppModel.GridStyle.allCases) { style in
-                    Button { model.grid = style } label: {
-                        HStack(spacing: 10) {
-                            GridOverlay(style: style, thumbnail: true)
+        VStack(alignment: .leading, spacing: 16) {
+            PanelSection(title: String(localized: "Grade")) {
+                VStack(spacing: 6) {
+                    ForEach(AppModel.GridStyle.allCases) { style in
+                        Button { model.grid = style } label: {
+                            HStack(spacing: 10) {
+                                GridOverlay(style: style, thumbnail: true)
+                                    .frame(width: 36, height: 22)
+                                    .background(.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 3))
+                                Text(style.title)
+                                Spacer()
+                            }
+                        }
+                        .buttonStyle(ChoiceStyle(isOn: model.grid == style))
+                    }
+                }
+            }
+            PanelSection(title: String(localized: "Área segura")) {
+                VStack(spacing: 6) {
+                    ForEach([SafeZone?.none] + SafeZone.allCases.map(Optional.some), id: \.self) { zone in
+                        Button { model.safeZone = zone } label: {
+                            HStack(spacing: 10) {
+                                Group {
+                                    if let zone { SafeZoneOverlay(zone: zone, thumbnail: true) } else { Color.clear }
+                                }
                                 .frame(width: 36, height: 22)
                                 .background(.black.opacity(0.4), in: RoundedRectangle(cornerRadius: 3))
-                            Text(style.title)
-                            Spacer()
+                                Text(zone?.title ?? String(localized: "Sem área segura"))
+                                Spacer()
+                            }
                         }
+                        .buttonStyle(ChoiceStyle(isOn: model.safeZone == zone))
                     }
-                    .buttonStyle(ChoiceStyle(isOn: model.grid == style))
                 }
+                Text("Medidas que cada rede publica para vídeo vertical, conferidas em outubro de 2026. Com o vídeo deitado, mostra o recorte vertical do meio.")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }
     }

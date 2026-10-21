@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Atalhos do teclado num lugar só: o menu os registra e a tela de atalhos os lista.
 enum Shortcut: CaseIterable {
-    case record, focusNow, iso, shutter, whiteBalance, tint, lens, audio, mute, grid, rotate, help
+    case record, focusNow, iso, shutter, whiteBalance, tint, lens, audio, mute, grid, safeZone, rotate, help
 
     var keyboard: KeyboardShortcut {
         switch self {
@@ -16,6 +16,7 @@ enum Shortcut: CaseIterable {
         case .audio: KeyboardShortcut("a", modifiers: [])
         case .mute: KeyboardShortcut("m", modifiers: [])
         case .grid: KeyboardShortcut("g", modifiers: [])
+        case .safeZone: KeyboardShortcut("z", modifiers: [])
         // Longe do ⌘R: girar a janela nunca pode parar uma gravação por um Shift esquecido.
         case .rotate: KeyboardShortcut(.rightArrow, modifiers: .command)
         case .help: KeyboardShortcut("/", modifiers: .command)
@@ -34,6 +35,7 @@ enum Shortcut: CaseIterable {
         case .audio: String(localized: "Origem de áudio")
         case .mute: String(localized: "Som da câmera no Mac (ligar ou mudo)")
         case .grid: String(localized: "Mostrar ou esconder a grade")
+        case .safeZone: String(localized: "Mostrar ou esconder a área segura")
         case .rotate: String(localized: "Girar 90°")
         case .help: String(localized: "Atalhos do teclado")
         }
@@ -84,7 +86,7 @@ struct ShortcutsOverlay: View {
         (String(localized: "Abrir controle"), rows([.iso, .shutter, .whiteBalance, .tint, .lens, .audio])),
         (
             String(localized: "No Mac"),
-            rows([.mute, .grid, .rotate]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]
+            rows([.mute, .grid, .safeZone, .rotate]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]
                 + rows([.help])
         ),
     ]

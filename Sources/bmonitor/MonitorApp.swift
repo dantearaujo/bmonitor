@@ -1,4 +1,5 @@
 import AppKit
+import MonitorCore
 import Sparkle
 import SwiftUI
 
@@ -54,6 +55,14 @@ struct MonitorApp: App {
                     .keyboardShortcut(.grid)
                 Picker("Tipo de grade", selection: $model.grid) {
                     ForEach(AppModel.GridStyle.allCases) { Text($0.title).tag($0) }
+                }
+                Button(model.safeZone == nil ? String(localized: "Mostrar área segura") : String(localized: "Esconder área segura")) {
+                    model.toggleSafeZone()
+                }
+                .keyboardShortcut(.safeZone)
+                Picker("Tipo de área segura", selection: $model.safeZone) {
+                    Text("Sem área segura").tag(SafeZone?.none)
+                    ForEach(SafeZone.allCases) { Text($0.title).tag(Optional($0)) }
                 }
                 Button("Girar 90°") { model.rotate() }.keyboardShortcut(.rotate)
             }
