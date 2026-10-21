@@ -387,7 +387,8 @@ struct AudioPanel: View {
 
     var body: some View {
         let current = model.state.audioInputs[0]
-        let inputs = model.state.availableAudioInputs.filter { $0 != "None" }
+        let silent = model.state.silentInput
+        let inputs = model.state.availableAudioInputs.filter { $0 != silent }
         VStack(alignment: .leading, spacing: 16) {
             PanelSection(title: String(localized: "Nível (dBFS)")) {
                 LiveAudioMeter(model: model, large: true)
@@ -420,18 +421,18 @@ struct AudioPanel: View {
                     }
                 }
             }
-            if model.state.availableAudioInputs.contains("None") {
+            if model.state.availableAudioInputs.contains(silent) {
                 Divider()
                 // Separado no fim da lista: um clique aqui deixa a gravação sem som. Vermelho só
                 // quando escolhido, porque aí é o alarme.
                 Button {
-                    if model.state.recording { confirmSilence = true } else { model.setAudioInput("None") }
+                    if model.state.recording { confirmSilence = true } else { model.setAudioInput(silent) }
                 } label: {
                     Label("Sem áudio", systemImage: "mic.slash").frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .buttonStyle(ChoiceStyle(isOn: current == "None", fill: Theme.rec))
+                .buttonStyle(ChoiceStyle(isOn: current == silent, fill: Theme.rec))
                 .confirmationDialog("Gravar sem áudio?", isPresented: $confirmSilence) {
-                    Button("Desligar o áudio", role: .destructive) { model.setAudioInput("None") }
+                    Button("Desligar o áudio", role: .destructive) { model.setAudioInput(silent) }
                 } message: {
                     Text("O clipe que está sendo gravado fica sem som a partir de agora.")
                 }

@@ -118,3 +118,18 @@ private func recordedState() throws -> CameraState {
     state.apply(property: "/video/shutter/measurement", value: ["measurement": "ShutterAngle"])
     #expect(state.shutterMeasurement == "ShutterAngle")
 }
+
+@Test func silentInputIsTheFirstSupportedOneInAnyLanguage() {
+    let state = CameraState()
+    #expect(state.isSilent("None"))
+    // iPhone em português, como chegou em 21/10/2026.
+    state.apply(property: "/audio/channel/0/supportedInputs", value: ["items": [
+        ["input": "Não", "available": true], ["input": "Microfone do iPhone", "available": true],
+        ["input": "Wireless microphone", "available": true],
+    ]])
+    #expect(state.silentInput == "Não")
+    state.apply(property: "/audio/channel/0/input", value: ["input": "Não"])
+    #expect(state.recordsSilence)
+    state.apply(property: "/audio/channel/0/input", value: ["input": "Wireless microphone"])
+    #expect(!state.recordsSilence)
+}

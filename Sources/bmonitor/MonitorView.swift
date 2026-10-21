@@ -419,11 +419,11 @@ struct ControlBar: View {
         }
         ValueButton(model: model, panel: .audio) {
             ValueItem(
-                label: String(localized: "Áudio"), value: compact ? shortAudioName : audioName,
+                label: String(localized: "Áudio"), value: state.shortAudioName,
                 pending: model.pending.contains("/audio/channel/0/input"),
                 failed: model.failed.contains("/audio/channel/0/input"), tint: noAudio ? Theme.rec : nil,
                 compact: compact, tight: tight)
-                .help(compact ? String(localized: "Áudio: \(audioName)") : "")
+                .help(String(localized: "Áudio: \(state.audioName)"))
         } content: {
             AudioPanel(model: model)
         }
@@ -458,16 +458,29 @@ struct ControlBar: View {
         return state.focus.map { "\(Int(($0 * 100).rounded()))%" } ?? "MF"
     }
 
-    private var noAudio: Bool { state.audioInputs[0] == "None" }
+    private var noAudio: Bool { state.isSilent(state.audioInputs[0]) }
+}
 
-    /// Nome curto para janela estreita: "iPhone Microphone" vira "iPhone Mic".
-    private var shortAudioName: String {
-        audioName.replacingOccurrences(of: "Microphone", with: "Mic")
+extension CameraState {
+    /// Nome inteiro das entradas ativas, para a cápsula de status, a dica e o painel.
+    var audioName: String {
+        let names = Set(audioInputs.values.map { isSilent($0) ? String(localized: "Sem áudio") : $0 })
+        return names.isEmpty ? "—" : names.sorted().joined(separator: " · ")
     }
 
-    private var audioName: String {
-        let inputs = Set(state.audioInputs.values.map { $0 == "None" ? String(localized: "Sem áudio") : $0 })
-        return inputs.isEmpty ? "—" : inputs.sorted().joined(separator: " · ")
+    /// Nome curto para a barra, do tamanho dos outros valores: o nome inteiro ocupava quase
+    /// metade dela ("Wireless microphone"). Os nomes vêm no idioma do iPhone.
+    var shortAudioName: String {
+        let names = Set(audioInputs.values.map { Self.shortName($0, silent: silentInput) })
+        return names.isEmpty ? "—" : names.sorted().joined(separator: " · ")
+    }
+
+    private static func shortName(_ input: String, silent: String) -> String {
+        if input == silent { return String(localized: "Sem áudio") }
+        let lower = input.lowercased()
+        if lower.contains("iphone") { return "iPhone" }
+        if lower.contains("wireless") || lower.contains("sem fio") { return String(localized: "Sem fio") }
+        return input.count <= 12 ? input : String(input.prefix(11)) + "…"
     }
 }
 
@@ -480,7 +493,7 @@ struct AudioStatus: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30)) { _ in
             let gone = model.signal == .cameraGone
-            let none = model.state.audioInputs.values.contains("None")
+            let none = model.state.recordsSilence
             let missing = model.audioMissing
             let alarm = !gone && (none || missing)
             HStack(spacing: 6) {
@@ -509,7 +522,7 @@ struct AudioStatus: View {
     }
 
     private var fullName: String {
-        let names = Set(model.state.audioInputs.values.filter { $0 != "None" })
+        let names = Set(model.state.audioInputs.values.filter { !model.state.isSilent($0) })
         return names.isEmpty ? "—" : names.sorted().joined(separator: " · ")
     }
 

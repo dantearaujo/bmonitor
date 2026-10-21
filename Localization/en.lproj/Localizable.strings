@@ -167,3 +167,4 @@
 "%@ não aceita ajuste de ganho. Um microfone externo aceita." = "%@ doesn't accept gain adjustment. An external mic does.";
 "Subir o ganho do áudio" = "Raise audio gain";
 "Baixar o ganho do áudio" = "Lower audio gain";
+"Sem fio" = "Wireless";

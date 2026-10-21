@@ -101,6 +101,9 @@ public final class CameraState {
     public var audioGain: Double?
     public var stabilization = false
     public var availableAudioInputs: [String] = []
+    /// A opção "sem áudio" vem no idioma do iPhone ("None" em inglês, "Não" em português) e é
+    /// a primeira de `supportedInputs` nos dois (conferido em 21/10/2026).
+    public var silentInput = "None"
 
     private var timecodeFrames = 0
     private var timecodeAt = Date.distantPast
@@ -219,6 +222,7 @@ public final class CameraState {
         case "/audio/channel/0/supportedInputs":
             let items = value["items"] as? [[String: Any]] ?? []
             availableAudioInputs = items.filter { $0["available"] as? Bool != false }.compactMap { $0["input"] as? String }
+            if let first = items.first?["input"] as? String { silentInput = first }
         case "/media/workingset":
             let disks = value["workingset"] as? [[String: Any]] ?? []
             let active = disks.first { $0["activeDisk"] as? Bool == true } ?? disks.first
@@ -234,6 +238,11 @@ public final class CameraState {
             break
         }
     }
+
+    public func isSilent(_ input: String?) -> Bool { input == silentInput }
+
+    /// Algum canal está gravando sem áudio.
+    public var recordsSilence: Bool { audioInputs.values.contains(where: isSilent) }
 
     private func parseTimecode(_ text: String) -> Int? {
         let parts = text.split(whereSeparator: { $0 == ":" || $0 == ";" }).compactMap { Int($0) }
