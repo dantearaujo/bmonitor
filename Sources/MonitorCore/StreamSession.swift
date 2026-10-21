@@ -21,6 +21,7 @@ public final class StreamSession {
 
     private let api: CameraAPI
     private let listener: SRTListener
+    private let restartGate = Gate()
     private let demuxer = TSDemuxer()
     private let decoder = HEVCDecoder()
     private let audioDecoder = AudioDecoder()
@@ -94,8 +95,13 @@ public final class StreamSession {
     }
 
     /// Para e começa de novo: é o que tira a câmera de `Interrupted`.
+    /// Um pedido por vez: dois seguidos (a volta dos eventos e o sinal perdido chegam juntos)
+    /// paravam o stream que o primeiro acabara de abrir.
     public func restart() async throws {
+        guard restartGate.enter() else { return }
+        defer { restartGate.leave() }
         try? await api.stopStream()
+        listener.dropStaleClient()
         try await Task.sleep(for: .milliseconds(800))
         try await api.startStream()
     }
@@ -170,5 +176,25 @@ public final class StreamSession {
         var buffer = [CChar](repeating: 0, count: Int(INET_ADDRSTRLEN))
         inet_ntop(AF_INET, &local.sin_addr, &buffer, socklen_t(buffer.count))
         return String(cString: buffer)
+    }
+}
+
+/// Porta de uma passagem só, segura entre threads.
+final class Gate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var busy = false
+
+    func enter() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        if busy { return false }
+        busy = true
+        return true
+    }
+
+    func leave() {
+        lock.lock()
+        busy = false
+        lock.unlock()
     }
 }

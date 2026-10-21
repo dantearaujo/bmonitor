@@ -51,13 +51,17 @@ public final class CameraEvents {
 
     /// Ping a cada 2 s. Uma conexão pode morrer calada, sem erro no `receive`: o app ficava
     /// com o REC e o microfone parados no último valor (visto em 21/10/2026). Sem pong em 5 s
-    /// (o iPhone responde em ~10 ms), derruba a tarefa; o `receive` falha, reconecta e reassina.
+    /// (o iPhone responde em ~10 ms), derruba a tarefa e reconecta daqui mesmo: com o Blackmagic
+    /// Camera em segundo plano a conexão nova fica pendurada antes de abrir, e cancelada assim
+    /// ela não chama o `receive` de volta, então esperar por ele deixava o app em "Sem câmera".
     private func ping(_ task: URLSessionWebSocketTask) {
         watch.asyncAfter(deadline: .now() + 2) { [weak self] in
             guard let self, self.running, task === self.task else { return }
             if Date().timeIntervalSince(self.lastPong) > 5 {
                 print("eventos da câmera sem resposta; reconectando")
+                self.task = nil
                 task.cancel(with: .abnormalClosure, reason: nil)
+                self.reconnect()
                 return
             }
             task.sendPing { [weak self] error in
@@ -82,13 +86,17 @@ public final class CameraEvents {
                 for (property, value) in Self.changes(in: data) { self.onChange?(property, value) }
                 self.receive(on: task)
             case .failure:
-                self.onConnection?(false)
-                guard self.running else { return }
-                DispatchQueue.global().asyncAfter(deadline: .now() + 1) { [weak self] in
-                    guard let self, self.running else { return }
-                    self.connect()
-                }
+                self.reconnect()
             }
+        }
+    }
+
+    private func reconnect() {
+        onConnection?(false)
+        guard running else { return }
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1) { [weak self] in
+            guard let self, self.running else { return }
+            self.connect()
         }
     }
 

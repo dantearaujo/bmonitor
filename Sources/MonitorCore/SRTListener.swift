@@ -1,5 +1,6 @@
 import CSRT
 import Darwin
+import Foundation
 
 /// Escuta SRT em modo listener. O app do iPhone é o caller.
 /// `run()` bloqueia: aceita uma conexão, entrega cada mensagem e volta a aceitar quando ela cai.
@@ -26,6 +27,7 @@ public final class SRTListener {
     private let latencyMs: Int32
     private var server: SRTSOCKET = SRT_INVALID_SOCK
     private var client: SRTSOCKET = SRT_INVALID_SOCK
+    private var lastPayload = Date.distantPast
 
     /// `port` é a primeira tentativa; `listen()` sobe até nove portas se ela estiver ocupada.
     public init(port: UInt16, latencyMs: Int32) {
@@ -75,6 +77,7 @@ public final class SRTListener {
             let socket = srt_accept(server, nil, nil)
             guard socket != SRT_INVALID_SOCK else { continue }
             client = socket
+            lastPayload = Date()
 
             var negotiated: Int32 = 0
             var size = Int32(MemoryLayout<Int32>.size)
@@ -86,12 +89,24 @@ public final class SRTListener {
                     srt_recvmsg(socket, $0.baseAddress!.assumingMemoryBound(to: CChar.self), 1500)
                 }
                 if n <= 0 { break }
+                lastPayload = Date()
                 buffer.withUnsafeBytes { onPayload?(UnsafeRawBufferPointer(rebasing: $0[0..<Int(n)])) }
             }
             client = SRT_INVALID_SOCK
             srt_close(socket)
             onDisconnect?()
         }
+    }
+
+    /// Fecha a conexão atual se ela está parada há mais de `idle` segundos, e o `run()` volta a
+    /// aceitar. Pedir o stream de novo sem isso falhava: o listener atende uma conexão por vez,
+    /// a antiga (de antes de o Blackmagic Camera ir para o segundo plano) seguia aberta sem
+    /// vídeo e a nova era recusada com "Listener's backlog exceeded" (21/10/2026). Conexão com
+    /// vídeo chegando nunca é fechada daqui.
+    public func dropStaleClient(idle: TimeInterval = 1) {
+        let socket = client
+        guard socket != SRT_INVALID_SOCK, Date().timeIntervalSince(lastPayload) > idle else { return }
+        srt_close(socket)
     }
 
     /// Estatísticas da conexão atual, ou nil sem conexão.
