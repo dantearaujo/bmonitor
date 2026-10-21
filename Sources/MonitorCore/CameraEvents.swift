@@ -11,6 +11,8 @@ public final class CameraEvents {
     private let session: URLSession
     private var task: URLSessionWebSocketTask?
     private var running = false
+    private let watch = DispatchQueue(label: "bmonitor.camera-events")
+    private var lastPong = Date()
 
     public init(host: String, properties: [String]) {
         self.url = URL(string: "wss://\(host):4444/control/api/v1/event/websocket")!
@@ -41,6 +43,29 @@ public final class CameraEvents {
             if error == nil { self?.onConnection?(true) }
         }
         receive(on: task)
+        watch.async {
+            self.lastPong = Date()
+            self.ping(task)
+        }
+    }
+
+    /// Ping a cada 2 s. Uma conexão pode morrer calada, sem erro no `receive`: o app ficava
+    /// com o REC e o microfone parados no último valor (visto em 21/10/2026). Sem pong em 5 s
+    /// (o iPhone responde em ~10 ms), derruba a tarefa; o `receive` falha, reconecta e reassina.
+    private func ping(_ task: URLSessionWebSocketTask) {
+        watch.asyncAfter(deadline: .now() + 2) { [weak self] in
+            guard let self, self.running, task === self.task else { return }
+            if Date().timeIntervalSince(self.lastPong) > 5 {
+                print("eventos da câmera sem resposta; reconectando")
+                task.cancel(with: .abnormalClosure, reason: nil)
+                return
+            }
+            task.sendPing { [weak self] error in
+                guard error == nil, let self else { return }
+                self.watch.async { self.lastPong = Date() }
+            }
+            self.ping(task)
+        }
     }
 
     private func receive(on task: URLSessionWebSocketTask) {
