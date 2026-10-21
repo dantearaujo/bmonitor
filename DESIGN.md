@@ -67,9 +67,9 @@ spacing:
   chip-y: "8pt"
   bar: "6pt"
   bar-compact: "5pt"
-  item-x: "10pt"
-  item-x-compact: "6pt"
-  item-x-tight: "4pt"
+  item-x: "14pt"
+  item-x-compact: "12pt"
+  item-x-tight: "8pt"
   item-y: "5pt"
   choice-gap: "6pt"
   popover: "18pt"
@@ -90,7 +90,7 @@ components:
   value-item:
     textColor: "{colors.label-white}"
     typography: "{typography.value}"
-    padding: "5pt 10pt"
+    padding: "5pt 14pt"
   value-item-failed:
     textColor: "{colors.rec-red}"
     typography: "{typography.value}"
@@ -198,7 +198,7 @@ O vídeo é encaixado (aspect fit) na janela, e a janela segue a proporção do 
 - **Base, centralizada, só com o mouse:** barra com ISO, shutter, WB, tint e foco à esquerda, gravar no meio, lente, áudio, mudo, grade e girar à direita, separados por divisores de 26 pt de altura.
 - **Centro:** livre. Só cartões de estado sem vídeo (procurando, conectando, sem câmera, vídeo parado) e a tela de atalhos ocupam o centro.
 
-Janela estreita, na ordem em que o layout cede: o respiro aperta (14 para 10 pt nas cápsulas), a saúde troca "fps" só pelo ícone, o áudio desce para uma segunda linha da cápsula de gravação (que vira cartão de cantos 18 pt) e, em último caso, o nome do microfone sai. A barra compacta letra e respiro, depois aperta ainda mais numa linha só (respiro de 4 pt nos itens; os botões de ícone mantêm 44 pt, para não desnivelar do gravar) e, se ainda não couber, quebra em duas cápsulas: exposição em cima; gravar, lente, áudio e janela embaixo, 8 pt entre elas. Na barra, o áudio mostra só o nome curto da entrada ("iPhone", "Sem fio", "Sem áudio"; outros nomes cortados em 12 caracteres), do tamanho dos outros valores; o nome inteiro fica na cápsula, na dica e no painel. A opção sem áudio vem no idioma do iPhone ("None", "Não") e é reconhecida por ser a primeira da lista de entradas.
+Janela estreita, na ordem em que o layout cede: o respiro aperta (14 para 10 pt nas cápsulas), a saúde troca "fps" só pelo ícone, o áudio desce para uma segunda linha da cápsula de gravação (que vira cartão de cantos 18 pt) e, em último caso, o nome do microfone sai. A barra compacta letra e respiro, depois aperta ainda mais numa linha só (respiro de 8 pt nos itens; os botões de ícone mantêm 44 pt, para não desnivelar do gravar) e, se ainda não couber, quebra em duas cápsulas: exposição em cima; gravar, lente, áudio e janela embaixo, 8 pt entre elas. Na barra, o áudio mostra só o nome curto da entrada ("iPhone", "Sem fio", "Sem áudio"; outros nomes cortados em 12 caracteres), do tamanho dos outros valores; o nome inteiro fica na cápsula, na dica e no painel. A opção sem áudio vem no idioma do iPhone ("None", "Não") e é reconhecida por ser a primeira da lista de entradas.
 
 Popovers têm 340 pt de largura, 18 pt de respiro e 14 a 16 pt entre blocos. Grades de opção usam 6 pt de vão. Cartões centrais têm 22 pt de respiro e ficam a 32 pt das bordas.
 
@@ -240,7 +240,7 @@ Enquanto procura o iPhone, a janela mostra um iPhone desenhado na tela inicial: 
 - Sliders, segmentados e switches são os nativos do macOS. O slider de câmera segue o valor confirmado quando parado e envia enquanto é arrastado; o passo vale no envio, sem marcas no trilho.
 
 ### Value Item
-Rótulo de 10 pt secundário em cima, valor de 15 pt semibold embaixo, 1 pt entre os dois e respiro 5 × 10 pt. Pendente mostra um indicador mini ao lado até a câmera confirmar (prazo de 3 s); falha deixa o valor vermelho. Rótulo pode carregar contexto curto com ponto médio ("ISO · auto", "Lente · 13 mm").
+Rótulo de 10 pt secundário em cima, valor de 15 pt semibold embaixo, 1 pt entre os dois e respiro lateral de 14 pt (12 na barra compacta, 8 na apertada): o realce é uma cápsula de 44 pt de altura, e com menos respiro as pontas arredondadas encostam no texto. Pendente mostra um indicador mini ao lado até a câmera confirmar (prazo de 3 s); falha deixa o valor vermelho. Rótulo pode carregar contexto curto com ponto médio ("ISO · auto", "Lente · 13 mm").
 
 ### Audio Meter
 O medidor do Blackmagic Camera: uma barra por canal sobre o trilho com as três zonas a 24% de opacidade, verde de -60 até -20 dBFS, amarelo até -9, vermelho até 0. A barra acesa toma a cor da zona e a marca de pico (1,5 pt; 2,5 pt no grande) segura 1 s e cai a 20 dB em 1,7 s, como o PPM tipo I. A escala comprime abaixo de -20 (metade da largura de -20 a 0). Redesenha a 30 Hz e apaga se o som parou há mais de 0,5 s. Pequeno na cápsula (96 × 14 pt, 2 pt entre canais); grande no popover de áudio (46 pt de altura, L e R, marcas e números de -40 a 0). Logo abaixo do grande fica o ganho da entrada: slider de 0 a 100% com o número ao lado, para ver o efeito no medidor enquanto arrasta, e ⌥↑ e ⌥↓ em passos de 5%. A cada troca de entrada o app regrava o ganho atual para saber se ela aceita ajuste; o microfone do iPhone recusa, e o slider fica desabilitado com uma nota que diz isso.

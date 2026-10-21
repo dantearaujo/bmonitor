@@ -59,7 +59,9 @@ struct ValueItem: View {
         }
         .lineLimit(1)
         .fixedSize()
-        .padding(.horizontal, tight ? 4 : compact ? 6 : 10)
+        // A cápsula do realce tem 44 pt de altura: com menos respiro, as pontas arredondadas
+        // encostam no texto.
+        .padding(.horizontal, tight ? 8 : compact ? 12 : 14)
         .frame(minHeight: Theme.barItem)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
