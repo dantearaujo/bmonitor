@@ -3,7 +3,7 @@ import CoreGraphics
 /// Faixas que a interface de cada rede cobre num vídeo vertical 9:16, com as medidas que a
 /// própria rede publica. Nenhuma rede publica números para o vídeo orgânico: as medidas são as
 /// das especificações de anúncio vertical, que é o que cada uma documenta. Conferidas em
-/// 21/10/2026; as redes mudam a interface, então reveja as fontes de tempos em tempos.
+/// 20/10/2026; as redes mudam a interface, então reveja as fontes de tempos em tempos.
 public enum SafeZone: String, CaseIterable, Sendable {
     /// Instagram e Facebook, Reels e Stories: 14% em cima, 35% embaixo, 6% nas laterais.
     /// https://www.facebook.com/business/ads-guide/update/video/instagram-reels
