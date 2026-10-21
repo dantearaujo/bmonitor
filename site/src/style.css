@@ -359,55 +359,55 @@ kbd { display: inline-grid; place-items: center; min-width: calc(var(--u) * 38);
 
 /* Guia comparativo (guide.html): coluna de leitura alinhada à borda esquerda da coluna do site */
 .guide { --edge: max(var(--gutter), calc((100vw - var(--wrap)) / 2 + var(--gutter))); }
-.doc-head { padding: clamp(32px, 5vw, 60px) var(--edge) clamp(36px, 5vw, 52px); }
-.crumb { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
-.crumb a { color: var(--ink-2); }
-.crumb .ic { width: 12px; height: 12px; stroke-width: 2.2; }
-.doc-title { max-width: 920px; margin-top: 18px; font-size: clamp(32px, 4.4vw, 52px); line-height: 1.08; letter-spacing: -0.025em; font-weight: 600; text-wrap: balance; }
-.byline { max-width: 640px; margin-top: 22px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
-.answer { background: var(--paper); padding: clamp(36px, 5vw, 56px) var(--edge); }
-.answer h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
-.answer p { max-width: 34em; margin-top: 12px; font-size: clamp(19px, 1.8vw, 22px); line-height: 1.42; letter-spacing: -0.015em; }
-.cmp-sec { padding: clamp(56px, 6vw, 80px) var(--edge) clamp(80px, 11vw, 140px); }
-.cmp-wrap { margin-top: 24px; }
-.ctable { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.45; }
-.ctable caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.ctable th, .ctable td { text-align: left; vertical-align: top; padding: 18px 20px 18px 0; border-top: 1px solid var(--line); }
-.ctable thead th { border-top: 0; padding-bottom: 14px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
-.ctable tbody th { width: 16%; font-weight: 600; letter-spacing: -0.011em; }
-.ctable tbody th a { color: var(--ink); }
-.ctable td { color: var(--ink-2); }
-.ctable tbody tr:last-child > * { border-bottom: 1px solid var(--line); }
-.ctable tbody tr.is-us > * { border-top-color: var(--ink); border-bottom-color: var(--ink); color: var(--ink); }
-.opts { background: var(--paper); padding: clamp(80px, 11vw, 140px) var(--edge); }
-.opt { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: 14px 40px; padding: clamp(32px, 4vw, 44px) 0; border-top: 1px solid var(--line); scroll-margin-top: 72px; }
-.opt:last-child { border-bottom: 1px solid var(--line); }
-.opt h3 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.12; letter-spacing: -0.02em; font-weight: 600; }
-.opt-body p { max-width: 62ch; font-size: 17px; line-height: 1.47; }
-.opt-body p + p { margin-top: 14px; }
-.verdict { display: grid; gap: 10px; margin-top: 22px; max-width: 62ch; }
-.verdict div { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 16px; font-size: 15px; line-height: 1.5; }
-.verdict dt { font-weight: 600; }
-.verdict dd { margin: 0; color: var(--ink-2); }
-.pick { padding: clamp(80px, 11vw, 140px) var(--edge) 0; }
-.pick-list { list-style: none; max-width: 760px; margin: clamp(32px, 4vw, 48px) 0 0; padding: 0; }
-.pick-list li { padding: 18px 0; border-top: 1px solid var(--line); font-size: 17px; line-height: 1.47; color: var(--ink-2); }
-.pick-list li:last-child { border-bottom: 1px solid var(--ink); border-top-color: var(--ink); color: var(--ink); }
-.pick-list b { color: var(--ink); font-weight: 600; }
-.sources { background: var(--paper); padding: clamp(56px, 7vw, 80px) var(--edge); }
-.sources h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
-.sources ol { max-width: 760px; margin-top: 16px; padding-left: 1.2em; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
-.sources li + li { margin-top: 6px; }
+.guide .doc-head { padding: clamp(32px, 5vw, 60px) var(--edge) clamp(36px, 5vw, 52px); }
+.guide .crumb { display: flex; align-items: center; gap: 6px; font-size: 14px; color: var(--ink-2); }
+.guide .crumb a { color: var(--ink-2); }
+.guide .crumb .ic { width: 12px; height: 12px; stroke-width: 2.2; }
+.guide .doc-title { max-width: 920px; margin-top: 18px; font-size: clamp(32px, 4.4vw, 52px); line-height: 1.08; letter-spacing: -0.025em; font-weight: 600; text-wrap: balance; }
+.guide .byline { max-width: 640px; margin-top: 22px; font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.guide .answer { background: var(--paper); padding: clamp(36px, 5vw, 56px) var(--edge); }
+.guide .answer h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+.guide .answer p { max-width: 34em; margin-top: 12px; font-size: clamp(19px, 1.8vw, 22px); line-height: 1.42; letter-spacing: -0.015em; }
+.guide .cmp-sec { padding: clamp(56px, 6vw, 80px) var(--edge) clamp(80px, 11vw, 140px); }
+.guide .cmp-wrap { margin-top: 24px; }
+.guide .ctable { width: 100%; border-collapse: collapse; font-size: 15px; line-height: 1.45; }
+.guide .ctable caption { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.guide .ctable th, .guide .ctable td { text-align: left; vertical-align: top; padding: 18px 20px 18px 0; border-top: 1px solid var(--line); }
+.guide .ctable thead th { border-top: 0; padding-bottom: 14px; font-size: 13px; font-weight: 400; color: var(--ink-2); }
+.guide .ctable tbody th { width: 16%; font-weight: 600; letter-spacing: -0.011em; }
+.guide .ctable tbody th a { color: var(--ink); }
+.guide .ctable td { color: var(--ink-2); }
+.guide .ctable tbody tr:last-child > * { border-bottom: 1px solid var(--line); }
+.guide .ctable tbody tr.is-us > * { border-top-color: var(--ink); border-bottom-color: var(--ink); color: var(--ink); }
+.guide .options { background: var(--paper); padding: clamp(80px, 11vw, 140px) var(--edge); }
+.guide .option { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr); gap: 14px 40px; padding: clamp(32px, 4vw, 44px) 0; border-top: 1px solid var(--line); scroll-margin-top: 72px; }
+.guide .option:last-child { border-bottom: 1px solid var(--line); }
+.guide .option h3 { font-size: clamp(24px, 2.6vw, 32px); line-height: 1.12; letter-spacing: -0.02em; font-weight: 600; }
+.guide .option-body p { max-width: 62ch; font-size: 17px; line-height: 1.47; }
+.guide .option-body p + p { margin-top: 14px; }
+.guide .verdict { display: grid; gap: 10px; margin-top: 22px; max-width: 62ch; }
+.guide .verdict div { display: grid; grid-template-columns: 8.5em minmax(0, 1fr); gap: 16px; font-size: 15px; line-height: 1.5; }
+.guide .verdict dt { font-weight: 600; }
+.guide .verdict dd { margin: 0; color: var(--ink-2); }
+.guide .pick { padding: clamp(80px, 11vw, 140px) var(--edge) 0; }
+.guide .pick-list { list-style: none; max-width: 760px; margin: clamp(32px, 4vw, 48px) 0 0; padding: 0; }
+.guide .pick-list li { padding: 18px 0; border-top: 1px solid var(--line); font-size: 17px; line-height: 1.47; color: var(--ink-2); }
+.guide .pick-list li:last-child { border-bottom: 1px solid var(--ink); border-top-color: var(--ink); color: var(--ink); }
+.guide .pick-list b { color: var(--ink); font-weight: 600; }
+.guide .sources { background: var(--paper); padding: clamp(56px, 7vw, 80px) var(--edge); }
+.guide .sources h2 { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
+.guide .sources ol { max-width: 760px; margin-top: 16px; padding-left: 1.2em; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.guide .sources li + li { margin-top: 6px; }
 
 @media (max-width: 760px) {
-  .ctable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-  .ctable, .ctable tbody, .ctable tr, .ctable th, .ctable td { display: block; width: auto; }
-  .ctable tr { padding: 22px 0 16px; border-top: 1px solid var(--line); }
-  .ctable tr.is-us { border-top-color: var(--ink); border-bottom: 1px solid var(--ink); }
-  .ctable th, .ctable td, .ctable tbody tr:last-child > * { border: 0; }
-  .ctable tbody th { width: auto; padding: 0 0 10px; font-size: 19px; letter-spacing: -0.02em; }
-  .ctable td { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 14px; padding: 5px 0; color: var(--ink); }
-  .ctable td::before { content: attr(data-label); color: var(--ink-2); font-size: 13px; line-height: 1.6; }
-  .opt { grid-template-columns: 1fr; }
-  .verdict div { grid-template-columns: 1fr; gap: 2px; }
+  .guide .ctable thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .guide .ctable, .guide .ctable tbody, .guide .ctable tr, .guide .ctable th, .guide .ctable td { display: block; width: auto; }
+  .guide .ctable tr { padding: 22px 0 16px; border-top: 1px solid var(--line); }
+  .guide .ctable tr.is-us { border-top-color: var(--ink); border-bottom: 1px solid var(--ink); }
+  .guide .ctable th, .guide .ctable td, .guide .ctable tbody tr:last-child > * { border: 0; }
+  .guide .ctable tbody th { width: auto; padding: 0 0 10px; font-size: 19px; letter-spacing: -0.02em; }
+  .guide .ctable td { display: grid; grid-template-columns: 9em minmax(0, 1fr); gap: 14px; padding: 5px 0; color: var(--ink); }
+  .guide .ctable td::before { content: attr(data-label); color: var(--ink-2); font-size: 13px; line-height: 1.6; }
+  .guide .option { grid-template-columns: 1fr; }
+  .guide .verdict div { grid-template-columns: 1fr; gap: 2px; }
 }
