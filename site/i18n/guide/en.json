@@ -77,7 +77,7 @@
   "g_s5_falls": "The recording happens on the Mac, with no manual exposure.",
   "g_s6_body": "<p>bmonitor is a Mac app that monitors and controls Blackmagic Camera over Wi‑Fi. The iPhone records in Blackmagic Camera at the quality you set, and the Mac shows the live picture and sound about 0.3&nbsp;s behind, in landscape or portrait. Recording status, timecode and audio levels are sized to be read from 3&nbsp;m, and every control has its own key.</p>",
   "g_s6_good": "Filming yourself at a desk or in a small studio with a Mac nearby, and vertical videos.",
-  "g_s6_falls": "Needs a Mac on the same Wi‑Fi, works with one iPhone at a time and doesn't record on the Mac. It's a public beta, tested so far on two Macs (macOS 26 and 14) and one iPhone; Intel Macs untested.",
+  "g_s6_falls": "Needs a Mac on the same Wi‑Fi, works with one iPhone at a time, and the copy it can save on the Mac comes from the live stream (about 8 Mb/s), lighter than the iPhone's original. It's a public beta, tested so far on two Macs (macOS 26 and 14) and one iPhone; Intel Macs untested.",
   "g_pick_title": "Which one should you pick?",
   "g_pick": "<li><b>Filming away from a desk:</b> a clip-on selfie screen, or the Apple Watch app if you have one.</li><li><b>Several iPhones at once:</b> Blackmagic Camera's remote mode on an iPad.</li><li><b>Recording or streaming into a Mac app:</b> Continuity Camera.</li><li><b>A quick look with no setup:</b> the front camera, or AirPlay to a Mac.</li><li><b>Filming yourself with a Mac beside you:</b> bmonitor.</li>",
   "g_cta_title": "If the last one is you",

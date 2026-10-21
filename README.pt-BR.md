@@ -19,7 +19,7 @@ Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
 <p align="center"><sub>Versão mais recente · macOS 14 Sonoma ou mais novo · Apple Silicon e Intel · <a href="#instalar">como instalar</a> · <a href="https://bmonitor.app/pt/">bmonitor.app</a></sub></p>
 
-<p align="center"><b>⚠️ Beta público (0.9.4).</b> Funciona todo dia no setup do autor, mas até agora foi testado em dois Macs (macOS 26 e macOS 14) e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
+<p align="center"><b>⚠️ Beta público (0.9.5).</b> Funciona todo dia no setup do autor, mas até agora foi testado em dois Macs (macOS 26 e macOS 14) e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
 
 O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
 
@@ -29,10 +29,12 @@ O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
 
 Você se grava com um iPhone no tripé. O bmonitor transforma o Mac ao lado no monitor e no controle remoto da câmera, sem precisar de um segundo iPhone ou iPad.
 
-- **Monitor:** vídeo ao vivo numa janela comum do Mac, deitada ou em pé, com aviso de gravação (borda vermelha), timecode, tempo de gravação restante e estado do sinal. Grades de enquadramento: terços, proporção áurea, cruz central e outras.
+- **Monitor:** vídeo ao vivo numa janela comum do Mac, deitada ou em pé, com aviso de gravação (borda vermelha), timecode, tempo de gravação restante e estado do sinal. Grades de enquadramento: terços, proporção áurea, cruz central e outras. Áreas seguras do vídeo vertical mostram o que o Instagram e o Facebook, o TikTok e o YouTube Shorts cobrem, além do recorte do grid do perfil (3:4) e de um quadrado central (1:1).
 - **Áudio:** o nome do microfone ativo e um medidor de pico L/R no estilo do medidor da própria Blackmagic (verde, amarelo e vermelho), além do som da câmera no Mac, que começa mudo.
+- **Cópia no Mac:** opcional, num botão ao lado do gravar. Cada take também é salvo no Mac a partir do stream, na resolução da câmera e a cerca de 8 Mb/s, com o nome do clipe do iPhone, na pasta Filmes (`~/Movies/bmonitor`). O original fica no iPhone.
 - **Controle remoto:** iniciar e parar a gravação, ISO, shutter (velocidade ou ângulo), balanço de branco com presets de luz, tint, foco (clique no vídeo para focar ali), zoom, lente, estabilização, origem do áudio e ganho do áudio (com microfone externo; o microfone do iPhone não aceita ajuste de ganho).
-- **Teclado:** uma tecla por controle (`I` ISO, `S` shutter, `W` balanço de branco, `T` tint, `L` lente, `A` áudio, `M` mudo, `G` grade, `F` focar agora), `⌘R` para gravar e `⌘→` para girar. `⌘/` mostra todos.
+- **Teclado:** uma tecla por controle (`I` ISO, `S` shutter, `W` balanço de branco, `T` tint, `L` lente, `A` áudio, `M` mudo, `G` grade, `Z` área segura, `F` focar agora), `⌥↑` `⌥↓` para o ganho do áudio, `⌘R` para gravar e `⌘→` para girar. `⌘/` mostra todos.
+- **Primeira abertura:** enquanto procura o iPhone, o bmonitor mostra qual app abrir (o Blackmagic Camera, não a Câmera do iPhone), os ajustes que precisam estar ligados e se o Mac está bloqueando a Rede Local.
 - **Atualiza sozinho:** o bmonitor procura versão nova uma vez por dia e pergunta antes de instalar. Também dá para usar **bmonitor › Procurar atualizações…**.
 - **Legível a 3 m:** o status fica nos cantos de cima, em letra grande. A barra de controles aparece quando você mexe o mouse e some depois de 3 s.
 
