@@ -494,9 +494,9 @@ struct ControlBar: View {
         }
         .help("Grade")
         Button { model.rotate() } label: {
-            // O desenho do símbolo fica 1,9 pt à esquerda e 0,9 pt abaixo do centro (medido):
-            // compensa para ficar no meio do círculo como os vizinhos.
-            Image(systemName: "rotate.right").font(.system(size: 15, weight: .medium)).offset(x: 1.6, y: -0.5)
+            // Alinhado pelo quadrado, que é o que o olho compara; a seta quase não pesa e fica
+            // de fora. O quadrado do símbolo fica 2,7 pt abaixo do centro (medido).
+            Image(systemName: "rotate.right").font(.system(size: 15, weight: .medium)).offset(y: -2.7)
                 .frame(width: Theme.barItem, height: Theme.barItem)
         }
         .buttonStyle(HUDItemStyle())
