@@ -333,10 +333,11 @@ struct ControlBar: View {
     /// escolhe a pasta e abre as cópias no Finder.
     private func copyButton(tight: Bool) -> some View {
         Button { model.savesCopy.toggle() } label: {
+            // Ícone largo: a cápsula tem folga dos lados para o realce não encostar nele.
             Image(systemName: "laptopcomputer.and.arrow.down")
-                .font(.system(size: 15, weight: .medium)).frame(width: tight ? 28 : 34, height: tight ? 28 : 34)
+                .font(.system(size: 15, weight: .semibold)).frame(width: tight ? 38 : 46, height: tight ? 28 : 34)
         }
-        .buttonStyle(HUDItemStyle(isOn: model.savesCopy))
+        .buttonStyle(HUDToggleStyle(isOn: model.savesCopy))
         .help(
             model.savesCopy
                 ? String(localized: "Cada take também vai para o Mac, em \(model.copyFolder.lastPathComponent). Clique com o botão direito para trocar a pasta.")

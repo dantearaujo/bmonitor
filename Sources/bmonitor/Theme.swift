@@ -84,6 +84,29 @@ struct HUDItemStyle: ButtonStyle {
     }
 }
 
+/// Interruptor da barra cujo ícone não muda com o estado (a cópia no Mac). Desligado, o ícone
+/// fica apagado e sem fundo; ligado, cápsula branca e ícone escuro, legível de longe e sem
+/// competir em cor com o vermelho do gravar ao lado.
+struct HUDToggleStyle: ButtonStyle {
+    var isOn: Bool
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .foregroundStyle(isOn ? Color.black : Color.white.opacity(hovering ? 0.9 : 0.6))
+            .background(
+                Capsule().fill(
+                    isOn
+                        ? Color.white.opacity(configuration.isPressed ? 0.7 : hovering ? 0.82 : 0.92)
+                        : Color.white.opacity(configuration.isPressed ? 0.28 : hovering ? 0.12 : 0)))
+            // Grupo próprio: sem ele, a vibrancy do vidro tinge o branco e o preto.
+            .compositingGroup()
+            .contentShape(Capsule())
+            .onHover { hovering = $0 }
+            .linkPointer()
+    }
+}
+
 extension View {
     /// Cursor de link sobre os botões da barra; o modificador só existe a partir do macOS 15.
     @ViewBuilder func linkPointer() -> some View {
