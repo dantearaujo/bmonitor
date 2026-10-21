@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Atalhos do teclado num lugar só: o menu os registra e a tela de atalhos os lista.
 enum Shortcut: CaseIterable {
-    case record, focusNow, iso, shutter, whiteBalance, tint, lens, audio, mute, grid, safeZone, rotate, help
+    case record, focusNow, iso, shutter, whiteBalance, tint, lens, audio, gainUp, gainDown, mute, grid, safeZone, rotate, help
 
     var keyboard: KeyboardShortcut {
         switch self {
@@ -14,6 +14,9 @@ enum Shortcut: CaseIterable {
         case .tint: KeyboardShortcut("t", modifiers: [])
         case .lens: KeyboardShortcut("l", modifiers: [])
         case .audio: KeyboardShortcut("a", modifiers: [])
+        // Setas com ⌥: iguais em qualquer teclado, ao contrário de + e -.
+        case .gainUp: KeyboardShortcut(.upArrow, modifiers: .option)
+        case .gainDown: KeyboardShortcut(.downArrow, modifiers: .option)
         case .mute: KeyboardShortcut("m", modifiers: [])
         case .grid: KeyboardShortcut("g", modifiers: [])
         case .safeZone: KeyboardShortcut("z", modifiers: [])
@@ -33,6 +36,8 @@ enum Shortcut: CaseIterable {
         case .tint: "Tint"
         case .lens: String(localized: "Lente e zoom")
         case .audio: String(localized: "Origem de áudio")
+        case .gainUp: String(localized: "Subir o ganho do áudio")
+        case .gainDown: String(localized: "Baixar o ganho do áudio")
         case .mute: String(localized: "Som da câmera no Mac (ligar ou mudo)")
         case .grid: String(localized: "Mostrar ou esconder a grade")
         case .safeZone: String(localized: "Mostrar ou esconder a área segura")
@@ -51,6 +56,8 @@ enum Shortcut: CaseIterable {
         if mods.contains(.command) { text += "⌘" }
         switch keyboard.key {
         case .rightArrow: text += "→"
+        case .upArrow: text += "↑"
+        case .downArrow: text += "↓"
         case .escape: text += "esc"
         default: text += String(keyboard.key.character).uppercased()
         }
@@ -83,7 +90,7 @@ struct ShortcutsOverlay: View {
             rows([.record, .focusNow])
                 + [Row(keys: String(localized: "Clique"), title: String(localized: "Focar no ponto do vídeo"))]
         ),
-        (String(localized: "Abrir controle"), rows([.iso, .shutter, .whiteBalance, .tint, .lens, .audio])),
+        (String(localized: "Abrir controle"), rows([.iso, .shutter, .whiteBalance, .tint, .lens, .audio, .gainUp, .gainDown])),
         (
             String(localized: "No Mac"),
             rows([.mute, .grid, .safeZone, .rotate]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]

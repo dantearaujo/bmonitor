@@ -392,6 +392,24 @@ struct AudioPanel: View {
             PanelSection(title: String(localized: "Nível (dBFS)")) {
                 LiveAudioMeter(model: model, large: true)
             }
+            if let gain = model.state.audioGain {
+                // Logo abaixo do medidor: o efeito do ganho aparece enquanto se arrasta.
+                PanelSection(title: String(localized: "Ganho (\(Shortcut.gainDown.glyph) \(Shortcut.gainUp.glyph))")) {
+                    HStack(spacing: 10) {
+                        CameraSlider(value: gain, range: 0...1, step: 0.01) { model.setAudioGain($0) }
+                        Text(gain, format: .percent.precision(.fractionLength(0)))
+                            .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                            .frame(width: 42, alignment: .trailing)
+                    }
+                    .disabled(!model.gainAdjustable)
+                    if let input = current, model.gainRefusedInput == input {
+                        Text("\(input) não aceita ajuste de ganho. Um microfone externo aceita.")
+                            .font(.callout)
+                            .foregroundStyle(.secondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+            }
             PanelSection(title: String(localized: "Origem de áudio no iPhone")) {
                 VStack(spacing: 6) {
                     ForEach(inputs, id: \.self) { input in
@@ -421,6 +439,7 @@ struct AudioPanel: View {
             Text("Um microfone sem fio aparece aqui quando o iPhone o reconhece.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
             Divider()
             // Local, não muda a câmera: com o iPhone na mesma sala, som no Mac dá microfonia.
             Toggle("Ouvir no Mac (\(Shortcut.mute.glyph))", isOn: Binding(get: { !model.muted }, set: { model.muted = !$0 }))

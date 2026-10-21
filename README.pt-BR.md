@@ -31,7 +31,7 @@ Você se grava com um iPhone no tripé. O bmonitor transforma o Mac ao lado no m
 
 - **Monitor:** vídeo ao vivo numa janela comum do Mac, deitada ou em pé, com aviso de gravação (borda vermelha), timecode, tempo de gravação restante e estado do sinal. Grades de enquadramento: terços, proporção áurea, cruz central e outras.
 - **Áudio:** o nome do microfone ativo e um medidor de pico L/R no estilo do medidor da própria Blackmagic (verde, amarelo e vermelho), além do som da câmera no Mac, que começa mudo.
-- **Controle remoto:** iniciar e parar a gravação, ISO, shutter (velocidade ou ângulo), balanço de branco com presets de luz, tint, foco (clique no vídeo para focar ali), zoom, lente, estabilização e origem do áudio.
+- **Controle remoto:** iniciar e parar a gravação, ISO, shutter (velocidade ou ângulo), balanço de branco com presets de luz, tint, foco (clique no vídeo para focar ali), zoom, lente, estabilização, origem do áudio e ganho do áudio (com microfone externo; o microfone do iPhone não aceita ajuste de ganho).
 - **Teclado:** uma tecla por controle (`I` ISO, `S` shutter, `W` balanço de branco, `T` tint, `L` lente, `A` áudio, `M` mudo, `G` grade, `F` focar agora), `⌘R` para gravar e `⌘→` para girar. `⌘/` mostra todos.
 - **Atualiza sozinho:** o bmonitor procura versão nova uma vez por dia e pergunta antes de instalar. Também dá para usar **bmonitor › Procurar atualizações…**.
 - **Legível a 3 m:** o status fica nos cantos de cima, em letra grande. A barra de controles aparece quando você mexe o mouse e some depois de 3 s.

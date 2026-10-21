@@ -61,7 +61,7 @@ public final class CameraState {
         "/video/supportedISOs", "/video/supportedShutters", "/video/flickerFreeShutters", "/video/autoExposure",
         "/video/whiteBalance/description", "/video/whiteBalanceTint/description",
         "/lens/cameras", "/lens/zoom", "/lens/zoom/description", "/lens/focus", "/lens/opticalImageStabilization",
-        "/audio/channel/0/supportedInputs",
+        "/audio/channel/0/supportedInputs", "/audio/channel/0/level",
     ]
 
     /// Abaixo destes segundos restantes o status vira alerta (decisão de produto).
@@ -97,6 +97,8 @@ public final class CameraState {
     public var zoomNormalized: Double = 0
     public var zoomRange: ClosedRange<Double>?
     public var focus: Double?
+    /// Ganho da entrada de áudio, de 0 a 1 (`normalised`; o `gain` só repete o mesmo número).
+    public var audioGain: Double?
     public var stabilization = false
     public var availableAudioInputs: [String] = []
 
@@ -224,6 +226,8 @@ public final class CameraState {
         case "/audio/channel/0/input", "/audio/channel/1/input":
             let channel = property.contains("/1/") ? 1 : 0
             audioInputs[channel] = value["input"] as? String
+        case "/audio/channel/0/level":
+            audioGain = number(value["normalised"]) ?? number(value["normalized"])
         case "/livestreams/0":
             streamStatus = value["status"] as? String
         default:

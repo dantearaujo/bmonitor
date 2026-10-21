@@ -31,7 +31,7 @@ You record yourself with an iPhone on a tripod. bmonitor turns the Mac next to i
 
 - **Monitor:** live video in a regular Mac window, landscape or portrait, with a recording tally (red border), timecode, remaining recording time, and signal status. Framing grids: thirds, golden ratio, center cross, and more.
 - **Audio:** the active microphone's name and an L/R peak meter styled after Blackmagic's own (green, yellow, red), plus the camera's sound on the Mac, muted by default.
-- **Remote control:** start and stop recording, ISO, shutter (speed or angle), white balance with light presets, tint, focus (click the video to focus there), zoom, lens, stabilization, and audio input.
+- **Remote control:** start and stop recording, ISO, shutter (speed or angle), white balance with light presets, tint, focus (click the video to focus there), zoom, lens, stabilization, audio input, and audio gain (with an external mic; the iPhone's built-in mic doesn't accept gain changes).
 - **Keyboard:** one key per control (`I` ISO, `S` shutter, `W` white balance, `T` tint, `L` lens, `A` audio, `M` mute, `G` grid, `F` focus now), `⌘R` to record, `⌘→` to rotate. `⌘/` shows them all.
 - **Updates itself:** bmonitor checks for a new version once a day and asks before installing. You can also use **bmonitor › Check for Updates…**.
 - **Readable from 3 m:** status lives in the top corners and stays large. The control bar appears when you move the mouse and hides after 3 s.

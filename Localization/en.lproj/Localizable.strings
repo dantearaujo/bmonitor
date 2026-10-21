@@ -163,3 +163,7 @@
 "Salvar também no Mac uma cópia de cada take" = "Also save a copy of each take on the Mac";
 "Cópia no Mac ligada" = "Copy on the Mac on";
 "Cópia no Mac desligada" = "Copy on the Mac off";
+"Ganho (%@ %@)" = "Gain (%@ %@)";
+"%@ não aceita ajuste de ganho. Um microfone externo aceita." = "%@ doesn't accept gain adjustment. An external mic does.";
+"Subir o ganho do áudio" = "Raise audio gain";
+"Baixar o ganho do áudio" = "Lower audio gain";

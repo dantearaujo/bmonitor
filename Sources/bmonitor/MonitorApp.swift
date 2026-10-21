@@ -52,6 +52,10 @@ struct MonitorApp: App {
                 Button("Tint…") { model.togglePanel(.tint) }.keyboardShortcut(.tint)
                 Button("Lente…") { model.togglePanel(.lens) }.keyboardShortcut(.lens)
                 Button("Origem de áudio…") { model.togglePanel(.audio) }.keyboardShortcut(.audio)
+                Button("Subir o ganho do áudio") { model.stepAudioGain(by: 0.05) }
+                    .keyboardShortcut(.gainUp).disabled(!model.gainAdjustable)
+                Button("Baixar o ganho do áudio") { model.stepAudioGain(by: -0.05) }
+                    .keyboardShortcut(.gainDown).disabled(!model.gainAdjustable)
                 Divider()
                 Button(model.muted ? String(localized: "Ligar o som no Mac") : String(localized: "Silenciar o som no Mac")) { model.muted.toggle() }
                     .keyboardShortcut(.mute)
