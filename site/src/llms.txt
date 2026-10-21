@@ -19,7 +19,7 @@ Key facts:
 - Keyboard: one key per control (I ISO, S shutter, W white balance, T tint, L lens, A audio, M mute, G grid, F focus), ⌘R records, ⌘/ lists all shortcuts.
 - Privacy: collects nothing, no analytics, no account; it only talks to the iPhone on the local network.
 - Interface in English and Brazilian Portuguese.
-- Status: public beta (0.9.x), tested on one Mac and one iPhone so far.
+- Status: public beta (0.9.x), tested so far on two Macs (macOS 26 Tahoe and macOS 14 Sonoma) and one iPhone; Intel Macs untested.
 - Independent project by Dante Araujo; not affiliated with or endorsed by Blackmagic Design.
 
 ## Download and docs

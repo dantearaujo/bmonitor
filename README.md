@@ -19,7 +19,7 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <p align="center"><sub>Latest version · macOS 14 Sonoma or later · Apple Silicon and Intel · <a href="#install">how to install</a> · <a href="https://bmonitor.app">bmonitor.app</a></sub></p>
 
-<p align="center"><b>⚠️ Public beta (0.9.4).</b> It works every day on the author's setup, but it was tested on one Mac and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
+<p align="center"><b>⚠️ Public beta (0.9.4).</b> It works every day on the author's setup, but so far it has been tested on two Macs (macOS 26 and macOS 14) and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 
 The app speaks English and Brazilian Portuguese, following your Mac's language.
 
@@ -40,7 +40,7 @@ You record yourself with an iPhone on a tripod. bmonitor turns the Mac next to i
 
 | | |
 |---|---|
-| Mac | macOS 14 Sonoma or later, Apple Silicon or Intel (tested on macOS 26 Tahoe with Apple Silicon; earlier macOS versions and Intel Macs are untested in this beta, so please report how it goes) |
+| Mac | macOS 14 Sonoma or later, Apple Silicon or Intel (tested on macOS 26 Tahoe with Apple Silicon and on macOS 14 Sonoma; Intel Macs and macOS 15 are untested in this beta, so please report how it goes) |
 | iPhone | [Blackmagic Camera](https://apps.apple.com/app/blackmagic-camera/id6449580241) (free), tested with version 3.5 |
 | Network | Mac and iPhone on the **same Wi‑Fi network** |
 

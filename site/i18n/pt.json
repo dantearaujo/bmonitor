@@ -96,7 +96,7 @@
   "q5": "Dá para usar mais de um iPhone?",
   "a5": "Um por vez. Se houver mais de um na rede, o bmonitor pergunta qual usar.",
   "q6": "Ele está pronto?",
-  "a6": "É um beta público. Funciona todo dia no setup do autor, mas foi testado em um Mac e um iPhone, então espere arestas e <a href=\"https://github.com/dantearaujo/bmonitor/issues\">conte o que encontrar</a>.",
+  "a6": "É um beta público. Funciona todo dia no setup do autor, mas até agora foi testado em dois Macs (macOS 26 e macOS 14) e um iPhone, então espere arestas e <a href=\"https://github.com/dantearaujo/bmonitor/issues\">conte o que encontrar</a>.",
   "q7": "É da Blackmagic Design?",
   "a7": "Não. O bmonitor é um projeto independente que conversa com o Blackmagic Camera pela API de controle remoto e pela transmissão ao vivo documentadas.",
   "q8": "É grátis?",
