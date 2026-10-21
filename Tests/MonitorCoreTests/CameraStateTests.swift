@@ -133,3 +133,32 @@ private func recordedState() throws -> CameraState {
     state.apply(property: "/audio/channel/0/input", value: ["input": "Wireless microphone"])
     #expect(!state.recordsSilence)
 }
+
+@Test func batteryAndProductComeFromTheCamera() {
+    let state = CameraState()
+    // Como o iPhone mandou em 21/10/2026.
+    state.apply(property: "/camera/power", value: [
+        "batteries": [["statusFlags": ["Battery Is Present", "Battery Is Charging"], "chargeRemainingPercent": 60, "milliVolt": 0]],
+        "milliVolt": 0, "source": "AC",
+    ])
+    #expect(state.batteryPercent == 60)
+    #expect(state.batteryCharging)
+    #expect(state.batteryLevel == .normal)
+    state.apply(property: "/camera/power", value: ["batteries": [["statusFlags": ["Battery Is Present"], "chargeRemainingPercent": 20]]])
+    #expect(!state.batteryCharging)
+    #expect(state.batteryLevel == .warning)
+    state.apply(property: "/camera/power", value: ["batteries": [["chargeRemainingPercent": 10]]])
+    #expect(state.batteryLevel == .critical)
+    state.apply(property: "/system/product", value: ["productName": "iPhone 17 Pro Max", "softwareVersion": "3.5.200045", "deviceName": "A"])
+    #expect(state.deviceName == "A")
+    #expect(state.productName == "iPhone 17 Pro Max")
+}
+
+@Test func builtInMicPublishesAFixedGainRange() {
+    let state = CameraState()
+    state.apply(property: "/audio/channel/0/input/description", value: ["description": [
+        "gainRange": ["Max": 1, "Min": 1],
+        "capabilities": [["PhantomPower": false, "LowCutFilter": false]],
+    ]])
+    #expect(state.audioGainRange == 1...1)
+}

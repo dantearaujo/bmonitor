@@ -39,9 +39,17 @@ final class AppModel {
     var phase: Phase = .searching
     var cameras: [Discovery.Camera] = []
     /// Diagnóstico da tela de primeira abertura: o que o Mac consegue confirmar do lado dele.
-    /// Entrada que recusou o ganho e entrada já testada (ver `probeGain`).
+    /// "Câmera A · iPhone 17 Pro Max": o nome da câmera nos ajustes do Blackmagic Camera e o
+    /// modelo, que é o que a API publica.
+    var cameraTitle: String? {
+        let model = state.productName
+        guard let name = state.deviceName, !name.isEmpty else { return model }
+        let camera = String(localized: "Câmera \(name)")
+        return model.map { "\(camera) · \($0)" } ?? camera
+    }
+
+    /// Entrada que recusou uma escrita de ganho.
     var gainRefusedInput: String?
-    var gainProbedInput: String?
     var localNetworkDenied = false
     var onNetwork = true
     /// Nunca conectou a um iPhone: a busca mostra o guia inteiro desde o primeiro instante.
@@ -200,7 +208,6 @@ final class AppModel {
 
     func connect(_ camera: Discovery.Camera) {
         phase = .connecting(camera.host)
-        gainProbedInput = nil
         gainRefusedInput = nil
         let api = CameraAPI(host: camera.host)
         let events = CameraEvents(host: camera.host, properties: CameraState.properties)
@@ -359,7 +366,7 @@ final class AppModel {
 
     /// Ganho da entrada, de 0 a 1. A câmera exige `gain` e `normalised` juntos (só um dá 500)
     /// e vale o `normalised`. Testado em 21/10/2026: o microfone sem fio aceita; o do iPhone
-    /// recusa toda escrita com 400, e nada avisa antes. A recusa trava o controle naquela entrada.
+    /// recusa com 400. Uma recusa trava o controle naquela entrada, além da faixa publicada.
     func setAudioGain(_ value: Double) {
         let gain = min(max(value, 0), 1)
         let input = state.audioInputs[0]
@@ -373,39 +380,11 @@ final class AppModel {
         setAudioGain(((gain + delta) * 20).rounded() / 20)
     }
 
-    /// O controle de ganho vale para a entrada atual: há valor e a entrada não recusou.
+    /// O controle de ganho vale para a entrada atual: a faixa que ela publica não é um ponto
+    /// só (o microfone do iPhone publica 1 a 1) e nenhuma escrita foi recusada nela.
     var gainAdjustable: Bool {
-        state.audioGain != nil && gainRefusedInput != state.audioInputs[0] && gainProbedInput == state.audioInputs[0]
-    }
-
-    /// A cada entrada nova, reescreve o ganho atual para saber se ela aceita ajuste, antes de
-    /// alguém mexer. Mesmo valor: nada muda no som. O evento da entrada chega antes de o
-    /// iPhone terminar a troca (em 21/10 o teste imediato ainda falava com a entrada anterior),
-    /// então espera 1,5 s, e uma recusa só trava depois de se repetir.
-    private func probeGain(for input: String?) {
-        guard let api, let input, input != gainProbedInput else { return }
-        gainProbedInput = nil
-        Task { [weak self] in
-            var refusals = 0
-            for _ in 0..<2 {
-                try? await Task.sleep(for: .seconds(1.5))
-                guard let self, self.state.audioInputs[0] == input else { return }
-                guard let level = try? await api.get("/audio/channel/0/level"),
-                    let gain = (level["normalised"] ?? level["normalized"]) as? Double
-                else { return }
-                do {
-                    try await api.put("/audio/channel/0/level", ["gain": gain, "normalised": gain])
-                    break
-                } catch let error as CameraAPI.HTTPError where error.status == 400 {
-                    refusals += 1
-                } catch {
-                    return
-                }
-            }
-            guard let self, self.state.audioInputs[0] == input else { return }
-            self.gainRefusedInput = refusals == 2 ? input : (self.gainRefusedInput == input ? nil : self.gainRefusedInput)
-            self.gainProbedInput = input
-        }
+        guard state.audioGain != nil, let range = state.audioGainRange else { return false }
+        return range.upperBound > range.lowerBound && gainRefusedInput != state.audioInputs[0]
     }
 
     func togglePanel(_ panel: Panel) {
@@ -647,8 +626,6 @@ final class AppModel {
         pending.remove(property)
         timeouts.removeValue(forKey: property)?.cancel()
         switch property {
-        case "/audio/channel/0/input":
-            probeGain(for: state.audioInputs[0])
         case "/lens/cameras/active":
             pending.remove("/lens/cameras")
         case "/livestreams/0" where state.streamStatus == "Interrupted":

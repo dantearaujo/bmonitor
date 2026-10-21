@@ -59,6 +59,20 @@ struct MonitorView: View {
                         EmptyView()
                     }
                     HUD(model: model).padding(.top, titlebarInset)
+                    // Qual iPhone está conectado: aparece com os controles, na faixa dos botões
+                    // da janela. De perto é que se confere; de longe valem os cantos.
+                    if let title = model.cameraTitle {
+                        Text(title)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .padding(.horizontal, 80)
+                            .frame(height: titlebarInset)
+                            .frame(maxHeight: .infinity, alignment: .top)
+                            .opacity(model.controlsVisible ? 1 : 0)
+                            .animation(.easeOut(duration: 0.25), value: model.controlsVisible)
+                            .allowsHitTesting(false)
+                    }
                 }
                 if model.showsShortcuts { ShortcutsOverlay(model: model) }
             }
@@ -219,6 +233,7 @@ struct HealthChip: View {
         HStack(spacing: tight ? 10 : 14) {
             copy
             remaining
+            battery
             signal
         }
         .font(.system(size: 17, weight: .semibold).monospacedDigit())
@@ -239,6 +254,37 @@ struct HealthChip: View {
             Label("\(seconds / 60) min", systemImage: level == .normal ? "internaldrive" : "exclamationmark.triangle.fill")
                 .foregroundStyle(level == .critical ? Theme.rec : level == .warning ? Theme.warn : .primary)
                 .help("Tempo de gravação restante no iPhone")
+        }
+    }
+
+    /// Bateria do iPhone: um iPhone que apaga no meio do take é tão grave quanto o espaço
+    /// acabar. Alerta com forma além da cor, como os minutos: o ícone vira triângulo.
+    @ViewBuilder private var battery: some View {
+        if model.signal != .cameraGone, let percent = model.state.batteryPercent {
+            let level = model.state.batteryLevel
+            HStack(spacing: 4) {
+                Image(systemName: level == .normal ? Self.batterySymbol(percent) : "exclamationmark.triangle.fill")
+                if model.state.batteryCharging {
+                    Image(systemName: "bolt.fill").font(.system(size: 11, weight: .bold))
+                }
+                Text("\(percent)%")
+            }
+            .foregroundStyle(level == .critical ? Theme.rec : level == .warning ? Theme.warn : .primary)
+            .help(
+                model.state.batteryCharging
+                    ? String(localized: "Bateria do iPhone, carregando") : String(localized: "Bateria do iPhone"))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(String(localized: "Bateria do iPhone"))
+            .accessibilityValue("\(percent)%")
+        }
+    }
+
+    private static func batterySymbol(_ percent: Int) -> String {
+        switch percent {
+        case 88...: "battery.100percent"
+        case 63..<88: "battery.75percent"
+        case 38..<63: "battery.50percent"
+        default: "battery.25percent"
         }
     }
 

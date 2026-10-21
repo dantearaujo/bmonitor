@@ -403,7 +403,9 @@ struct AudioPanel: View {
                             .frame(width: 42, alignment: .trailing)
                     }
                     .disabled(!model.gainAdjustable)
-                    if let input = current, model.gainRefusedInput == input {
+                    if let input = current, model.gainRefusedInput == input
+                        || model.state.audioGainRange.map({ $0.upperBound <= $0.lowerBound }) == true
+                    {
                         Text("\(input) não aceita ajuste de ganho. Um microfone externo aceita.")
                             .font(.callout)
                             .foregroundStyle(.secondary)

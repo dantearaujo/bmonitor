@@ -24,6 +24,8 @@ struct MonitorApp: App {
         WindowGroup("bmonitor") {
             MonitorView(model: model)
                 .frame(minWidth: 480, minHeight: 270)
+                // Título da janela no menu Janela e no Mission Control.
+                .navigationTitle(model.cameraTitle ?? "bmonitor")
                 .onAppear {
                     // Desenvolvimento: `--check-updates-now` procura atualização em segundo plano ao abrir,
                     // para testar o Sparkle de ponta a ponta sem clicar no menu.

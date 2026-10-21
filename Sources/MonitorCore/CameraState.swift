@@ -61,7 +61,8 @@ public final class CameraState {
         "/video/supportedISOs", "/video/supportedShutters", "/video/flickerFreeShutters", "/video/autoExposure",
         "/video/whiteBalance/description", "/video/whiteBalanceTint/description",
         "/lens/cameras", "/lens/zoom", "/lens/zoom/description", "/lens/focus", "/lens/opticalImageStabilization",
-        "/audio/channel/0/supportedInputs", "/audio/channel/0/level",
+        "/audio/channel/0/supportedInputs", "/audio/channel/0/level", "/audio/channel/0/input/description",
+        "/camera/power", "/system/product",
     ]
 
     /// Abaixo destes segundos restantes o status vira alerta (decisão de produto).
@@ -101,6 +102,16 @@ public final class CameraState {
     public var audioGain: Double?
     public var stabilization = false
     public var availableAudioInputs: [String] = []
+    /// Faixa de ganho da entrada atual. O microfone do iPhone publica 1 a 1: não ajusta.
+    public var audioGainRange: ClosedRange<Double>?
+    /// Bateria do iPhone, de 0 a 100, e se está carregando.
+    public var batteryPercent: Int?
+    public var batteryCharging = false
+    /// "Nome da Câmera" nos ajustes do Blackmagic Camera ("A") e o modelo do iPhone. O nome que
+    /// a pessoa deu ao iPhone não sai pela API nem pelo Bonjour.
+    public var deviceName: String?
+    public var productName: String?
+
     /// A opção "sem áudio" vem no idioma do iPhone ("None" em inglês, "Não" em português) e é
     /// a primeira de `supportedInputs` nos dois (conferido em 21/10/2026).
     public var silentInput = "None"
@@ -115,6 +126,15 @@ public final class CameraState {
         case .speed(let s): return flickerFreeSpeeds.contains(s)
         case .angle(let a): return flickerFreeAngles.contains { abs($0 - a) < 0.01 }
         }
+    }
+
+    /// Laranja com 20% ou menos, vermelho com 10%: os mesmos pontos em que o iOS avisa de
+    /// bateria fraca.
+    public var batteryLevel: Level {
+        guard let percent = batteryPercent else { return .normal }
+        if percent <= 10 { return .critical }
+        if percent <= 20 { return .warning }
+        return .normal
     }
 
     public var remainingLevel: Level {
@@ -230,6 +250,20 @@ public final class CameraState {
         case "/audio/channel/0/input", "/audio/channel/1/input":
             let channel = property.contains("/1/") ? 1 : 0
             audioInputs[channel] = value["input"] as? String
+        case "/audio/channel/0/input/description":
+            let range = (value["description"] as? [String: Any])?["gainRange"] as? [String: Any]
+            if let lo = number(range?["Min"]), let hi = number(range?["Max"]), lo <= hi {
+                audioGainRange = lo...hi
+            } else {
+                audioGainRange = nil
+            }
+        case "/camera/power":
+            let battery = (value["batteries"] as? [[String: Any]])?.first
+            batteryPercent = number(battery?["chargeRemainingPercent"]).map { Int($0.rounded()) }
+            batteryCharging = (battery?["statusFlags"] as? [String])?.contains("Battery Is Charging") ?? false
+        case "/system/product":
+            deviceName = value["deviceName"] as? String
+            productName = value["productName"] as? String
         case "/audio/channel/0/level":
             audioGain = number(value["normalised"]) ?? number(value["normalized"])
         case "/livestreams/0":
