@@ -5,6 +5,8 @@ import SwiftUI
 enum Theme {
     static let rec = Color(nsColor: .systemRed)
     static let warn = Color.orange
+    /// Altura de todo item da barra, a do botão de gravar: realces e estados ficam nivelados.
+    static let barItem: CGFloat = 44
 
     static func value(_ size: CGFloat) -> Font { .system(size: size, weight: .semibold).monospacedDigit() }
 }
@@ -58,7 +60,7 @@ struct ValueItem: View {
         .lineLimit(1)
         .fixedSize()
         .padding(.horizontal, tight ? 4 : compact ? 6 : 10)
-        .padding(.vertical, 5)
+        .frame(minHeight: Theme.barItem)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label)
         .accessibilityValue(value)
@@ -78,29 +80,6 @@ struct HUDItemStyle: ButtonStyle {
             // Cápsula: concêntrica com a borda da barra, que também é cápsula.
             .background(
                 Capsule().fill(.white.opacity(configuration.isPressed ? 0.28 : isOn ? 0.2 : hovering ? 0.12 : 0)))
-            .contentShape(Capsule())
-            .onHover { hovering = $0 }
-            .linkPointer()
-    }
-}
-
-/// Interruptor da barra cujo ícone não muda com o estado (a cópia no Mac). Desligado, o ícone
-/// fica apagado e sem fundo; ligado, cápsula branca e ícone escuro, legível de longe e sem
-/// competir em cor com o vermelho do gravar ao lado.
-struct HUDToggleStyle: ButtonStyle {
-    var isOn: Bool
-    @State private var hovering = false
-
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .foregroundStyle(isOn ? Color.black : Color.white.opacity(hovering ? 0.9 : 0.6))
-            .background(
-                Capsule().fill(
-                    isOn
-                        ? Color.white.opacity(configuration.isPressed ? 0.7 : hovering ? 0.82 : 0.92)
-                        : Color.white.opacity(configuration.isPressed ? 0.28 : hovering ? 0.12 : 0)))
-            // Grupo próprio: sem ele, a vibrancy do vidro tinge o branco e o preto.
-            .compositingGroup()
             .contentShape(Capsule())
             .onHover { hovering = $0 }
             .linkPointer()

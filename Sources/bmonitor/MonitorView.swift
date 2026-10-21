@@ -305,7 +305,7 @@ struct ControlBar: View {
                 HStack(spacing: 2) { exposure(compact: true) }.padding(5).hudGlass(Capsule())
                 HStack(spacing: 2) {
                     RecordButton(model: model)
-                    copyButton(tight: true)
+                    copyButton
                     separator
                     cameraAndWindow(compact: true)
                 }
@@ -321,7 +321,7 @@ struct ControlBar: View {
             exposure(compact: compact, tight: tight)
             separator
             RecordButton(model: model)
-            copyButton(tight: tight)
+            copyButton
             separator
             cameraAndWindow(compact: compact, tight: tight)
         }
@@ -331,13 +331,21 @@ struct ControlBar: View {
 
     /// Cópia no Mac colada no gravar: aceso, cada take vai também para o Mac. O clique direito
     /// escolhe a pasta e abre as cópias no Finder.
-    private func copyButton(tight: Bool) -> some View {
+    private var copyButton: some View {
         Button { model.savesCopy.toggle() } label: {
-            // Ícone largo: a cápsula tem folga dos lados para o realce não encostar nele.
-            Image(systemName: "laptopcomputer.and.arrow.down")
-                .font(.system(size: 15, weight: .semibold)).frame(width: tight ? 38 : 46, height: tight ? 28 : 34)
+            // Círculo do tamanho do anel do gravar, ao lado dele. O ícone não muda com o estado,
+            // então o estado é o círculo: anel apagado desligado, branco cheio e ícone preto ligado.
+            ZStack {
+                Circle().fill(model.savesCopy ? Color.white.opacity(0.92) : .clear).frame(width: 36, height: 36)
+                Circle().strokeBorder(.white.opacity(model.savesCopy ? 0 : 0.35), lineWidth: 2).frame(width: 36, height: 36)
+                Image(systemName: "laptopcomputer.and.arrow.down").font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(model.savesCopy ? Color.black : .white.opacity(0.75))
+            }
+            // Grupo próprio: sem ele, a vibrancy do vidro tinge o branco e o preto.
+            .compositingGroup()
+            .frame(width: Theme.barItem, height: Theme.barItem)
         }
-        .buttonStyle(HUDToggleStyle(isOn: model.savesCopy))
+        .buttonStyle(HUDItemStyle())
         .help(
             model.savesCopy
                 ? String(localized: "Cada take também vai para o Mac, em \(model.copyFolder.lastPathComponent). Clique com o botão direito para trocar a pasta.")
@@ -421,7 +429,7 @@ struct ControlBar: View {
         }
         Button { model.muted.toggle() } label: {
             Image(systemName: model.muted ? "speaker.slash.fill" : "speaker.wave.2.fill")
-                .font(.system(size: 15, weight: .medium)).frame(width: tight ? 28 : 34, height: tight ? 28 : 34)
+                .font(.system(size: 15, weight: .medium)).frame(width: Theme.barItem, height: Theme.barItem)
         }
         .buttonStyle(HUDItemStyle(isOn: !model.muted))
         .help(
@@ -431,14 +439,14 @@ struct ControlBar: View {
         .accessibilityLabel(model.muted ? String(localized: "Som no Mac desligado") : String(localized: "Som no Mac ligado"))
         separator
         ValueButton(model: model, panel: .grid, isOn: model.grid != .off || model.safeZone != nil) {
-            Image(systemName: "squareshape.split.3x3").font(.system(size: 15, weight: .medium)).frame(width: tight ? 28 : 34, height: tight ? 28 : 34)
+            Image(systemName: "squareshape.split.3x3").font(.system(size: 15, weight: .medium)).frame(width: Theme.barItem, height: Theme.barItem)
                 .accessibilityLabel("Grade")
         } content: {
             GridPanel(model: model)
         }
         .help("Grade")
         Button { model.rotate() } label: {
-            Image(systemName: "rotate.right").font(.system(size: 15, weight: .medium)).frame(width: tight ? 28 : 34, height: tight ? 28 : 34)
+            Image(systemName: "rotate.right").font(.system(size: 15, weight: .medium)).frame(width: Theme.barItem, height: Theme.barItem)
         }
         .buttonStyle(HUDItemStyle())
         .help("Girar 90°: a janela fica em pé (\(Shortcut.rotate.glyph))")
@@ -647,7 +655,7 @@ struct RecordButton: View {
                     ProgressView().controlSize(.small).tint(.white)
                 }
             }
-            .frame(width: 44, height: 44)
+            .frame(width: Theme.barItem, height: Theme.barItem)
         }
         .buttonStyle(HUDItemStyle())
         .help(
