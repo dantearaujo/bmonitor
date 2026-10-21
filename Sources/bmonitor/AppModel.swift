@@ -609,13 +609,17 @@ final class AppModel {
         let returned = connected && !eventsConnected && phase == .connected
         eventsConnected = connected
         if returned, let session {
-            // A câmera voltou (app reaberto no iPhone) com o stream parado: pede de novo.
+            // A câmera voltou (Blackmagic Camera de volta do segundo plano ou reaberto). O próprio
+            // iPhone reabre o vídeo; pedir o stream na hora, com o app dele ainda subindo, o
+            // derrubava (21/10/2026). Só pede se em 3 s o vídeo não voltou.
             Task { [weak self] in
+                try? await Task.sleep(for: .seconds(3))
+                guard let self, self.eventsConnected, (self.session?.health().secondsSinceFrame ?? .infinity) > 3 else { return }
                 do {
                     try await session.start()
-                    self?.streamError = nil
+                    self.streamError = nil
                 } catch {
-                    self?.streamError = "\(error)"
+                    self.streamError = "\(error)"
                 }
             }
         }
@@ -663,7 +667,9 @@ final class AppModel {
         if healthTicks % 120 == 0, let stats = session?.audio.statistics(), !muted {
             print("áudio: \(stats.buffers) buffers, \(stats.underruns) cortes, \(stats.drops) descartes")
         }
-        if state.streamStatus == "Streaming", let since = health?.secondsSinceFrame, since > 4 {
+        // Sem eventos, o app do iPhone está fora (segundo plano ou fechado): pedidos ali ficam
+        // presos e chegam todos juntos quando ele volta, e foi isso que o derrubou em 21/10.
+        if eventsConnected, state.streamStatus == "Streaming", let since = health?.secondsSinceFrame, since > 4 {
             restartStream()
         }
     }

@@ -13,6 +13,7 @@ public final class CameraEvents {
     private var running = false
     private let watch = DispatchQueue(label: "bmonitor.camera-events")
     private var lastPong = Date()
+    private var failures = 0
 
     public init(host: String, properties: [String]) {
         self.url = URL(string: "wss://\(host):4444/control/api/v1/event/websocket")!
@@ -77,6 +78,7 @@ public final class CameraEvents {
             guard let self, task === self.task else { return }
             switch result {
             case .success(let message):
+                self.failures = 0
                 let data: Data
                 switch message {
                 case .string(let text): data = Data(text.utf8)
@@ -91,10 +93,14 @@ public final class CameraEvents {
         }
     }
 
+    /// Espera crescente (1, 2, 4 e depois 8 s) enquanto o app do iPhone está fora, para não
+    /// martelar um app suspenso; zera quando chega a primeira mensagem.
     private func reconnect() {
         onConnection?(false)
         guard running else { return }
-        DispatchQueue.global().asyncAfter(deadline: .now() + 1) { [weak self] in
+        let delay = min(pow(2, Double(failures)), 8)
+        failures += 1
+        DispatchQueue.global().asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self, self.running else { return }
             self.connect()
         }
