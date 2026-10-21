@@ -1,5 +1,6 @@
 import Foundation
 import Network
+import dnssd
 
 /// Lista as câmeras Blackmagic na rede pelo Bonjour (`_http._tcp` com TXT
 /// `capabilities=cameraControl`) e resolve o IP de cada uma.
@@ -16,6 +17,8 @@ public final class Discovery {
     }
 
     public var onChange: (([Camera]) -> Void)?
+    /// O macOS negou a Rede Local ao app (true) ou a busca voltou a funcionar (false).
+    public var onDenied: ((Bool) -> Void)?
 
     private let queue = DispatchQueue(label: "discovery")
     private var browser: NWBrowser?
@@ -27,6 +30,20 @@ public final class Discovery {
     public func start() {
         let browser = NWBrowser(for: .bonjourWithTXTRecord(type: "_http._tcp", domain: nil), using: .tcp)
         browser.browseResultsChangedHandler = { [weak self] results, _ in self?.update(results) }
+        // Sem a permissão de Rede Local (macOS 15+), o Bonjour fica esperando com PolicyDenied
+        // e nenhum iPhone aparece, por mais que esteja tudo certo nele.
+        browser.stateUpdateHandler = { [weak self] state in
+            switch state {
+            case .waiting(let error), .failed(let error):
+                if case .dns(let code) = error, code == DNSServiceErrorType(kDNSServiceErr_PolicyDenied) {
+                    self?.onDenied?(true)
+                }
+            case .ready:
+                self?.onDenied?(false)
+            default:
+                break
+            }
+        }
         browser.start(queue: queue)
         self.browser = browser
     }

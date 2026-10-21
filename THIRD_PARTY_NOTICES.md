@@ -21,3 +21,5 @@ SRT uses OpenSSL for encryption.
 ## Trademarks
 
 Blackmagic Design, Blackmagic Camera and related marks belong to Blackmagic Design Pty. Ltd. bmonitor is an independent project, not affiliated with or endorsed by Blackmagic Design. It talks to the Blackmagic Camera app only through the app's documented REST API and live stream features.
+
+The Blackmagic Camera app icon appears only on bmonitor's setup screen, unmodified, to show which iPhone app to open.

@@ -230,8 +230,11 @@ A forma dominante é a cápsula: as duas cápsulas de status, a barra de control
 
 ### Cards / Containers
 - **Cápsula de status:** vidro em cápsula, respiro 8 × 14 pt (10 pt na janela estreita).
-- **Cartão central:** vidro com cantos de 18 pt, respiro 22 pt, título em title3 semibold com indicador de progresso e detalhe em callout secundário.
+- **Cartão central:** vidro com cantos de 18 pt, respiro 22 pt, título em title3 semibold com indicador de progresso e detalhe em callout secundário. "Sem câmera" leva o ícone do Blackmagic Camera (44 pt) à esquerda, porque a saída é abrir esse app.
 - **Popover:** nativo, seta para cima, 340 pt; nota de falha em vermelho com triângulo no fim.
+
+### Guia da busca
+Enquanto procura o iPhone, a janela mostra um iPhone desenhado na tela inicial: os outros apps são quadrados apagados (branco 7%) e só o ícone real do Blackmagic Camera tem cor, 1,6 vez maior que os vizinhos, com uma seta azul (cor de destaque) na casa de cima. Ícone e seta pulsam juntos, 0,9 s ease-in-out em vai e volta (escala 1 a 1,08 e brilho azul); com Reduzir Movimento, ficam parados. Embaixo (ou ao lado, em janela deitada): título "Abra o Blackmagic Camera no iPhone" em 24 pt bold, a frase "não a Câmera do iPhone", uma cápsula de vidro com o diagnóstico do Mac (procurando, Rede Local bloqueada com atalho para os Ajustes, ou Mac sem rede, os dois com ícone laranja), os três ajustes numerados e o link do QR code da App Store, que abre num popover. O primeiro arranjo que couber ganha: o iPhone encolhe e os detalhes saem antes do ícone. Na primeira vez aparece logo; depois, só se a busca passar de 3 s, para não piscar a cada abertura. Com mais de um iPhone na rede, a busca mostra a escolha.
 
 ### Inputs / Fields
 - Sliders, segmentados e switches são os nativos do macOS. O slider de câmera segue o valor confirmado quando parado e envia enquanto é arrastado; o passo vale no envio, sem marcas no trilho.
@@ -249,7 +252,7 @@ A barra aparece e some com fade de 0,25 s ease-out e desliza 12 pt; some 3 s dep
 Gravando, uma borda vermelha de 3 pt contorna o quadro. Sem câmera, a borda some, porque o estado é desconhecido. Quadro parado escurece com véu preto 60% até o vídeo voltar.
 
 ### Grade e área segura
-As duas ficam sobre o quadro e podem ser somadas. A grade é traço branco 55% de 0,75 pt sobre preto 30% de 2 pt (terços, terços e centro, proporção áurea, cruz, ponto, linha dos olhos). A área segura de uma rede escurece com preto 35% o que a interface dela cobre e contorna o que fica visível no mesmo traço da grade; com o vídeo deitado, o que fica fora do recorte 9:16 do meio escurece com preto 55%. As medidas moram em `SafeZone` (MonitorCore), com fonte e data, e um teste confere cada número. Escolha no popover da grade, em seções separadas, e `Z` liga e desliga.
+As duas ficam sobre o quadro e podem ser somadas. A grade é traço branco 55% de 0,75 pt sobre preto 30% de 2 pt (terços, terços e centro, proporção áurea, cruz, ponto, linha dos olhos). A área segura de uma rede escurece com preto 35% o que a interface dela cobre e contorna o que fica visível no mesmo traço da grade; com o vídeo deitado, o que fica fora do recorte 9:16 do meio escurece com preto 55%. O quadrado central (1:1) não é medida de rede: é o recorte de um post quadrado, de borda a borda no lado menor do vídeo inteiro, e escurece o resto com preto 35%. As medidas moram em `SafeZone` (MonitorCore), com fonte e data, e um teste confere cada número. Escolha no popover da grade, em seções separadas, e `Z` liga e desliga.
 
 ### Keycap
 Tecla desenhada da tela de atalhos: 12 pt semibold, placa branca 12% com contorno 0,5 pt a 18%, cantos de 5 pt, mínimo 26 × 22 pt, coluna fixa de 56 pt para os nomes alinharem entre seções.

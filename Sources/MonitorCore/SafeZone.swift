@@ -19,6 +19,9 @@ public enum SafeZone: String, CaseIterable, Sendable {
     /// Grid do perfil do Instagram: Reels aparece num recorte 3:4 (1080x1440) no meio do quadro.
     /// https://www.threads.com/@creators/post/DFYwfNwRYRZ
     case profileGrid
+    /// Quadrado 1:1 no meio do vídeo, de borda a borda no lado menor, sem margem: o recorte
+    /// de um post quadrado. Geometria, não medida de rede.
+    case square
 
     /// Quadro de referência das medidas, em pixels.
     static let reference = CGSize(width: 1080, height: 1920)
@@ -50,15 +53,35 @@ public enum SafeZone: String, CaseIterable, Sendable {
         case .profileGrid:
             let cut = (h - 1440) / 2
             return [CGRect(x: 0, y: 0, width: w, height: cut), CGRect(x: 0, y: h - cut, width: w, height: cut)]
+        case .square:
+            return []
         }
     }
 
     /// Faixas cobertas num quadro vertical qualquer, na mesma proporção das medidas.
     public func covered(in frame: CGRect) -> [CGRect] {
+        if self == .square {
+            let side = min(frame.width, frame.height)
+            let cutX = (frame.width - side) / 2, cutY = (frame.height - side) / 2
+            return cutY > 0
+                ? [
+                    CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: cutY),
+                    CGRect(x: frame.minX, y: frame.maxY - cutY, width: frame.width, height: cutY),
+                ]
+                : [
+                    CGRect(x: frame.minX, y: frame.minY, width: cutX, height: frame.height),
+                    CGRect(x: frame.maxX - cutX, y: frame.minY, width: cutX, height: frame.height),
+                ]
+        }
         let sx = frame.width / Self.reference.width, sy = frame.height / Self.reference.height
         return referenceRects.map {
             CGRect(x: frame.minX + $0.minX * sx, y: frame.minY + $0.minY * sy, width: $0.width * sx, height: $0.height * sy)
         }
+    }
+
+    /// Onde a área vale: o quadro 9:16 para as redes verticais, o vídeo inteiro para o quadrado.
+    public func area(in video: CGSize) -> CGRect {
+        self == .square ? CGRect(origin: .zero, size: video) : Self.verticalFrame(in: video)
     }
 
     /// O maior quadro 9:16 no meio do vídeo: o vídeo inteiro quando ele está em pé, o recorte

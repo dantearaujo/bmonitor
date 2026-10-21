@@ -39,6 +39,8 @@ mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Frameworks" "$APP/Contents/Resourc
 cp "$BIN_PATH/bmonitor" "$APP/Contents/MacOS/"
 cp .build/icon/AppIcon.icns "$APP/Contents/Resources/"
 cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
+# Ícone do Blackmagic Camera no guia da busca (ver Trademarks em THIRD_PARTY_NOTICES.md).
+cp assets/blackmagic-camera.png "$APP/Contents/Resources/"
 # Traduções: português é a base (chaves no código); en.lproj traduz para inglês.
 cp -R Localization/*.lproj "$APP/Contents/Resources/"
 

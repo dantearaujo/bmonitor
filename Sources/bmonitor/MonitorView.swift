@@ -16,7 +16,7 @@ struct MonitorView: View {
                 Color.black
                 switch model.phase {
                 case .searching:
-                    SearchingCard(model: model)
+                    Searching(model: model)
                 case .connecting(let host):
                     MessageCard(title: String(localized: "Conectando"), detail: host, spinning: true)
                 case .connected:
@@ -47,7 +47,7 @@ struct MonitorView: View {
                         MessageCard(
                             title: String(localized: "Sem câmera"),
                             detail: String(localized: "Abra o Blackmagic Camera no iPhone. Reconecto sozinho."),
-                            spinning: true)
+                            spinning: true, appIcon: true)
                     case .lost:
                         MessageCard(
                             title: String(localized: "Vídeo parado"),
@@ -729,7 +729,7 @@ struct SafeZoneOverlay: View {
 
     var body: some View {
         Canvas { context, size in
-            let frame = SafeZone.verticalFrame(in: size)
+            let frame = zone.area(in: size)
             var outside = Path(CGRect(origin: .zero, size: size))
             outside.addRect(frame)
             context.fill(outside, with: .color(.black.opacity(0.55)), style: FillStyle(eoFill: true))
@@ -786,15 +786,20 @@ struct MessageCard: View {
     let title: String
     let detail: String?
     var spinning = false
+    /// Ícone do Blackmagic Camera ao lado: quando a saída é abrir o app no iPhone.
+    var appIcon = false
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 10) {
-                if spinning { ProgressView().controlSize(.small) }
-                Text(title).font(.title3.weight(.semibold))
-            }
-            if let detail {
-                Text(detail).font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
+        HStack(spacing: 14) {
+            if appIcon { BlackmagicIcon(size: 44) }
+            VStack(spacing: 8) {
+                HStack(spacing: 10) {
+                    if spinning { ProgressView().controlSize(.small) }
+                    Text(title).font(.title3.weight(.semibold))
+                }
+                if let detail {
+                    Text(detail).font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                }
             }
         }
         .padding(.horizontal, 22)
@@ -804,29 +809,37 @@ struct MessageCard: View {
     }
 }
 
-struct SearchingCard: View {
+/// Na busca: com mais de um iPhone, a escolha; na primeira vez, o guia inteiro desde o
+/// início; depois, o guia só se a busca passar de 3 s, para não piscar a cada abertura.
+struct Searching: View {
+    @Bindable var model: AppModel
+    @State private var waited = false
+
+    var body: some View {
+        Group {
+            if model.cameras.count > 1 {
+                CameraChoice(model: model)
+            } else if model.neverConnected || waited {
+                SetupGuide(model: model)
+            } else {
+                MessageCard(title: String(localized: "Procurando o iPhone"), detail: nil, spinning: true)
+            }
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(3))
+            waited = true
+        }
+    }
+}
+
+struct CameraChoice: View {
     @Bindable var model: AppModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 10) {
-                ProgressView().controlSize(.small)
-                Text(model.cameras.count > 1 ? String(localized: "Escolha a câmera") : String(localized: "Procurando o iPhone"))
-                    .font(.title3.weight(.semibold))
-            }
-            if model.cameras.count > 1 {
-                ForEach(model.cameras) { camera in
-                    Button(camera.host) { model.connect(camera) }.buttonStyle(.bordered)
-                }
-            } else {
-                VStack(alignment: .leading, spacing: 6) {
-                    SwiftUI.Label("Blackmagic Camera aberto na tela de câmera", systemImage: "camera")
-                    SwiftUI.Label("Remote Camera Control ligado em modo Remote Camera", systemImage: "dot.radiowaves.left.and.right")
-                    SwiftUI.Label("Servidor HTTP ligado em Network Access", systemImage: "network")
-                    SwiftUI.Label("Mac e iPhone na mesma rede Wi‑Fi", systemImage: "wifi")
-                }
-                .font(.callout)
-                .foregroundStyle(.secondary)
+            Text("Escolha a câmera").font(.title3.weight(.semibold))
+            ForEach(model.cameras) { camera in
+                Button(camera.host) { model.connect(camera) }.buttonStyle(.bordered)
             }
         }
         .padding(22)

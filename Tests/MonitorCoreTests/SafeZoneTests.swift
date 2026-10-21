@@ -47,6 +47,21 @@ extension [CGRect] {
     #expect(covered.has(CGRect(x: 0, y: 1680, width: 1080, height: 240)))
 }
 
+@Test func squareKeepsTheFullWidthMiddle() {
+    let video = CGSize(width: 1080, height: 1920)
+    let covered = SafeZone.square.covered(in: SafeZone.square.area(in: video))
+    #expect(covered.count == 2)
+    #expect(covered.has(CGRect(x: 0, y: 0, width: 1080, height: 420)))
+    #expect(covered.has(CGRect(x: 0, y: 1500, width: 1080, height: 420)))
+}
+
+@Test func squareInLandscapeVideoKeepsTheFullHeightMiddle() {
+    let video = CGSize(width: 1920, height: 1080)
+    let covered = SafeZone.square.covered(in: SafeZone.square.area(in: video))
+    #expect(covered.has(CGRect(x: 0, y: 0, width: 420, height: 1080)))
+    #expect(covered.has(CGRect(x: 1500, y: 0, width: 420, height: 1080)))
+}
+
 @Test func zonesScaleWithTheFrame() {
     let half = CGRect(x: 10, y: 20, width: 540, height: 960)
     #expect(SafeZone.shorts.covered(in: half).has(CGRect(x: 10, y: 20, width: 540, height: 144)))

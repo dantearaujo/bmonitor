@@ -1,6 +1,7 @@
 import AVFoundation
 import AppKit
 import MonitorCore
+import Network
 import Observation
 import SwiftUI
 
@@ -37,6 +38,11 @@ final class AppModel {
 
     var phase: Phase = .searching
     var cameras: [Discovery.Camera] = []
+    /// Diagnóstico da tela de primeira abertura: o que o Mac consegue confirmar do lado dele.
+    var localNetworkDenied = false
+    var onNetwork = true
+    /// Nunca conectou a um iPhone: a busca mostra o guia inteiro desde o primeiro instante.
+    var neverConnected: Bool { Self.simulatesFirstRun || UserDefaults.standard.string(forKey: Self.lastHostKey) == nil }
     let state = CameraState()
     var eventsConnected = false
     var health: StreamSession.Health?
@@ -91,6 +97,7 @@ final class AppModel {
 
     @ObservationIgnored let displayLayer = AVSampleBufferDisplayLayer()
     @ObservationIgnored private let discovery = Discovery()
+    @ObservationIgnored private let network = NWPathMonitor()
     @ObservationIgnored private var api: CameraAPI?
     @ObservationIgnored private var events: CameraEvents?
     @ObservationIgnored private var session: StreamSession?
@@ -118,9 +125,18 @@ final class AppModel {
         discovery.onChange = { [weak self] cameras in
             DispatchQueue.main.async { self?.camerasChanged(cameras) }
         }
+        discovery.onDenied = { [weak self] denied in
+            DispatchQueue.main.async { self?.localNetworkDenied = denied }
+        }
+        network.pathUpdateHandler = { [weak self] path in
+            let online = path.status == .satisfied && (path.usesInterfaceType(.wifi) || path.usesInterfaceType(.wiredEthernet))
+            DispatchQueue.main.async { self?.onNetwork = online && !CommandLine.arguments.contains("--simulate-offline") }
+        }
+        network.start(queue: .main)
+        localNetworkDenied = CommandLine.arguments.contains("--simulate-denied")
         // Desenvolvimento: `--skip-bonjour` testa o plano B do último iPhone.
-        if !CommandLine.arguments.contains("--skip-bonjour") { discovery.start() }
-        tryLastCamera()
+        if !CommandLine.arguments.contains("--skip-bonjour"), !Self.simulatesFirstRun { discovery.start() }
+        if !Self.simulatesFirstRun { tryLastCamera() }
         healthTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.checkHealth() }
         }
@@ -160,6 +176,9 @@ final class AppModel {
     /// estado gravando sem gravar no iPhone.
     private static let simulatesLost = CommandLine.arguments.contains("--simulate-lost")
     private static let simulatesRecording = CommandLine.arguments.contains("--simulate-recording")
+    /// Desenvolvimento: `--simulate-first-run` mostra o guia da busca sem procurar o iPhone;
+    /// com `--simulate-denied` ou `--simulate-offline`, os diagnósticos de Rede Local e de rede.
+    private static let simulatesFirstRun = CommandLine.arguments.contains("--simulate-first-run")
     /// Desenvolvimento: `--simulate-remaining <segundos>` substitui o tempo restante do iPhone.
     private static let simulatedRemaining: Int? = {
         let args = CommandLine.arguments
@@ -643,6 +662,7 @@ extension SafeZone: Identifiable {
         case .tiktok: "TikTok"
         case .shorts: "YouTube Shorts"
         case .profileGrid: String(localized: "Grid do perfil (3:4)")
+        case .square: String(localized: "Quadrado central (1:1)")
         }
     }
 }
