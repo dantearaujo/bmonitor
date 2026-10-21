@@ -248,7 +248,7 @@ struct HealthChip: View {
             copyLabel("exclamationmark.triangle.fill").foregroundStyle(Theme.rec).help(failure)
         } else if model.savesCopy, model.state.recording, model.signal != .cameraGone {
             copyLabel("laptopcomputer.and.arrow.down")
-                .help("Copiando o stream para o Mac: 1080p, 8 Mb/s. O arquivo original fica no iPhone.")
+                .help("Copiando o stream para o Mac, na resolução da câmera e a 8 Mb/s, mais leve que o original. O arquivo original fica no iPhone.")
         }
     }
 

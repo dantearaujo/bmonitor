@@ -2,8 +2,8 @@ import AVFoundation
 import CoreMedia
 
 /// Grava no Mac uma cópia do stream que chega do iPhone, sem recodificar: o HEVC e o AAC vão
-/// do jeito que vieram para um `.mov`. É a qualidade do stream (1080p, 8 Mb/s), não o arquivo
-/// original do iPhone.
+/// do jeito que vieram para um `.mov`. É a qualidade do stream (resolução da câmera, 8 Mb/s), não
+/// o arquivo original do iPhone.
 ///
 /// Tudo roda numa fila própria: quem recebe o stream só entrega e volta. O vídeo vai para a
 /// tela antes de chegar aqui, então a cópia não soma atraso ao monitor.
@@ -41,6 +41,8 @@ public final class TakeRecorder {
         var lastVideo: CMTime
         var lastAudio: CMTime = .negativeInfinity
         var url: URL
+        /// Endereço pedido em `begin`, de onde saem os nomes das continuações.
+        var base: URL
         var quarterTurns: Int
         var part: Int
     }
@@ -110,7 +112,7 @@ public final class TakeRecorder {
             // Stream reiniciado (o relógio voltou) ou formato novo: este arquivo fecha e o
             // take continua num arquivo "(2)" a partir do próximo quadro-chave.
             if pts <= current.lastVideo || !CMFormatDescriptionEqual(format, otherFormatDescription: current.format) {
-                let next = (current.url, current.quarterTurns, current.part + 1)
+                let next = (current.base, current.quarterTurns, current.part + 1)
                 let continues = !stopping
                 close()
                 if continues { armed = next }
@@ -148,7 +150,13 @@ public final class TakeRecorder {
     private func open(at keyframe: CMSampleBuffer) {
         guard let armed, let format = keyframe.formatDescription else { return }
         self.armed = nil
-        let url = armed.part == 1 ? armed.url : Self.partURL(armed.url, armed.part)
+        var part = armed.part
+        var url = part == 1 ? armed.url : Self.partURL(armed.url, part)
+        // O AVAssetWriter falha se o arquivo existe: a continuação pula para o próximo número livre.
+        while part > 1, FileManager.default.fileExists(atPath: url.path) {
+            part += 1
+            url = Self.partURL(armed.url, part)
+        }
         do {
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
             let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
@@ -173,7 +181,7 @@ public final class TakeRecorder {
             writer.startSession(atSourceTime: start)
             take = Take(
                 writer: writer, video: video, audio: audio, format: format, start: start, lastVideo: .negativeInfinity,
-                url: url, quarterTurns: armed.quarterTurns, part: armed.part)
+                url: url, base: armed.url, quarterTurns: armed.quarterTurns, part: part)
             print("cópia no Mac: gravando \(url.lastPathComponent)")
         } catch {
             print("cópia no Mac: não abriu \(url.path): \(error)")

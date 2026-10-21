@@ -396,16 +396,27 @@ final class AppModel {
         NSWorkspace.shared.open(copyFolder)
     }
 
-    /// Um arquivo por take: "bmonitor 2026-10-21 14.32.05 TC 01.00.12.03.mov". Dois-pontos
-    /// viram ponto porque o Finder não aceita ":" em nome de arquivo.
+    /// Um arquivo por take, com o nome do clipe no iPhone: "A001_10210835_C009 bmonitor.mov".
+    /// O evento que liga o REC já traz o nome do take novo (conferido em 21/10/2026). Sem
+    /// nome, vale data e timecode, com ponto no lugar de ":", que o Finder não aceita.
     private func beginCopy() {
         guard let session else { return }
-        let date = Date().formatted(.verbatim(
-            "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)).\(minute: .twoDigits).\(second: .twoDigits)",
-            timeZone: .current, calendar: .current))
-        let timecode = state.timecode().replacingOccurrences(of: ":", with: ".")
-        let url = copyFolder.appendingPathComponent("bmonitor \(date) TC \(timecode).mov")
-        print("cópia no Mac: take \(state.clipName ?? "sem nome") no iPhone")
+        let name: String
+        if let clip = state.clipName, !clip.isEmpty {
+            name = "\(clip) bmonitor"
+        } else {
+            let date = Date().formatted(.verbatim(
+                "\(year: .defaultDigits)-\(month: .twoDigits)-\(day: .twoDigits) \(hour: .twoDigits(clock: .twentyFourHour, hourCycle: .zeroBased)).\(minute: .twoDigits).\(second: .twoDigits)",
+                timeZone: .current, calendar: .current))
+            name = "bmonitor \(date) TC \(state.timecode().replacingOccurrences(of: ":", with: "."))"
+        }
+        // Nunca por cima de uma cópia que já existe: o gravador falharia e o take ficaria sem cópia.
+        var url = copyFolder.appendingPathComponent("\(name).mov")
+        var n = 2
+        while FileManager.default.fileExists(atPath: url.path) {
+            url = copyFolder.appendingPathComponent("\(name) (\(n)).mov")
+            n += 1
+        }
         session.recorder.begin(url: url, quarterTurns: quarterTurns)
     }
 

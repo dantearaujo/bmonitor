@@ -145,4 +145,4 @@
 "Escolher" = "Choose";
 "Onde salvar a cópia de cada take" = "Where to save a copy of each take";
 "A cópia %@ não foi salva: %@" = "The copy %@ wasn't saved: %@";
-"Copiando o stream para o Mac: 1080p, 8 Mb/s. O arquivo original fica no iPhone." = "Copying the stream to the Mac: 1080p, 8 Mb/s. The original file stays on the iPhone.";
+"Copiando o stream para o Mac, na resolução da câmera e a 8 Mb/s, mais leve que o original. O arquivo original fica no iPhone." = "Copying the stream to the Mac at the camera's resolution and 8 Mb/s, lighter than the original. The original file stays on the iPhone.";
