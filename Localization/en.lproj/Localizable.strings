@@ -11,9 +11,9 @@
 "Abra o Blackmagic Camera\nno iPhone" = "Open Blackmagic Camera\non your iPhone";
 "O bmonitor controla esse app, não a Câmera do iPhone." = "bmonitor controls this app, not the iPhone's Camera app.";
 "Ligue o controle remoto" = "Turn on remote control";
-"Em Remote Camera Control, modo Remote Camera." = "In Remote Camera Control, choose Remote Camera.";
+"Configurações › Controle de Câmera Remoto: ligue e use este iPhone como Câmera Remota." = "Settings › Remote Camera Control: turn it on and use this iPhone as Remote Camera.";
 "Ligue o servidor HTTP" = "Turn on the HTTP server";
-"Em Network Access, servidor HTTP ligado." = "In Network Access, turn on HTTP Server.";
+"Configurações › Network Access › HTTP Server: ligue Enable HTTP Server." = "Settings › Network Access › HTTP Server: turn on Enable HTTP Server.";
 "Mesma Wi‑Fi" = "Same Wi‑Fi";
 "Mac e iPhone na mesma rede." = "Mac and iPhone on the same network.";
 "Ainda não tem? Baixar na App Store" = "Don't have it? Get it on the App Store";

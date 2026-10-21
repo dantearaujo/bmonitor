@@ -77,10 +77,10 @@ private struct GuideText: View {
                 VStack(alignment: .leading, spacing: details ? 10 : 6) {
                     GuideStep(
                         number: 1, title: String(localized: "Ligue o controle remoto"),
-                        detail: details ? String(localized: "Em Remote Camera Control, modo Remote Camera.") : nil)
+                        detail: details ? String(localized: "Configurações › Controle de Câmera Remoto: ligue e use este iPhone como Câmera Remota.") : nil)
                     GuideStep(
                         number: 2, title: String(localized: "Ligue o servidor HTTP"),
-                        detail: details ? String(localized: "Em Network Access, servidor HTTP ligado.") : nil)
+                        detail: details ? String(localized: "Configurações › Network Access › HTTP Server: ligue Enable HTTP Server.") : nil)
                     GuideStep(
                         number: 3, title: String(localized: "Mesma Wi‑Fi"),
                         detail: details ? String(localized: "Mac e iPhone na mesma rede.") : nil)
