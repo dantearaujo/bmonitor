@@ -39,7 +39,11 @@ struct MonitorView: View {
             // Estado salvo da webcam: ligada, pede a ativação (e troca a extensão depois de uma
             // atualização) e já sai girada como a janela.
             VirtualCamera.shared.setQuarterTurns(model.quarterTurns)
-            VirtualCamera.shared.setEnabled(model.webcamEnabled)
+            if CommandLine.arguments.contains("--remove-webcam") {
+                VirtualCamera.shared.removeIfRequested()
+            } else {
+                VirtualCamera.shared.setEnabled(model.webcamEnabled)
+            }
             try? await Task.sleep(for: .milliseconds(300))
             model.shapeWindow(animate: false)
             model.showScriptWindowIfNeeded()

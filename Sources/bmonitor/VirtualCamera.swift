@@ -44,6 +44,7 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     private var outputPool: CVPixelBufferPool?
     private var rotatedPool: CVPixelBufferPool?
     private var rotatedSize = (width: 0, height: 0)
+    private var watchingDevices = false
 
     // Na main.
     private var lastHeard = Date.distantPast
@@ -66,7 +67,7 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
         guard isAvailable else { return }
         queue.async {
             self.enabled = on
-            if !on { self.disconnect() }
+            if on { self.watchDevices() } else { self.disconnect() }
         }
         if on {
             activate()
@@ -78,6 +79,17 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
 
     func setQuarterTurns(_ turns: Int) {
         queue.async { self.quarterTurns = ((turns % 4) + 4) % 4 }
+    }
+
+    /// Desenvolvimento e suporte: `--remove-webcam` pede ao macOS para desinstalar a extensão,
+    /// para testar a primeira aprovação de novo.
+    @MainActor
+    func removeIfRequested() {
+        guard CommandLine.arguments.contains("--remove-webcam"), let extensionID else { return }
+        let request = OSSystemExtensionRequest.deactivationRequest(forExtensionWithIdentifier: extensionID, queue: .main)
+        request.delegate = self
+        OSSystemExtensionManager.shared.submitRequest(request)
+        log.info("pedido de remoção enviado")
     }
 
     @MainActor
@@ -214,6 +226,21 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     }
 
     // MARK: - Achar a câmera
+
+    /// A lista de câmeras que o processo vê não se atualiza sozinha: aprovada com o app aberto, a
+    /// câmera "bmonitor" não aparecia até reabrir o app (achado em 22/10, na 0.10.0). Escutar a
+    /// lista faz o CoreMediaIO mantê-la em dia; a cada mudança, a conexão é refeita.
+    private func watchDevices() {
+        guard !watchingDevices else { return }
+        watchingDevices = true
+        var address = address(kCMIOHardwarePropertyDevices)
+        CMIOObjectAddPropertyListenerBlock(CMIOObjectID(kCMIOObjectSystemObject), &address, queue) { [weak self] _, _ in
+            guard let self else { return }
+            self.log.info("lista de câmeras mudou")
+            if self.sinkQueue != nil, !self.devices().contains(self.device) { self.sinkQueue = nil }
+            self.lastAttempt = .distantPast
+        }
+    }
 
     /// Acha a câmera "bmonitor" e abre o stream de entrada dela. Tenta no máximo uma vez por
     /// segundo: antes de o usuário aprovar a extensão, ela não existe, e depois aparece sozinha.
