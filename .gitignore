@@ -9,3 +9,6 @@ site/PRODUCT.md
 site/DESIGN.md
 site/.impeccable
 site/dist/
+
+# Gravações reais para testar o roteiro pela voz (voz e texto de um take do autor)
+Tests/MonitorCoreTests/Fixtures/roteiro/

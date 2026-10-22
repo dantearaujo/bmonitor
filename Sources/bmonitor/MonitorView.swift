@@ -85,6 +85,7 @@ struct MonitorView: View {
             try? await Task.sleep(for: .milliseconds(300))
             WindowShaper.fit(aspect: model.displayAspect, animate: false)
         }
+        .modifier(OpenScriptOnLaunch(model: model))
         .preferredColorScheme(.dark)
     }
 
@@ -918,5 +919,20 @@ struct CameraChoice: View {
         .padding(22)
         .hudGlass(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .padding(32)
+    }
+}
+
+/// Desenvolvimento: `--open-script` abre o roteiro ao abrir o app e `--script-follow` já liga o
+/// acompanhamento (com `--script-audio`, testa sem o iPhone).
+private struct OpenScriptOnLaunch: ViewModifier {
+    let model: AppModel
+    @Environment(\.openWindow) private var openWindow
+
+    func body(content: Content) -> some View {
+        content.onAppear {
+            let args = CommandLine.arguments
+            if args.contains("--open-script") || args.contains("--script-follow") { openWindow(id: "script") }
+            if args.contains("--script-follow"), !model.script.following { model.script.toggleFollowing() }
+        }
     }
 }

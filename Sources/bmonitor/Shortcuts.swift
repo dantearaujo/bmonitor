@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Atalhos do teclado num lugar só: o menu os registra e a tela de atalhos os lista.
 enum Shortcut: CaseIterable {
-    case record, focusNow, iso, shutter, whiteBalance, tint, format, lens, audio, gainUp, gainDown, mute, grid, safeZone, rotate, help
+    case record, focusNow, iso, shutter, whiteBalance, tint, format, lens, audio, gainUp, gainDown, mute, grid, safeZone, rotate,
+        script, follow, help
 
     var keyboard: KeyboardShortcut {
         switch self {
@@ -23,6 +24,9 @@ enum Shortcut: CaseIterable {
         case .safeZone: KeyboardShortcut("z", modifiers: [])
         // Longe do ⌘R: girar a janela nunca pode parar uma gravação por um Shift esquecido.
         case .rotate: KeyboardShortcut(.rightArrow, modifiers: .command)
+        // Segunda janela do app, como ⌘2 em outros apps de várias janelas.
+        case .script: KeyboardShortcut("2", modifiers: .command)
+        case .follow: KeyboardShortcut("v", modifiers: [])
         case .help: KeyboardShortcut("/", modifiers: .command)
         }
     }
@@ -44,6 +48,8 @@ enum Shortcut: CaseIterable {
         case .grid: String(localized: "Mostrar ou esconder a grade")
         case .safeZone: String(localized: "Mostrar ou esconder a área segura")
         case .rotate: String(localized: "Girar 90°")
+        case .script: String(localized: "Mostrar o roteiro")
+        case .follow: String(localized: "Seguir a fala no roteiro")
         case .help: String(localized: "Atalhos do teclado")
         }
     }
@@ -68,7 +74,11 @@ enum Shortcut: CaseIterable {
 }
 
 extension View {
-    func keyboardShortcut(_ shortcut: Shortcut) -> some View { keyboardShortcut(shortcut.keyboard) }
+    /// `typing`: o roteiro está em edição. Atalho de uma tecla só sairia do menu no lugar da
+    /// letra digitada, então ele fica desligado até a edição acabar.
+    func keyboardShortcut(_ shortcut: Shortcut, typing: Bool = false) -> some View {
+        keyboardShortcut(typing && shortcut.keyboard.modifiers.isEmpty ? nil : shortcut.keyboard)
+    }
 }
 
 /// Lista de atalhos sobre o vídeo, aberta por ⌘/ ou pelo menu Ajuda. Fecha com esc, ⌘/
@@ -96,6 +106,8 @@ struct ShortcutsOverlay: View {
         (
             String(localized: "No Mac"),
             rows([.mute, .grid, .safeZone, .rotate]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]
+                + rows([.script, .follow])
+                + [Row(keys: "↑ ↓", title: String(localized: "Frase anterior ou próxima no roteiro"))]
                 + rows([.help])
         ),
     ]

@@ -79,6 +79,8 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>NSHighResolutionCapable</key><true/>
     <key>NSLocalNetworkUsageDescription</key>
     <string>O bmonitor procura o iPhone com o Blackmagic Camera na rede local para mostrar o vídeo e controlar a câmera.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>O bmonitor reconhece a fala no áudio da câmera, no próprio Mac, para marcar onde você está no roteiro.</string>
     <key>SUFeedURL</key><string>$FEED_URL</string>
     <key>SUPublicEDKey</key><string>$SPARKLE_PUBLIC_KEY</string>
     <key>SUEnableAutomaticChecks</key><true/>

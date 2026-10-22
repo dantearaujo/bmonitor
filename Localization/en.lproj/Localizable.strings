@@ -185,3 +185,31 @@
 "Baixa" = "Low";
 "Gravando: o formato fica travado até parar." = "Recording: the format is locked until you stop.";
 "Trocar o formato reinicia o vídeo no Mac por um instante." = "Changing the format restarts the video on the Mac for a moment.";
+
+/* Roteiro */
+"Roteiro" = "Script";
+"Cole o seu roteiro" = "Paste your script";
+"Texto ou Markdown, com títulos, negrito e listas. O bmonitor guarda o último roteiro." = "Plain text or Markdown, with headings, bold and lists. bmonitor keeps your last script.";
+"Colar" = "Paste";
+"Abrir arquivo…" = "Open File…";
+"Escrever" = "Write";
+"Concluído" = "Done";
+"Editar" = "Edit";
+"Texto menor" = "Smaller Text";
+"Texto maior" = "Larger Text";
+"Voltar ao início" = "Back to Start";
+"Seguir a fala" = "Follow Speech";
+"Parar de seguir a fala" = "Stop Following Speech";
+"desligado" = "off";
+"preparando…" = "getting ready…";
+"sem áudio da câmera" = "no camera audio";
+"ouvindo em português" = "listening in Portuguese";
+"ouvindo em inglês" = "listening in English";
+"Mostrar o roteiro" = "Show Script";
+"Editar o roteiro" = "Edit Script";
+"Colar roteiro" = "Paste Script";
+"Seguir a fala no roteiro" = "Follow speech in the script";
+"Frase anterior ou próxima no roteiro" = "Previous or next sentence in the script";
+"O reconhecimento de fala do Mac não tem esse idioma." = "The Mac's speech recognition doesn't support this language.";
+"O reconhecimento de fala do Mac não abriu." = "The Mac's speech recognition didn't start.";
+"Permita o reconhecimento de fala em Ajustes do Sistema › Privacidade e Segurança." = "Allow speech recognition in System Settings › Privacy & Security.";

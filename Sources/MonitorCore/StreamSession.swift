@@ -1,3 +1,4 @@
+import AVFoundation
 import CoreVideo
 import Darwin
 import Foundation
@@ -18,6 +19,9 @@ public final class StreamSession {
     public let audio = AudioMonitor()
     /// Cópia do stream no Mac. Recebe tudo depois da tela e do som; só grava quando pedem.
     public let recorder = TakeRecorder()
+    /// Cada buffer de áudio decodificado, na thread do stream (o roteiro escuta a fala por aqui).
+    /// Defina antes de `start()`.
+    public var onAudioBuffer: ((AVAudioPCMBuffer) -> Void)?
 
     private let api: CameraAPI
     private let listener: SRTListener
@@ -48,7 +52,10 @@ public final class StreamSession {
             self?.audioDecoder.decode($0)
             self?.recorder.appendAudio($0)
         }
-        audioDecoder.onBuffer = { [audio] in audio.play($0) }
+        audioDecoder.onBuffer = { [weak self, audio] buffer in
+            audio.play(buffer)
+            self?.onAudioBuffer?(buffer)
+        }
         listener.onPayload = { [weak self] in self?.demuxer.feed($0) }
     }
 

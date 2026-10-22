@@ -107,6 +107,8 @@ final class AppModel {
     }
 
     @ObservationIgnored let displayLayer = AVSampleBufferDisplayLayer()
+    /// O roteiro da janela ao lado; ouve a fala no áudio da câmera.
+    let script = ScriptModel()
     @ObservationIgnored private let discovery = Discovery()
     @ObservationIgnored private let network = NWPathMonitor()
     @ObservationIgnored private var api: CameraAPI?
@@ -222,6 +224,7 @@ final class AppModel {
         session.onFrame = { VideoEnqueue.enqueue($0, into: layer) }
         session.audio.isMuted = muted
         session.recorder.onFinish = { [weak self] url, error in self?.copyFinished(url, error) }
+        session.onAudioBuffer = { [speech = script.speech] in speech.append($0) }
         self.api = api
         self.events = events
         self.session = session
