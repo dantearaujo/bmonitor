@@ -378,14 +378,31 @@ struct HealthChip: View {
                 Label("\(Int(fps.rounded())) fps", systemImage: "antenna.radiowaves.left.and.right")
                     .help("Quadros por segundo chegando do iPhone")
             }
-        case .lossy:
-            Label("Perdas", systemImage: "antenna.radiowaves.left.and.right").foregroundStyle(Theme.warn)
+        // Esperando o primeiro quadro: o cartão do meio já diz "Aguardando vídeo". A palavra aqui
+        // não cabia na janela em pé estreita e empurrava o vídeo para baixo do roteiro.
         case .waiting:
-            Label("Aguardando", systemImage: "antenna.radiowaves.left.and.right").foregroundStyle(.secondary)
+            HStack(spacing: 6) {
+                Image(systemName: "antenna.radiowaves.left.and.right")
+                ProgressView().controlSize(.mini)
+            }
+            .foregroundStyle(.secondary)
+            .help(String(localized: "Aguardando vídeo"))
+        case .lossy:
+            alert("Perdas", symbol: "antenna.radiowaves.left.and.right", color: Theme.warn)
         case .lost:
-            Label("Caiu", systemImage: "antenna.radiowaves.left.and.right.slash").foregroundStyle(Theme.rec)
+            alert("Caiu", symbol: "antenna.radiowaves.left.and.right.slash", color: Theme.rec)
         case .cameraGone:
-            Label("Sem câmera", systemImage: "antenna.radiowaves.left.and.right.slash").foregroundStyle(Theme.rec)
+            alert("Sem câmera", symbol: "antenna.radiowaves.left.and.right.slash", color: Theme.rec)
+        }
+    }
+
+    /// Na janela estreita, o alerta fica no ícone e na cor, com a palavra na dica: a cápsula tem
+    /// tamanho fixo e, maior que a janela, empurrava o vídeo.
+    @ViewBuilder private func alert(_ title: LocalizedStringKey, symbol: String, color: Color) -> some View {
+        if compact {
+            Image(systemName: symbol).foregroundStyle(color).help(Text(title))
+        } else {
+            Label(title, systemImage: symbol).foregroundStyle(color)
         }
     }
 }

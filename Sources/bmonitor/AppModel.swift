@@ -132,6 +132,12 @@ final class AppModel {
             ?? (UserDefaults.standard.bool(forKey: "showGrid") ? .thirds : .off)
         safeZone = UserDefaults.standard.string(forKey: "safeZone").flatMap(SafeZone.init(rawValue:))
         quarterTurns = UserDefaults.standard.integer(forKey: "quarterTurns")
+        // O formato da última câmera: a janela reabre com o tamanho salvo, e o layout precisa
+        // da mesma proporção antes do primeiro `/system/videoFormat`, senão parte de 16:9 e
+        // pula um segundo depois.
+        if let saved = UserDefaults.standard.array(forKey: "videoSize") as? [Double], saved.count == 2, saved[0] > 0, saved[1] > 0 {
+            state.videoSize = CGSize(width: saved[0], height: saved[1])
+        }
         muted = UserDefaults.standard.object(forKey: "muted") as? Bool ?? true
         savesCopy = UserDefaults.standard.bool(forKey: "savesCopy")
         copyFolder =
@@ -735,6 +741,7 @@ final class AppModel {
         case "/livestreams/0" where state.streamStatus == "Interrupted":
             restartStream()
         case "/system/videoFormat" where state.videoSize != previousSize:
+            UserDefaults.standard.set([state.videoSize.width, state.videoSize.height], forKey: "videoSize")
             shapeWindow(animate: false)
         default:
             break
