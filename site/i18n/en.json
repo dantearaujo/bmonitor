@@ -53,7 +53,7 @@
   "feat_2_lead": "Click to focus.",
   "feat_2_body": "Click anywhere on the video and the iPhone focuses there. Zoom, lens and stabilization are one click away too.",
   "feat_3_lead": "Every setting, one click.",
-  "feat_3_body": "ISO, shutter (speed or angle), white balance with light presets and tint. The Mac shows the value the camera confirmed, not the one you asked for.",
+  "feat_3_body": "ISO, shutter (speed or angle), white balance with light presets and tint, plus resolution, frame rate, codec and color space. The Mac shows the value the camera confirmed, not the one you asked for.",
   "feat_4_lead": "Hear what the camera hears.",
   "feat_4_body": "The mic's name and an L/R meter in Blackmagic's own green, yellow and red. With an external mic, set its gain from the Mac. The camera's sound can play on the Mac, muted by default.",
   "feat_5_lead": "One key per control.",
