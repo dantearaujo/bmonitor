@@ -33,9 +33,10 @@ You record yourself with an iPhone on a tripod. bmonitor turns the Mac next to i
 - **Audio:** the active microphone's name and an L/R peak meter styled after Blackmagic's own (green, yellow, red), plus the camera's sound on the Mac, muted by default.
 - **Copy on the Mac:** optional, one button next to record. Each take is also saved on the Mac from the live stream, at the camera's resolution and about 8 Mb/s, named after the iPhone clip, in `~/Movies/bmonitor`. The original stays on the iPhone.
 - **Remote control:** start and stop recording, ISO, shutter (speed or angle), white balance with light presets, tint, focus (click the video to focus there), zoom, lens, stabilization, recording format (resolution, frame rate, codec, color space), audio input, and audio gain (with an external mic; the iPhone's built-in mic doesn't accept gain changes).
-- **Keyboard:** one key per control (`I` ISO, `S` shutter, `W` white balance, `T` tint, `L` lens, `A` audio, `M` mute, `G` grid, `Z` safe area, `F` focus now, `K` recording format), `⌥↑` `⌥↓` for audio gain, `⌘R` to record, `⌘→` to rotate. `⌘/` shows them all.
+- **Script:** a panel inside the monitor window, beside the video or, with the video in landscape, above or below it. Paste or open your text (Markdown works), and it follows along as you speak, using the camera's sound; speech recognition runs on the Mac. Pop it out into its own window and dock it back with one click.
+- **Keyboard:** one key per control (`I` ISO, `S` shutter, `P` frame rate, `W` white balance, `T` tint, `L` lens, `A` audio, `M` mute, `G` grid, `Z` safe area, `F` focus now, `K` recording format), `⌥↑` `⌥↓` for audio gain, `⌘R` to record, `⌘→` to rotate, `⌘2` to show or hide the script. `⌘/` shows them all.
 - **First run:** while it looks for the iPhone, bmonitor shows which app to open (Blackmagic Camera, not the built-in Camera), the settings to turn on, and whether the Mac is blocking Local Network access.
-- **Updates itself:** bmonitor checks for a new version once a day and asks before installing. You can also use **bmonitor › Check for Updates…**.
+- **Updates itself:** when a new version is out, bmonitor shows what changed and asks before installing. It checks when you open it and once a day. You can also use **bmonitor › Check for Updates…**.
 - **Readable from 3 m:** status lives in the top corners and stays large. The control bar appears when you move the mouse and hides after 3 s.
 
 ## Requirements
@@ -92,7 +93,7 @@ Recording stays on the iPhone, in the quality you chose there. The stream to the
 
 ## Privacy
 
-bmonitor collects nothing. It talks only to the iPhone on your local network: no accounts, no analytics, no internet access.
+bmonitor collects nothing: no accounts, no analytics. It talks to the iPhone on your local network and, to check for updates, to GitHub. The script's speech recognition runs on the Mac.
 
 ## Build from source
 
@@ -103,7 +104,7 @@ swift test
 scripts/build-app.sh --install --dmg   # bmonitor.app in /Applications and a .dmg in .build/dist
 ```
 
-For development, the Swift package links Homebrew's libsrt. The packaging script instead builds libsrt and OpenSSL from source as universal libraries for macOS 14 and up (`scripts/build-deps.sh`), bundles them inside the app, generates the icon (`scripts/make-icon.swift`), and signs ad hoc. `DESIGN.md` documents the interface. Code comments are in Portuguese.
+For development, the Swift package links Homebrew's libsrt. The packaging script instead builds libsrt and OpenSSL from source as universal libraries for macOS 14 and up (`scripts/build-deps.sh`), bundles them inside the app, builds the icon from the images in `scripts/icon/` (`scripts/make-icon.swift`), and signs ad hoc. `DESIGN.md` documents the interface. Code comments are in Portuguese.
 
 ## How it works
 

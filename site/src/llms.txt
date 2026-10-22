@@ -16,8 +16,9 @@ Key facts:
 - Recording stays on the iPhone, in the quality chosen there. bmonitor is a monitor and remote control; it does not record on the Mac.
 - One iPhone at a time. With several on the network, it asks which one to use.
 - Status readable from about 3 m: recording tally (red border), timecode, remaining recording time, active microphone name, L/R audio meter in Blackmagic's colors, signal status. Framing grids. Landscape or portrait (⌘→ rotates).
-- Keyboard: one key per control (I ISO, S shutter, W white balance, T tint, L lens, A audio, M mute, G grid, F focus), ⌘R records, ⌘/ lists all shortcuts.
-- Privacy: collects nothing, no analytics, no account; it only talks to the iPhone on the local network.
+- Script: a panel inside the monitor window (beside the video, or above or below it in landscape) that follows along as you speak, using the camera's sound, with speech recognition on the Mac. It can pop out into its own window. ⌘2 shows or hides it.
+- Keyboard: one key per control (I ISO, S shutter, P frame rate, W white balance, T tint, L lens, A audio, M mute, G grid, F focus), ⌘R records, ⌘2 toggles the script, ⌘/ lists all shortcuts.
+- Privacy: collects nothing, no analytics, no account. It talks to the iPhone on the local network and checks GitHub for updates; the script's speech recognition runs on the Mac.
 - Interface in English and Brazilian Portuguese.
 - Status: public beta (0.9.x), tested so far on two Macs (macOS 26 Tahoe and macOS 14 Sonoma) and one iPhone; Intel Macs untested.
 - Independent project by Dante Araujo; not affiliated with or endorsed by Blackmagic Design.

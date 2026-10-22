@@ -33,9 +33,10 @@ Você se grava com um iPhone no tripé. O bmonitor transforma o Mac ao lado no m
 - **Áudio:** o nome do microfone ativo e um medidor de pico L/R no estilo do medidor da própria Blackmagic (verde, amarelo e vermelho), além do som da câmera no Mac, que começa mudo.
 - **Cópia no Mac:** opcional, num botão ao lado do gravar. Cada take também é salvo no Mac a partir do stream, na resolução da câmera e a cerca de 8 Mb/s, com o nome do clipe do iPhone, na pasta Filmes (`~/Movies/bmonitor`). O original fica no iPhone.
 - **Controle remoto:** iniciar e parar a gravação, ISO, shutter (velocidade ou ângulo), balanço de branco com presets de luz, tint, foco (clique no vídeo para focar ali), zoom, lente, estabilização, formato de gravação (resolução, quadros por segundo, codec, espaço de cor), origem do áudio e ganho do áudio (com microfone externo; o microfone do iPhone não aceita ajuste de ganho).
-- **Teclado:** uma tecla por controle (`I` ISO, `S` shutter, `W` balanço de branco, `T` tint, `L` lente, `A` áudio, `M` mudo, `G` grade, `Z` área segura, `F` focar agora, `K` formato de gravação), `⌥↑` `⌥↓` para o ganho do áudio, `⌘R` para gravar e `⌘→` para girar. `⌘/` mostra todos.
+- **Roteiro:** um painel dentro da janela do monitor, ao lado do vídeo ou, com o vídeo deitado, acima ou abaixo dele. Cole ou abra o seu texto (Markdown funciona) e ele acompanha a sua fala pelo som da câmera; o reconhecimento de fala roda no Mac. Dá para destacar o roteiro numa janela própria e juntar de volta com um clique.
+- **Teclado:** uma tecla por controle (`I` ISO, `S` shutter, `P` quadros por segundo, `W` balanço de branco, `T` tint, `L` lente, `A` áudio, `M` mudo, `G` grade, `Z` área segura, `F` focar agora, `K` formato de gravação), `⌥↑` `⌥↓` para o ganho do áudio, `⌘R` para gravar, `⌘→` para girar e `⌘2` para mostrar ou esconder o roteiro. `⌘/` mostra todos.
 - **Primeira abertura:** enquanto procura o iPhone, o bmonitor mostra qual app abrir (o Blackmagic Camera, não a Câmera do iPhone), os ajustes que precisam estar ligados e se o Mac está bloqueando a Rede Local.
-- **Atualiza sozinho:** o bmonitor procura versão nova uma vez por dia e pergunta antes de instalar. Também dá para usar **bmonitor › Procurar atualizações…**.
+- **Atualiza sozinho:** quando sai versão nova, o bmonitor mostra o que mudou e pergunta antes de instalar. Ele procura ao abrir e uma vez por dia. Também dá para usar **bmonitor › Procurar atualizações…**.
 - **Legível a 3 m:** o status fica nos cantos de cima, em letra grande. A barra de controles aparece quando você mexe o mouse e some depois de 3 s.
 
 ## Requisitos
@@ -92,7 +93,7 @@ A gravação continua no iPhone, na qualidade escolhida lá. A transmissão para
 
 ## Privacidade
 
-O bmonitor não coleta nada. Ele conversa só com o iPhone na sua rede local: sem conta, sem estatística de uso e sem acesso à internet.
+O bmonitor não coleta nada: sem conta e sem estatística de uso. Ele conversa com o iPhone na sua rede local e, para procurar atualização, com o GitHub. O reconhecimento de fala do roteiro roda no Mac.
 
 ## Compilar a partir do código
 
@@ -103,7 +104,7 @@ swift test
 scripts/build-app.sh --install --dmg   # bmonitor.app em /Applications e um .dmg em .build/dist
 ```
 
-Para desenvolver, o pacote Swift usa a libsrt do Homebrew. Já o script de empacotamento compila a libsrt e o OpenSSL a partir do código-fonte, universais e para macOS 14 em diante (`scripts/build-deps.sh`), põe as duas dentro do app, gera o ícone (`scripts/make-icon.swift`) e assina ad hoc. O `DESIGN.md` documenta a interface. Os comentários do código estão em português.
+Para desenvolver, o pacote Swift usa a libsrt do Homebrew. Já o script de empacotamento compila a libsrt e o OpenSSL a partir do código-fonte, universais e para macOS 14 em diante (`scripts/build-deps.sh`), põe as duas dentro do app, monta o ícone a partir das imagens de `scripts/icon/` (`scripts/make-icon.swift`) e assina ad hoc. O `DESIGN.md` documenta a interface. Os comentários do código estão em português.
 
 ## Como funciona
 
