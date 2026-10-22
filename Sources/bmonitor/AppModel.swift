@@ -773,6 +773,23 @@ final class AppModel {
 enum WindowShaper {
     static let sideFraction: CGFloat = 0.5
     static let stackFraction: CGFloat = 0.4
+    /// Menor vídeo em que a barra e o status cabem: a barra mais estreita pede uns 470 pt de
+    /// largura, e deitado o vídeo não desce de 270 pt. Sem isso, um vídeo em pé de 540 pt de
+    /// altura com o roteiro aberto ficava com 304 pt e a barra transbordava por baixo do roteiro.
+    static let minVideo = CGSize(width: 480, height: 270)
+
+    /// Quanto o vídeo precisa crescer, nas unidades dele, para chegar ao mínimo.
+    static func minScale(_ video: CGSize) -> CGFloat {
+        max(minVideo.width / video.width, minVideo.height / video.height)
+    }
+
+    /// Trava o redimensionamento na proporção e no mínimo do vídeo.
+    @MainActor private static func lock(_ window: NSWindow, video: CGSize, side: ScriptModel.Side?) {
+        let content = contentAspect(video: video, side: side)
+        let minimum = minScale(video)
+        window.contentAspectRatio = content
+        window.contentMinSize = CGSize(width: content.width * minimum, height: content.height * minimum)
+    }
 
     /// A janela do monitor: o SwiftUI dá a ela um identificador com o tipo da view. "A primeira
     /// janela" podia ser o "Sobre" ou a de atualização, que perdiam os botões e o tamanho.
@@ -830,8 +847,8 @@ enum WindowShaper {
         }
         last = (aspect, side)
         let target = contentAspect(video: aspect, side: side)
-        window.contentAspectRatio = target
-        let scale = long / max(aspect.width, aspect.height)
+        lock(window, video: aspect, side: side)
+        let scale = max(long / max(aspect.width, aspect.height), minScale(aspect))
         var size = CGSize(width: target.width * scale, height: target.height * scale)
         let room = window.contentRect(forFrameRect: screen.visibleFrame).size
         let shrink = min(1, room.width / size.width, room.height / size.height)
@@ -874,12 +891,12 @@ enum WindowShaper {
         let scale = min(content.width / before.width, content.height / before.height)
         let after = contentAspect(video: video, side: new)
         let room = window.contentRect(forFrameRect: screen.visibleFrame).size
-        let newScale = min(scale, room.width / after.width, room.height / after.height)
+        let newScale = min(max(scale, minScale(video)), room.width / after.width, room.height / after.height)
         let oldOffset = videoOffset(video: video, side: old, scale: scale)
         let newOffset = videoOffset(video: video, side: new, scale: newScale)
         let origin = CGPoint(x: content.minX + oldOffset.x - newOffset.x, y: content.minY + oldOffset.y - newOffset.y)
         last = (video, new)
-        window.contentAspectRatio = after
+        lock(window, video: video, side: new)
         let frame = window.frameRect(
             forContentRect: CGRect(origin: origin, size: CGSize(width: after.width * newScale, height: after.height * newScale)))
         setFrame(frame, of: window, on: screen, animate: animate)
