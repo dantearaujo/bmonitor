@@ -1,3 +1,5 @@
+# Gere com BASE_ID no ambiente: com.dantearaujo.bmonitor.dev (bmonitor Dev, testes) ou
+# com.dantearaujo.bmonitor (distribuição). Os scripts em Webcam/ fazem isso.
 name: Webcam
 options:
   deploymentTarget:
@@ -20,16 +22,18 @@ targets:
       path: Host/Info.plist
       properties:
         CFBundleName: bmonitor Dev
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSMinimumSystemVersion: "14.0"
     entitlements:
       path: Host/Host.entitlements
       properties:
         com.apple.developer.system-extension.install: true
         com.apple.security.application-groups:
-          - $(TeamIdentifierPrefix)com.dantearaujo.bmonitor.dev
+          - $(TeamIdentifierPrefix)${BASE_ID}
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.dantearaujo.bmonitor.dev
+        PRODUCT_BUNDLE_IDENTIFIER: ${BASE_ID}
         PRODUCT_NAME: Host
     dependencies:
       - target: Camera
@@ -42,18 +46,20 @@ targets:
       path: Extension/Info.plist
       properties:
         CFBundleDisplayName: bmonitor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CFBundlePackageType: SYSX
         LSMinimumSystemVersion: "14.0"
         NSSystemExtensionUsageDescription: Câmera virtual do bmonitor
         CMIOExtension:
-          CMIOExtensionMachServiceName: $(TeamIdentifierPrefix)com.dantearaujo.bmonitor.dev.camera
+          CMIOExtensionMachServiceName: $(TeamIdentifierPrefix)${BASE_ID}.camera
     entitlements:
       path: Extension/Camera.entitlements
       properties:
         com.apple.security.app-sandbox: true
         com.apple.security.application-groups:
-          - $(TeamIdentifierPrefix)com.dantearaujo.bmonitor.dev
+          - $(TeamIdentifierPrefix)${BASE_ID}
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.dantearaujo.bmonitor.dev.camera
-        PRODUCT_NAME: com.dantearaujo.bmonitor.dev.camera
+        PRODUCT_BUNDLE_IDENTIFIER: ${BASE_ID}.camera
+        PRODUCT_NAME: ${BASE_ID}.camera

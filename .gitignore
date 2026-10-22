@@ -16,3 +16,10 @@ Tests/MonitorCoreTests/Fixtures/roteiro/
 # Produto do app, symlink para projects/dante/bmonitor-design/app no AIOS
 PRODUCT.md
 .impeccable
+
+
+# Gerados pelo xcodegen a partir de Webcam/project.yml (mudam com o bundle id).
+Webcam/Host/Info.plist
+Webcam/Host/Host.entitlements
+Webcam/Extension/Info.plist
+Webcam/Extension/Camera.entitlements

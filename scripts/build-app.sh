@@ -110,6 +110,37 @@ if [[ -n "$SIGNING_IDENTITY" ]]; then
 else
     SIGN=(codesign --force --sign -)
 fi
+# Câmera virtual: a extensão sai do Xcode (Webcam/), assinada com Developer ID, junto com o perfil
+# que dá ao app a permissão restrita de instalar extensões de sistema. O Xcode, logado na conta do
+# time, gera esse perfil sozinho. Só nas builds com Developer ID; ad hoc fica sem a câmera.
+APP_ENTITLEMENTS=()
+if [[ -n "$SIGNING_IDENTITY" ]]; then
+    WR=.build/webcam-release
+    mkdir -p "$WR"
+    rm -rf "$WR/Host.xcarchive" "$WR/export"
+    (cd Webcam && BASE_ID="$BUNDLE_ID" xcodegen generate >/dev/null)
+    xcodebuild -project Webcam/Webcam.xcodeproj -scheme Host -configuration Release \
+        -archivePath "$WR/Host.xcarchive" MARKETING_VERSION="$VERSION" CURRENT_PROJECT_VERSION="$BUILD" \
+        -allowProvisioningUpdates archive >/dev/null
+    cat > "$WR/export.plist" <<EXPORT
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+    <key>method</key><string>developer-id</string>
+    <key>signingStyle</key><string>automatic</string>
+    <key>teamID</key><string>PMG6QHRW7K</string>
+</dict></plist>
+EXPORT
+    xcodebuild -exportArchive -archivePath "$WR/Host.xcarchive" -exportOptionsPlist "$WR/export.plist" \
+        -exportPath "$WR/export" -allowProvisioningUpdates >/dev/null
+    HOST="$WR/export/Host.app"
+    mkdir -p "$APP/Contents/Library/SystemExtensions"
+    ditto "$HOST/Contents/Library/SystemExtensions" "$APP/Contents/Library/SystemExtensions"
+    cp "$HOST/Contents/embedded.provisionprofile" "$APP/Contents/embedded.provisionprofile"
+    codesign -d --entitlements - --xml "$HOST" > "$WR/app.entitlements"
+    APP_ENTITLEMENTS=(--entitlements "$WR/app.entitlements")
+fi
+
 for f in "$FW"/*.dylib; do "${SIGN[@]}" "$f"; done
 # Sparkle: cada executável interno, depois o framework (ordem da documentação do Sparkle).
 SP="$FW/Sparkle.framework/Versions/B"
@@ -118,7 +149,7 @@ SP="$FW/Sparkle.framework/Versions/B"
 "${SIGN[@]}" "$SP/Autoupdate"
 "${SIGN[@]}" "$SP/Updater.app"
 "${SIGN[@]}" "$FW/Sparkle.framework"
-"${SIGN[@]}" "$APP"
+"${SIGN[@]}" ${APP_ENTITLEMENTS[@]+"${APP_ENTITLEMENTS[@]}"} "$APP"
 codesign --verify --deep --strict "$APP"
 
 # notarize <arquivo>: envia à Apple, espera o resultado e falha se não for aceito.

@@ -18,7 +18,7 @@ HOST="$DD/Build/Products/Debug/Host.app"
 DEV=".build/dev/bmonitor Dev.app"
 IDENTITY="Apple Development"
 
-(cd Webcam && xcodegen generate >/dev/null)
+(cd Webcam && BASE_ID=com.dantearaujo.bmonitor.dev xcodegen generate >/dev/null)
 xcodebuild -project Webcam/Webcam.xcodeproj -scheme Host -configuration Debug -derivedDataPath "$DD" \
     -allowProvisioningUpdates -allowProvisioningDeviceRegistration build >/dev/null
 
