@@ -51,10 +51,7 @@
             <span class="mb-right"><svg class="ic"><use href="#i-wifi"/></svg><span class="mb-batt"><i></i></span><span class="mb-clock" data-clock>9:41</span></span>
           </div>
           <div class="desk">
-            <aside class="script" aria-hidden="true">
-              <div class="script-bar"><i></i><i></i><i></i><span>{{screen_script_title}}</span></div>
-              <div class="script-body">{{screen_script_body}}</div>
-            </aside>
+            <div class="win">
             <div class="app is-rec" data-app>
               <div class="video" data-video>
                 <img src="/assets/creator-desk.webp" alt="{{illustration_note}}" width="2048" height="1152">
@@ -78,6 +75,7 @@
               <div class="bar" data-bar>
                 <div class="vi"><small>ISO</small><b>250</b></div>
                 <div class="vi"><small>Shutter</small><b>1/60</b></div>
+                <div class="vi opt"><small>FPS</small><b>30</b></div>
                 <div class="vi"><small>WB</small><b>5600 K</b></div>
                 <div class="vi opt"><small>Tint</small><b>+10</b></div>
                 <div class="vi opt"><small>{{hud_focus}}</small><b>AF</b></div>
@@ -89,11 +87,24 @@
                 <span class="ib"><svg class="ic"><use href="#i-speaker"/></svg></span>
                 <span class="ib opt"><svg class="ic"><use href="#i-grid"/></svg></span>
                 <span class="ib opt"><svg class="ic"><use href="#i-rotate"/></svg></span>
+                <span class="ib opt is-on"><svg class="ic"><use href="#i-note"/></svg></span>
               </div>
+            </div>
+            <aside class="pane" aria-hidden="true">
+              <div class="pane-head"><svg class="ic"><use href="#i-waveform"/></svg><span>{{screen_script_line}} <span data-ln>2</span> {{screen_script_of}} <span data-lm>4</span></span></div>
+              <div class="pane-text"><div class="pane-flow" data-script>{{screen_script_body}}</div></div>
+              <div class="pane-ctl">
+                <span class="pc is-on"><svg class="ic"><use href="#i-waveform"/></svg>{{screen_script_follow}}</span>
+                <span class="pc pc-i"><svg class="ic"><use href="#i-text-smaller"/></svg></span>
+                <span class="pc pc-i"><svg class="ic"><use href="#i-text-larger"/></svg></span>
+                <span class="pc pc-i"><svg class="ic"><use href="#i-window"/></svg></span>
+                <span class="pc pc-i"><svg class="ic"><use href="#i-more"/></svg></span>
+              </div>
+            </aside>
             </div>
           </div>
           <div class="dock" aria-hidden="true">
-            <img src="/assets/icon.png" alt="" width="64" height="64"><span class="dk-script"><i></i><i></i><i></i></span><span class="dk-sep"></span><span class="dk-folder"></span>
+            <img src="/assets/icon.png" alt="" width="64" height="64"><span class="dk-sep"></span><span class="dk-folder"></span>
           </div>
         </div>
         <span class="notch" aria-hidden="true"></span>

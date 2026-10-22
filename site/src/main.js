@@ -38,6 +38,31 @@
     recWord.textContent = on ? "REC" : "STBY";
   });
 
+  // Script: while recording, it moves one sentence every 2.6 s, as if following the speech.
+  // Said 22%, ahead 60%, current sentence 100%, with the current block held near 30% from the top.
+  const flow = document.querySelector("[data-script]");
+  if (flow) {
+    const lines = [...flow.querySelectorAll("span")];
+    const blocks = [...flow.children];
+    const lineNo = document.querySelector("[data-ln]");
+    document.querySelector("[data-lm]").textContent = blocks.length;
+    let said = 1;
+    const follow = () => {
+      lines.forEach((s, i) => { s.className = i < said ? "said" : i === said ? "now" : ""; });
+      const block = lines[said].closest("h4, p");
+      lineNo.textContent = blocks.indexOf(block) + 1;
+      const y = block.offsetTop - flow.parentElement.clientHeight * 0.3;
+      flow.style.transform = `translateY(${-Math.max(0, y)}px)`;
+    };
+    follow();
+    addEventListener("resize", follow);
+    if (!reduce) setInterval(() => {
+      if (!app.classList.contains("is-rec") || document.hidden) return;
+      said = (said + 1) % lines.length;
+      follow();
+    }, 2600);
+  }
+
   // Control bar: shows on pointer movement, hides 3 s after it stops
   const bar = document.querySelector("[data-bar]");
   let hideTimer;
