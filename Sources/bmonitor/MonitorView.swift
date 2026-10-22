@@ -450,6 +450,15 @@ struct ControlBar: View {
         } content: {
             FocusPanel(model: model)
         }
+        separator
+        ValueButton(model: model, panel: .format) {
+            ValueItem(
+                label: String(localized: "Formato"), value: state.recordFormat?.summary ?? "—",
+                pending: model.pending.contains("/system/format") || model.pending.contains("/system/dynamicRange"),
+                failed: model.hasFailed("/system/format", "/system/dynamicRange"), compact: compact, tight: tight)
+        } content: {
+            FormatPanel(model: model)
+        }
     }
 
     @ViewBuilder private func cameraAndWindow(compact: Bool, tight: Bool = false) -> some View {

@@ -17,7 +17,7 @@ final class AppModel {
 
     enum Signal { case waiting, ok, lossy, lost, cameraGone }
 
-    enum Panel: String { case iso, shutter, whiteBalance, tint, focus, lens, audio, grid }
+    enum Panel: String { case iso, shutter, whiteBalance, tint, focus, format, lens, audio, grid }
 
     enum GridStyle: String, CaseIterable, Identifiable {
         case off, thirds, thirdsCenter, phi, cross, dot, eyeLine
@@ -385,6 +385,26 @@ final class AppModel {
     var gainAdjustable: Bool {
         guard state.audioGain != nil, let range = state.audioGainRange else { return false }
         return range.upperBound > range.lowerBound && gainRefusedInput != state.audioInputs[0]
+    }
+
+    /// Troca resolução, fps ou codec. A câmera exige o objeto inteiro do formato. Gravando, não
+    /// troca: no meio de um take é quase sempre clique errado, e o custo é o take.
+    func setFormat(resolution: String? = nil, frameRate: String? = nil, codec: String? = nil) {
+        guard !state.recording, let current = state.recordFormat,
+            let option = state.supportedFormats.first(where: { $0.resolution == (resolution ?? current.resolution) })
+        else { return }
+        let rate = frameRate ?? (option.frameRates.contains(current.frameRate) ? current.frameRate : option.frameRates.first)
+        let wanted = codec ?? current.codec
+        let chosen =
+            option.codecs.contains(wanted)
+            ? wanted : option.codecs.first { RecordFormat.family($0) == RecordFormat.family(wanted) } ?? option.codecs.first
+        guard let rate, let chosen else { return }
+        set("/system/format", current.body(option: option, frameRate: rate, codec: chosen))
+    }
+
+    func setDynamicRange(_ range: String) {
+        guard !state.recording, range != state.dynamicRange else { return }
+        set("/system/dynamicRange", ["dynamicRange": range])
     }
 
     func togglePanel(_ panel: Panel) {

@@ -162,3 +162,26 @@ private func recordedState() throws -> CameraState {
     ]])
     #expect(state.audioGainRange == 1...1)
 }
+
+@Test func recordFormatAndItsOptions() {
+    let state = CameraState()
+    // Como o iPhone mandou em 21/10/2026.
+    state.apply(property: "/system/format", value: [
+        "frameRate": "30", "codec": "HEVC (H.265):Max", "offSpeedEnabled": false, "offSpeedFrameRate": 30,
+        "resolutionDescriptor": ["aspectRatio": "16:9", "description": "4K", "group": "4K"],
+        "recordResolution": ["width": 3840, "height": 2160], "sensorResolution": ["width": 3840, "height": 2160],
+    ])
+    #expect(state.recordFormat?.summary == "4K 30p")
+    #expect(RecordFormat.family("HEVC (H.265):Max") == "HEVC (H.265)")
+    #expect(RecordFormat.quality("Apple ProRes 422:Default") == "Default")
+    state.apply(property: "/system/supportedFormats", value: ["supportedFormats": [[
+        "codecs": ["HEVC (H.265):Max", "H.264:Max"], "frameRates": ["24", "30"],
+        "resolutionDescriptor": ["description": "Open Gate", "group": "Open Gate", "aspectRatio": "4:3"],
+        "recordResolution": ["width": 4032, "height": 3024], "sensorResolution": ["width": 4032, "height": 3024],
+    ]]])
+    let option = try! #require(state.supportedFormats.first)
+    #expect(option.resolution == "Open Gate")
+    let body = state.recordFormat!.body(option: option, frameRate: "24", codec: "H.264:Max")
+    #expect(body["frameRate"] as? String == "24")
+    #expect((body["recordResolution"] as? [String: Int])?["width"] == 4032)
+}

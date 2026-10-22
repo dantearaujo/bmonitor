@@ -381,6 +381,117 @@ struct GridPanel: View {
     }
 }
 
+/// Resolução, fps, codec e espaço de cor, com as opções que o iPhone publica. Os codecs ficam
+/// como a Blackmagic escreve; o espaço de cor usa os nomes da tela do Blackmagic Camera, porque
+/// a API chama de `dynamicRange` com outros nomes.
+struct FormatPanel: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        let state = model.state
+        let current = state.recordFormat
+        let option = state.supportedFormats.first { $0.resolution == current?.resolution }
+        let families = Self.families(option?.codecs ?? [])
+        let family = current.map { RecordFormat.family($0.codec) }
+        let qualities = (option?.codecs ?? []).filter { RecordFormat.family($0) == family }.map(RecordFormat.quality)
+        VStack(alignment: .leading, spacing: 16) {
+            if state.recording {
+                Label("Gravando: o formato fica travado até parar.", systemImage: "lock.fill")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            Group {
+                PanelSection(title: String(localized: "Resolução")) {
+                    ChoiceGrid(
+                        values: state.supportedFormats.map(\.resolution), selected: current?.resolution, columns: 4,
+                        label: { $0 }
+                    ) { model.setFormat(resolution: $0) }
+                }
+                PanelSection(title: String(localized: "Quadros por segundo")) {
+                    ChoiceGrid(values: option?.frameRates ?? [], selected: current?.frameRate, columns: 4, label: { $0 }) {
+                        model.setFormat(frameRate: $0)
+                    }
+                }
+                PanelSection(title: "Codec") {
+                    ChoiceGrid(values: families, selected: family, columns: 2, label: Self.short) { chosen in
+                        // Mesma qualidade na família nova, se ela tiver; senão a primeira dela.
+                        let quality = current.map { RecordFormat.quality($0.codec) } ?? "Default"
+                        let codecs = (option?.codecs ?? []).filter { RecordFormat.family($0) == chosen }
+                        model.setFormat(codec: codecs.first { RecordFormat.quality($0) == quality } ?? codecs.first)
+                    }
+                }
+                if qualities.count > 1, let family {
+                    PanelSection(title: String(localized: "Qualidade")) {
+                        ChoiceGrid(
+                            values: qualities, selected: current.map { RecordFormat.quality($0.codec) }, columns: 4,
+                            label: Self.quality
+                        ) { model.setFormat(codec: "\(family):\($0)") }
+                    }
+                }
+                if !state.supportedDynamicRanges.isEmpty {
+                    PanelSection(title: String(localized: "Espaço de cor")) {
+                        ChoiceGrid(
+                            values: Self.colorSpaces(state.supportedDynamicRanges), selected: state.dynamicRange,
+                            columns: 2, label: Self.colorSpace
+                        ) { model.setDynamicRange($0) }
+                        if state.dynamicRange == "Film" {
+                            Text("O Apple Log 2 só se escolhe no iPhone. Com ele ligado, aqui aparece Apple Log.")
+                                .font(.callout).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+            .disabled(state.recording)
+            .opacity(state.recording ? 0.4 : 1)
+            Text("Trocar o formato reinicia o vídeo no Mac por um instante.")
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    /// Famílias na ordem do uso comum: HEVC e H.264 antes dos ProRes.
+    private static func families(_ codecs: [String]) -> [String] {
+        var seen: [String] = []
+        for family in codecs.map(RecordFormat.family) where !seen.contains(family) { seen.append(family) }
+        let common = seen.filter { !$0.contains("ProRes") }
+        return common + seen.filter { $0.contains("ProRes") }
+    }
+
+    /// "HEVC (H.265)" vira "HEVC"; "Apple ProRes 422 HQ" vira "ProRes 422 HQ".
+    static func short(_ family: String) -> String {
+        if family.hasPrefix("HEVC") { return "HEVC" }
+        return family.hasPrefix("Apple ") ? String(family.dropFirst(6)) : family
+    }
+
+    /// Valores da API na ordem SDR e depois HDR; um valor desconhecido vai para o fim.
+    private static func colorSpaces(_ values: [String]) -> [String] {
+        let order = ["Video", "Extended Video", "HLG", "Film"]
+        return order.filter(values.contains) + values.filter { !order.contains($0) }
+    }
+
+    /// Nome do espaço de cor no Blackmagic Camera. "Film" é o Apple Log: o Apple Log 2 não tem
+    /// valor na API e, ligado no iPhone, também é lido como "Film" (visto em 21/10/2026).
+    private static func colorSpace(_ raw: String) -> String {
+        switch raw {
+        case "Video": "Rec.709"
+        case "Extended Video": "P3 D65"
+        case "HLG": "Rec.2020 · HDR"
+        case "Film": "Apple Log · HDR"
+        default: raw
+        }
+    }
+
+    private static func quality(_ raw: String) -> String {
+        switch raw {
+        case "Max": String(localized: "Máxima")
+        case "High": String(localized: "Alta")
+        case "Medium": String(localized: "Média")
+        case "Low": String(localized: "Baixa")
+        default: raw
+        }
+    }
+}
+
 struct AudioPanel: View {
     @Bindable var model: AppModel
     @State private var confirmSilence = false

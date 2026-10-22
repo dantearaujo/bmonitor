@@ -171,3 +171,17 @@
 "Câmera %@" = "Camera %@";
 "Bateria do iPhone" = "iPhone battery";
 "Bateria do iPhone, carregando" = "iPhone battery, charging";
+"Formato" = "Format";
+"Formato de gravação" = "Recording format";
+"Formato de gravação…" = "Recording Format…";
+"Resolução" = "Resolution";
+"Quadros por segundo" = "Frames per second";
+"Qualidade" = "Quality";
+"Espaço de cor" = "Color space";
+"O Apple Log 2 só se escolhe no iPhone. Com ele ligado, aqui aparece Apple Log." = "Apple Log 2 can only be chosen on the iPhone. While it's on, this shows Apple Log.";
+"Máxima" = "Max";
+"Alta" = "High";
+"Média" = "Medium";
+"Baixa" = "Low";
+"Gravando: o formato fica travado até parar." = "Recording: the format is locked until you stop.";
+"Trocar o formato reinicia o vídeo no Mac por um instante." = "Changing the format restarts the video on the Mac for a moment.";

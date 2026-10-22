@@ -7,6 +7,8 @@ public struct VideoAccessUnit {
     public var pts: Int64?
     /// Instante (ns, relógio monotônico) em que o primeiro pacote TS do quadro chegou.
     public var firstPacketAt: UInt64
+    /// H.264 em vez de HEVC: o iPhone transmite no codec da gravação quando ela é H.264.
+    public var isH264 = false
 }
 
 /// Um PES de áudio: um ou mais quadros AAC com cabeçalho ADTS.
@@ -108,7 +110,9 @@ public final class TSDemuxer {
     }
 
     private func parsePMT(_ p: UnsafeRawBufferPointer, _ pusi: Bool) {
-        guard pusi, videoPID < 0 || audioPID < 0, p.count > 1 else { return }
+        // Lido a cada PMT, não só o primeiro: o demuxer vive a sessão inteira e o stream pode
+        // voltar em outro codec depois de uma troca de formato.
+        guard pusi, p.count > 1 else { return }
         let s = 1 + Int(p[0])
         guard s + 12 < p.count, p[s] == 0x02 else { return }
         let sectionLength = Int(p[s + 1] & 0x0F) << 8 | Int(p[s + 2])
@@ -119,11 +123,15 @@ public final class TSDemuxer {
             let streamType = p[i]
             let pid = Int(p[i + 1] & 0x1F) << 8 | Int(p[i + 2])
             let esInfoLength = Int(p[i + 3] & 0x0F) << 8 | Int(p[i + 4])
-            if streamType == Self.hevc || streamType == Self.h264, videoPID < 0 {
-                videoPID = pid
-                videoStreamType = streamType
-            } else if streamType == Self.adtsAAC, audioPID < 0 {
+            if streamType == Self.hevc || streamType == Self.h264 {
+                if pid != videoPID || streamType != videoStreamType {
+                    videoPID = pid
+                    videoStreamType = streamType
+                    inPES = false
+                }
+            } else if streamType == Self.adtsAAC, pid != audioPID {
                 audioPID = pid
+                audioPES.removeAll(keepingCapacity: true)
             }
             i += 5 + esInfoLength
         }
@@ -178,6 +186,8 @@ public final class TSDemuxer {
     private func emit() {
         inPES = false
         guard let (pts, dataStart) = Self.pesHeader(pes) else { return }
-        onVideo?(VideoAccessUnit(data: Data(pes[dataStart...]), pts: pts, firstPacketAt: pesStartedAt))
+        onVideo?(
+            VideoAccessUnit(
+                data: Data(pes[dataStart...]), pts: pts, firstPacketAt: pesStartedAt, isH264: videoStreamType == Self.h264))
     }
 }

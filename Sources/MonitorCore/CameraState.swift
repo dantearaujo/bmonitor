@@ -63,6 +63,7 @@ public final class CameraState {
         "/lens/cameras", "/lens/zoom", "/lens/zoom/description", "/lens/focus", "/lens/opticalImageStabilization",
         "/audio/channel/0/supportedInputs", "/audio/channel/0/level", "/audio/channel/0/input/description",
         "/camera/power", "/system/product",
+        "/system/format", "/system/supportedFormats", "/system/dynamicRange", "/system/supportedDynamicRanges",
     ]
 
     /// Abaixo destes segundos restantes o status vira alerta (decisão de produto).
@@ -111,6 +112,12 @@ public final class CameraState {
     /// a pessoa deu ao iPhone não sai pela API nem pelo Bonjour.
     public var deviceName: String?
     public var productName: String?
+
+    /// Formato de gravação (`/system/format`) e as opções que o iPhone publica para ele.
+    public var recordFormat: RecordFormat?
+    public var supportedFormats: [RecordFormat.Option] = []
+    public var dynamicRange: String?
+    public var supportedDynamicRanges: [String] = []
 
     /// A opção "sem áudio" vem no idioma do iPhone ("None" em inglês, "Não" em português) e é
     /// a primeira de `supportedInputs` nos dois (conferido em 21/10/2026).
@@ -261,6 +268,14 @@ public final class CameraState {
             let battery = (value["batteries"] as? [[String: Any]])?.first
             batteryPercent = number(battery?["chargeRemainingPercent"]).map { Int($0.rounded()) }
             batteryCharging = (battery?["statusFlags"] as? [String])?.contains("Battery Is Charging") ?? false
+        case "/system/format":
+            recordFormat = RecordFormat(value)
+        case "/system/supportedFormats":
+            supportedFormats = (value["supportedFormats"] as? [[String: Any]] ?? []).compactMap(RecordFormat.Option.init)
+        case "/system/dynamicRange":
+            dynamicRange = value["dynamicRange"] as? String
+        case "/system/supportedDynamicRanges":
+            supportedDynamicRanges = value["supportedDynamicRanges"] as? [String] ?? []
         case "/system/product":
             deviceName = value["deviceName"] as? String
             productName = value["productName"] as? String
@@ -293,5 +308,76 @@ private func number(_ value: Any?) -> Double? {
     case let i as Int: return Double(i)
     case let n as NSNumber: return n.doubleValue
     default: return nil
+    }
+}
+
+/// Formato de gravação do Blackmagic Camera. O codec vem com a qualidade depois de dois pontos
+/// ("HEVC (H.265):Max"); ProRes 422 só tem "Default".
+public struct RecordFormat: Equatable, Sendable {
+    public struct Option: Equatable, Sendable {
+        /// "4K", "HD", "720p", "Open Gate".
+        public let resolution: String
+        public let width: Int
+        public let height: Int
+        public let sensorWidth: Int
+        public let sensorHeight: Int
+        public let frameRates: [String]
+        public let codecs: [String]
+
+        init?(_ value: [String: Any]) {
+            guard let descriptor = value["resolutionDescriptor"] as? [String: Any],
+                let name = descriptor["description"] as? String,
+                let record = value["recordResolution"] as? [String: Any],
+                let width = record["width"] as? Int, let height = record["height"] as? Int
+            else { return nil }
+            let sensor = value["sensorResolution"] as? [String: Any]
+            resolution = name
+            self.width = width
+            self.height = height
+            sensorWidth = sensor?["width"] as? Int ?? width
+            sensorHeight = sensor?["height"] as? Int ?? height
+            frameRates = value["frameRates"] as? [String] ?? []
+            codecs = value["codecs"] as? [String] ?? []
+        }
+    }
+
+    public let resolution: String
+    public let width: Int
+    public let height: Int
+    public let frameRate: String
+    public let codec: String
+    let offSpeedEnabled: Bool
+    let offSpeedFrameRate: Int
+
+    init?(_ value: [String: Any]) {
+        guard let rate = value["frameRate"] as? String, let codec = value["codec"] as? String,
+            let record = value["recordResolution"] as? [String: Any],
+            let width = record["width"] as? Int, let height = record["height"] as? Int
+        else { return nil }
+        resolution = (value["resolutionDescriptor"] as? [String: Any])?["description"] as? String ?? "\(width)x\(height)"
+        self.width = width
+        self.height = height
+        frameRate = rate
+        self.codec = codec
+        offSpeedEnabled = value["offSpeedEnabled"] as? Bool ?? false
+        offSpeedFrameRate = value["offSpeedFrameRate"] as? Int ?? Int(Double(rate)?.rounded() ?? 30)
+    }
+
+    /// "4K 30p".
+    public var summary: String { "\(resolution) \(frameRate)p" }
+
+    /// Família do codec sem a qualidade: "HEVC (H.265)".
+    public static func family(_ codec: String) -> String { codec.split(separator: ":").first.map(String.init) ?? codec }
+    /// Qualidade do codec: "Max", "High"…; "Default" quando não há níveis.
+    public static func quality(_ codec: String) -> String { codec.split(separator: ":").dropFirst().first.map(String.init) ?? "Default" }
+
+    /// Corpo do PUT: a câmera exige o objeto inteiro; só com codec, fps e resolução responde
+    /// 500 (testado em 21/10/2026).
+    public func body(option: Option, frameRate: String, codec: String) -> [String: Any] {
+        [
+            "codec": codec, "frameRate": frameRate, "offSpeedEnabled": offSpeedEnabled, "offSpeedFrameRate": offSpeedFrameRate,
+            "recordResolution": ["width": option.width, "height": option.height],
+            "sensorResolution": ["width": option.sensorWidth, "height": option.sensorHeight],
+        ]
     }
 }

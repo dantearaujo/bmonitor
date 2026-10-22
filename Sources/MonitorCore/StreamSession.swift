@@ -23,7 +23,7 @@ public final class StreamSession {
     private let listener: SRTListener
     private let restartGate = Gate()
     private let demuxer = TSDemuxer()
-    private let decoder = HEVCDecoder()
+    private let decoder = VideoDecoder()
     private let audioDecoder = AudioDecoder()
     private var receiver: Thread?
     private var originalPlatform: [String: Any]?

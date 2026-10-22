@@ -128,7 +128,7 @@ final class Meter {
 
 let listener = SRTListener(port: port, latencyMs: latency)
 let demuxer = TSDemuxer()
-let decoder = HEVCDecoder()
+let decoder = VideoDecoder()
 let meter = Meter()
 
 decoder.onFrame = display

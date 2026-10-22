@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Atalhos do teclado num lugar só: o menu os registra e a tela de atalhos os lista.
 enum Shortcut: CaseIterable {
-    case record, focusNow, iso, shutter, whiteBalance, tint, lens, audio, gainUp, gainDown, mute, grid, safeZone, rotate, help
+    case record, focusNow, iso, shutter, whiteBalance, tint, format, lens, audio, gainUp, gainDown, mute, grid, safeZone, rotate, help
 
     var keyboard: KeyboardShortcut {
         switch self {
@@ -12,6 +12,7 @@ enum Shortcut: CaseIterable {
         case .shutter: KeyboardShortcut("s", modifiers: [])
         case .whiteBalance: KeyboardShortcut("w", modifiers: [])
         case .tint: KeyboardShortcut("t", modifiers: [])
+        case .format: KeyboardShortcut("k", modifiers: [])
         case .lens: KeyboardShortcut("l", modifiers: [])
         case .audio: KeyboardShortcut("a", modifiers: [])
         // Setas com ⌥: iguais em qualquer teclado, ao contrário de + e -.
@@ -34,6 +35,7 @@ enum Shortcut: CaseIterable {
         case .shutter: "Shutter"
         case .whiteBalance: String(localized: "Balanço de branco")
         case .tint: "Tint"
+        case .format: String(localized: "Formato de gravação")
         case .lens: String(localized: "Lente e zoom")
         case .audio: String(localized: "Origem de áudio")
         case .gainUp: String(localized: "Subir o ganho do áudio")
@@ -90,7 +92,7 @@ struct ShortcutsOverlay: View {
             rows([.record, .focusNow])
                 + [Row(keys: String(localized: "Clique"), title: String(localized: "Focar no ponto do vídeo"))]
         ),
-        (String(localized: "Abrir controle"), rows([.iso, .shutter, .whiteBalance, .tint, .lens, .audio, .gainUp, .gainDown])),
+        (String(localized: "Abrir controle"), rows([.iso, .shutter, .whiteBalance, .tint, .format, .lens, .audio, .gainUp, .gainDown])),
         (
             String(localized: "No Mac"),
             rows([.mute, .grid, .safeZone, .rotate]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]

@@ -33,7 +33,7 @@ private func recordedUnits() throws -> [VideoAccessUnit] {
 @Test(.enabled(if: hasStreamFixture, "Fixtures/stream.ts ausente")) func keyframeCarriesParameterSets() throws {
     let units = try recordedUnits()
     let types = units.map { unit in
-        Set(HEVCDecoder.nalUnits(unit.data).compactMap { $0.first.map { ($0 >> 1) & 0x3F } })
+        Set(VideoDecoder.nalUnits(unit.data).compactMap { $0.first.map { ($0 >> 1) & 0x3F } })
     }
     let keyframe = try #require(types.firstIndex { $0.contains(32) })
     #expect(types[keyframe].isSuperset(of: [32, 33, 34]))
@@ -41,6 +41,6 @@ private func recordedUnits() throws -> [VideoAccessUnit] {
 
 @Test func splitsAnnexB() {
     let data = Data([0, 0, 0, 1, 0x40, 0x01, 0xAA, 0, 0, 1, 0x42, 0x01, 0, 0, 0, 1, 0x26, 0x01, 0xBB])
-    let nals = HEVCDecoder.nalUnits(data)
+    let nals = VideoDecoder.nalUnits(data)
     #expect(nals == [Data([0x40, 0x01, 0xAA]), Data([0x42, 0x01]), Data([0x26, 0x01, 0xBB])])
 }

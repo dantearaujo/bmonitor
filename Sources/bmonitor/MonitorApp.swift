@@ -52,6 +52,7 @@ struct MonitorApp: App {
                 Button("Shutter…") { model.togglePanel(.shutter) }.keyboardShortcut(.shutter)
                 Button("Balanço de branco…") { model.togglePanel(.whiteBalance) }.keyboardShortcut(.whiteBalance)
                 Button("Tint…") { model.togglePanel(.tint) }.keyboardShortcut(.tint)
+                Button("Formato de gravação…") { model.togglePanel(.format) }.keyboardShortcut(.format)
                 Button("Lente…") { model.togglePanel(.lens) }.keyboardShortcut(.lens)
                 Button("Origem de áudio…") { model.togglePanel(.audio) }.keyboardShortcut(.audio)
                 Button("Subir o ganho do áudio") { model.stepAudioGain(by: 0.05) }
