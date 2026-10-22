@@ -7,17 +7,17 @@ import SwiftUI
 struct MonitorApp: App {
     @NSApplicationDelegateAdaptor private var delegate: AppDelegate
     @State private var model: AppModel
-    /// Atualização automática pelo Sparkle: o feed e a chave pública vêm do Info.plist do .app.
-    /// O binário solto (swift run) não tem Info.plist, então o atualizador não liga nele.
-    private let updater = SPUStandardUpdaterController(
-        startingUpdater: Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") != nil,
-        updaterDelegate: nil, userDriverDelegate: nil)
+    /// Atualização automática pelo Sparkle, com a janela do app: o feed e a chave pública vêm do
+    /// Info.plist do .app. O binário solto (swift run) não tem Info.plist e fica sem atualizador.
+    private let updates: Updates
 
     init() {
         setvbuf(stdout, nil, _IOLBF, 0)
         let model = AppModel()
         _model = State(initialValue: model)
         AppDelegate.model = model
+        updates = Updates()
+        updates.isBusy = { [weak model] in model?.state.recording ?? false }
     }
 
     var body: some Scene {
@@ -26,13 +26,8 @@ struct MonitorApp: App {
                 .frame(minWidth: 480, minHeight: 270)
                 // Título da janela no menu Janela e no Mission Control.
                 .navigationTitle(model.cameraTitle ?? "bmonitor")
-                .onAppear {
-                    // Desenvolvimento: `--check-updates-now` procura atualização em segundo plano ao abrir,
-                    // para testar o Sparkle de ponta a ponta sem clicar no menu.
-                    if CommandLine.arguments.contains("--check-updates-now") {
-                        updater.updater.checkForUpdatesInBackground()
-                    }
-                }
+                // Versão nova aparece sozinha ao abrir o app, sem ninguém procurar.
+                .onAppear { updates.checkOnLaunch() }
         }
         // Janela comum, ao lado do roteiro e de outras janelas; nada de Space próprio.
         .defaultSize(width: 960, height: 540)
@@ -53,6 +48,7 @@ struct MonitorApp: App {
                 Divider()
                 Button("ISO…") { model.togglePanel(.iso) }.keyboardShortcut(.iso, typing: model.script.editing)
                 Button("Shutter…") { model.togglePanel(.shutter) }.keyboardShortcut(.shutter, typing: model.script.editing)
+                Button("Quadros por segundo…") { model.togglePanel(.frameRate) }.keyboardShortcut(.frameRate, typing: model.script.editing)
                 Button("Balanço de branco…") { model.togglePanel(.whiteBalance) }.keyboardShortcut(.whiteBalance, typing: model.script.editing)
                 Button("Tint…") { model.togglePanel(.tint) }.keyboardShortcut(.tint, typing: model.script.editing)
                 Button("Formato de gravação…") { model.togglePanel(.format) }.keyboardShortcut(.format, typing: model.script.editing)
@@ -80,58 +76,126 @@ struct MonitorApp: App {
                 }
                 Button("Girar 90°") { model.rotate() }.keyboardShortcut(.rotate, typing: model.script.editing)
             }
-            CommandGroup(after: .appInfo) {
-                Button("Procurar atualizações…") { updater.checkForUpdates(nil) }
-                    .disabled(Bundle.main.object(forInfoDictionaryKey: "SUFeedURL") == nil)
+            CommandGroup(replacing: .appInfo) {
+                AboutMenuItem()
+                Button("Procurar atualizações…") { updates.checkNow() }
+                    .disabled(!updates.isAvailable)
             }
             CommandGroup(replacing: .help) {
                 Button("Atalhos do teclado") { model.toggleShortcuts() }.keyboardShortcut(.help, typing: model.script.editing)
             }
         }
 
-        // O roteiro fica numa janela própria ao lado do monitor, nunca sobre o vídeo.
-        Window("Roteiro", id: "script") {
-            ScriptView(model: model.script, cameraConnected: model.phase == .connected)
+        Window("Sobre o bmonitor", id: "about") {
+            AboutView()
         }
-        .defaultSize(width: 600, height: 820)
         .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }
 
-/// Itens do menu Roteiro; o `openWindow` só existe dentro de uma view.
-private struct ScriptMenu: View {
-    let model: AppModel
+/// "Sobre o bmonitor" abre a janela própria no lugar do painel padrão; o `openWindow` só
+/// existe dentro de uma view.
+private struct AboutMenuItem: View {
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
+        Button("Sobre o bmonitor") { openWindow(id: "about") }
+    }
+}
+
+/// Itens do menu Roteiro, com os atalhos. O roteiro mora na janela do monitor: o que mexe
+/// nele abre o painel antes.
+private struct ScriptMenu: View {
+    let model: AppModel
+
+    var body: some View {
         let script = model.script
-        Button("Mostrar o roteiro") { openWindow(id: "script") }.keyboardShortcut(.script)
+        Button(script.isOpen ? String(localized: "Esconder o roteiro") : String(localized: "Mostrar o roteiro")) { model.toggleScript() }
+            .keyboardShortcut(.script)
         Button(script.following ? String(localized: "Parar de seguir a fala") : String(localized: "Seguir a fala")) {
-            openWindow(id: "script")
+            model.openScript()
             script.toggleFollowing()
         }
         .keyboardShortcut(.follow, typing: script.editing)
         .disabled(script.script.isEmpty)
         Button("Editar o roteiro") {
-            openWindow(id: "script")
+            model.openScript()
             script.editing = true
         }
         .keyboardShortcut("e")
         .disabled(script.editing)
         Divider()
         Button("Colar roteiro") {
-            openWindow(id: "script")
+            model.openScript()
             script.paste()
         }
         Button("Abrir arquivo…") {
-            openWindow(id: "script")
+            model.openScript()
             script.open()
         }
         .keyboardShortcut("o")
         Divider()
+        // Setas sem modificador só com o roteiro à vista e nenhum controle aberto: num popover,
+        // elas são do slider.
+        let reading = script.isOpen && !script.editing && !script.script.isEmpty && model.panel == nil
+        Button("Próxima frase") { script.nextSentence() }
+            .keyboardShortcut(.downArrow, modifiers: [])
+            .disabled(!reading)
+        Button("Frase anterior") { script.previousSentence() }
+            .keyboardShortcut(.upArrow, modifiers: [])
+            .disabled(!reading)
         Button("Voltar ao início") { script.restart() }.disabled(script.script.isEmpty)
-        Button("Texto maior") { script.adjustFont(by: 4) }.keyboardShortcut("+")
-        Button("Texto menor") { script.adjustFont(by: -4) }.keyboardShortcut("-")
+        Divider()
+        Button("Texto maior") { script.adjustFont(by: 2) }.keyboardShortcut("+")
+        Button("Texto menor") { script.adjustFont(by: -2) }.keyboardShortcut("-")
+        Divider()
+        DetachItem(model: model)
+        ScriptSidePicker(model: model)
+    }
+}
+
+/// Ações do roteiro no menu "…" da barra do monitor.
+struct ScriptActions: View {
+    let model: AppModel
+
+    var body: some View {
+        let script = model.script
+        Button("Editar o roteiro") { script.editing = true }
+        Button("Colar roteiro") { script.paste() }
+        Button("Abrir arquivo…") { script.open() }
+        Divider()
+        Button("Voltar ao início") { script.restart() }
+        Divider()
+        DetachItem(model: model)
+        ScriptSidePicker(model: model)
+    }
+}
+
+/// Destacar o roteiro numa janela própria, ou juntá-lo de volta à janela da câmera.
+struct DetachItem: View {
+    let model: AppModel
+
+    var body: some View {
+        if model.script.detached {
+            Button("Juntar à janela da câmera") { model.attachScript() }
+        } else {
+            Button("Destacar em janela própria") { model.detachScript() }
+        }
+    }
+}
+
+/// De que lado do vídeo o roteiro abre; trocar anda a janela, e o vídeo fica onde estava.
+struct ScriptSidePicker: View {
+    let model: AppModel
+
+    var body: some View {
+        Picker("Lado do roteiro", selection: Binding(get: { model.scriptSide }, set: { model.moveScript(to: $0) })) {
+            // Acima e abaixo só com o vídeo deitado; cada orientação guarda a sua escolha.
+            ForEach(ScriptModel.Side.choices(landscape: model.isLandscape)) { Text($0.title).tag($0) }
+        }
+        .pickerStyle(.inline)
     }
 }
 
@@ -155,13 +219,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { true }
 
-    /// Fechar o monitor fecha o app, mesmo com o roteiro aberto: é a saída que devolve a
-    /// plataforma original ao iPhone.
+    /// Saindo, as janelas fecham sozinhas: o roteiro destacado não pode contar isso como
+    /// "fechei o roteiro", senão ele não reabre no próximo uso.
+    @MainActor static var terminating = false
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        MainActor.assumeIsolated { Self.terminating = true }
+        return .terminateNow
+    }
+
+    /// Fechar o monitor fecha o app: é a saída que devolve a plataforma original ao iPhone.
     func applicationDidBecomeActive(_ notification: Notification) {
         guard closeObserver == nil else { return }
         closeObserver = NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: nil, queue: .main) { note in
-            // O SwiftUI dá à janela do monitor um identificador com o tipo da view; popovers,
-            // painéis e o roteiro ("script") não fecham o app.
+            // O SwiftUI dá à janela do monitor um identificador com o tipo da view; popovers e
+            // painéis não fecham o app.
             guard let window = note.object as? NSWindow, window.identifier?.rawValue.contains("MonitorView") == true
             else { return }
             NSApp.terminate(nil)

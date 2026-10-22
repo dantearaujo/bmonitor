@@ -17,7 +17,7 @@ final class AppModel {
 
     enum Signal { case waiting, ok, lossy, lost, cameraGone }
 
-    enum Panel: String { case iso, shutter, whiteBalance, tint, focus, format, lens, audio, grid }
+    enum Panel: String { case iso, shutter, frameRate, whiteBalance, tint, focus, format, lens, audio, grid }
 
     enum GridStyle: String, CaseIterable, Identifiable {
         case off, thirds, thirdsCenter, phi, cross, dot, eyeLine
@@ -109,6 +109,8 @@ final class AppModel {
     @ObservationIgnored let displayLayer = AVSampleBufferDisplayLayer()
     /// O roteiro da janela ao lado; ouve a fala no áudio da câmera.
     let script = ScriptModel()
+    /// A janela própria do roteiro, quando ele está destacado da janela da câmera.
+    @ObservationIgnored private var scriptWindow: ScriptWindow?
     @ObservationIgnored private let discovery = Discovery()
     @ObservationIgnored private let network = NWPathMonitor()
     @ObservationIgnored private var api: CameraAPI?
@@ -448,7 +450,86 @@ final class AppModel {
 
     func rotate() {
         quarterTurns = (quarterTurns + 1) % 4
-        WindowShaper.fit(aspect: displayAspect, animate: true)
+        shapeWindow(animate: true)
+    }
+
+    var isLandscape: Bool { displayAspect.width >= displayAspect.height }
+
+    /// Onde o roteiro fica agora: cada orientação do vídeo guarda a sua escolha.
+    var scriptSide: ScriptModel.Side { isLandscape ? script.landscapeSide : script.portraitSide }
+
+    /// O lugar do roteiro dentro da janela da câmera; nil fechado ou destacado.
+    var attachedScriptSide: ScriptModel.Side? { script.isOpen && !script.detached ? scriptSide : nil }
+
+    func shapeWindow(animate: Bool) {
+        WindowShaper.fit(aspect: displayAspect, side: attachedScriptSide, animate: animate)
+    }
+
+    /// Abre ou fecha o roteiro: junto, a janela cresce ou encolhe para o lado dele; destacado,
+    /// a janela própria aparece ou some.
+    func toggleScript() {
+        let old = attachedScriptSide
+        script.isOpen.toggle()
+        if !script.isOpen { script.editing = false }
+        if script.detached {
+            showScriptWindowIfNeeded()
+        } else {
+            WindowShaper.place(video: displayAspect, from: old, to: attachedScriptSide, animate: true)
+        }
+    }
+
+    /// Ações que mexem no roteiro (colar, abrir, editar) mostram o painel antes.
+    func openScript() {
+        if !script.isOpen { toggleScript() }
+    }
+
+    func moveScript(to side: ScriptModel.Side) {
+        guard side != scriptSide, ScriptModel.Side.choices(landscape: isLandscape).contains(side) else { return }
+        let old = attachedScriptSide
+        if isLandscape { script.landscapeSide = side } else { script.portraitSide = side }
+        if attachedScriptSide != nil { WindowShaper.place(video: displayAspect, from: old, to: attachedScriptSide, animate: true) }
+    }
+
+    /// Destaca o roteiro numa janela própria, no lugar e no tamanho em que ele estava: parece
+    /// que ele saiu da janela da câmera, que encolhe em volta do vídeo.
+    func detachScript() {
+        guard !script.detached else { return }
+        let old = attachedScriptSide
+        let frame = old.flatMap { WindowShaper.panelFrame(video: displayAspect, side: $0) }
+        script.detached = true
+        script.isOpen = true
+        WindowShaper.place(video: displayAspect, from: old, to: nil, animate: true)
+        scriptWindowController().show(frame: frame)
+    }
+
+    /// Junta o roteiro de volta à janela da câmera, no lugar escolhido para esta orientação.
+    func attachScript() {
+        guard script.detached else { return }
+        script.detached = false
+        scriptWindow?.hide()
+        script.isOpen = true
+        WindowShaper.place(video: displayAspect, from: nil, to: attachedScriptSide, animate: true)
+    }
+
+    /// Ao abrir o app destacado, ou ao mostrar e esconder com ⌘2.
+    func showScriptWindowIfNeeded() {
+        if script.detached, script.isOpen {
+            scriptWindowController().show(frame: nil)
+        } else {
+            scriptWindow?.hide()
+        }
+    }
+
+    private func scriptWindowController() -> ScriptWindow {
+        if let scriptWindow { return scriptWindow }
+        let window = ScriptWindow(app: self)
+        // Fechar a janela pelo botão vermelho esconde o roteiro; ele continua destacado.
+        window.onClose = { [weak self] in
+            self?.script.isOpen = false
+            self?.script.editing = false
+        }
+        scriptWindow = window
+        return window
     }
 
     func pokeControls() {
@@ -654,7 +735,7 @@ final class AppModel {
         case "/livestreams/0" where state.streamStatus == "Interrupted":
             restartStream()
         case "/system/videoFormat" where state.videoSize != previousSize:
-            WindowShaper.fit(aspect: displayAspect, animate: false)
+            shapeWindow(animate: false)
         default:
             break
         }
@@ -686,26 +767,127 @@ final class AppModel {
 }
 
 /// Dá à janela a proporção do vídeo: girar deixa o app inteiro em pé, e redimensionar
-/// mantém a proporção. Preserva o lado maior e a borda de cima, e cabe na tela.
+/// mantém a proporção. Com o roteiro aberto, a janela soma o roteiro: ao lado, metade do lado
+/// maior do vídeo; acima ou abaixo, 40% da largura dele. A proporção continua fixa e o vídeo
+/// não muda de tamanho nem de lugar ao abrir, fechar ou trocar o roteiro de lado.
 enum WindowShaper {
+    static let sideFraction: CGFloat = 0.5
+    static let stackFraction: CGFloat = 0.4
+
+    /// A janela do monitor: o SwiftUI dá a ela um identificador com o tipo da view. "A primeira
+    /// janela" podia ser o "Sobre" ou a de atualização, que perdiam os botões e o tamanho.
+    @MainActor static var monitorWindow: NSWindow? {
+        NSApp.windows.first { $0.identifier?.rawValue.contains("MonitorView") == true }
+    }
+
+    /// Tamanho do roteiro na direção em que ele soma, nas unidades do vídeo.
+    static func panelExtent(video: CGSize, side: ScriptModel.Side) -> CGFloat {
+        side.isVertical ? video.width * stackFraction : max(video.width, video.height) * sideFraction
+    }
+
+    /// Proporção do conteúdo da janela: o vídeo e, se aberto, o roteiro.
+    static func contentAspect(video: CGSize, side: ScriptModel.Side?) -> CGSize {
+        guard let side else { return video }
+        let extent = panelExtent(video: video, side: side)
+        return side.isVertical
+            ? CGSize(width: video.width, height: video.height + extent)
+            : CGSize(width: video.width + extent, height: video.height)
+    }
+
+    /// Onde o vídeo começa dentro do conteúdo, com a origem embaixo à esquerda, como no AppKit.
+    private static func videoOffset(video: CGSize, side: ScriptModel.Side?, scale: CGFloat) -> CGPoint {
+        guard let side else { return .zero }
+        let extent = panelExtent(video: video, side: side) * scale
+        switch side {
+        case .left: return CGPoint(x: extent, y: 0)
+        case .bottom: return CGPoint(x: 0, y: extent)
+        case .right, .top: return .zero
+        }
+    }
+
+    /// Como a janela estava na última vez: dela sai o tamanho do vídeo a preservar.
+    @MainActor private static var last: (video: CGSize, side: ScriptModel.Side?)?
+
+    /// Gira ou ajusta ao formato da câmera: o lado maior do vídeo fica, e também o centro
+    /// horizontal e a borda de cima da janela.
     @MainActor
-    static func fit(aspect: CGSize, animate: Bool) {
+    static func fit(aspect: CGSize, side: ScriptModel.Side?, animate: Bool) {
         guard aspect.width > 0, aspect.height > 0,
-            let window = NSApp.windows.first(where: { $0.canBecomeMain }),
+            let window = monitorWindow,
+            !window.styleMask.contains(.fullScreen),
             let screen = window.screen ?? NSScreen.main
         else { return }
-        window.contentAspectRatio = aspect
         let content = window.contentRect(forFrameRect: window.frame).size
-        let long = max(content.width, content.height)
-        var size =
-            aspect.width >= aspect.height
-            ? CGSize(width: long, height: long * aspect.height / aspect.width)
-            : CGSize(width: long * aspect.width / aspect.height, height: long)
+        let long: CGFloat
+        if let last {
+            let before = contentAspect(video: last.video, side: last.side)
+            long = max(last.video.width, last.video.height) * min(content.width / before.width, content.height / before.height)
+        } else if side != nil {
+            let now = contentAspect(video: aspect, side: side)
+            long = max(aspect.width, aspect.height) * min(content.width / now.width, content.height / now.height)
+        } else {
+            long = max(content.width, content.height)
+        }
+        last = (aspect, side)
+        let target = contentAspect(video: aspect, side: side)
+        window.contentAspectRatio = target
+        let scale = long / max(aspect.width, aspect.height)
+        var size = CGSize(width: target.width * scale, height: target.height * scale)
         let room = window.contentRect(forFrameRect: screen.visibleFrame).size
         let shrink = min(1, room.width / size.width, room.height / size.height)
         size = CGSize(width: size.width * shrink, height: size.height * shrink)
         var frame = window.frameRect(forContentRect: CGRect(origin: .zero, size: size))
-        frame.origin = CGPoint(x: window.frame.midX - frame.width / 2, y: window.frame.maxY - frame.height)
+        frame.origin.x = window.frame.midX - frame.width / 2
+        frame.origin.y = window.frame.maxY - frame.height
+        setFrame(frame, of: window, on: screen, animate: animate)
+    }
+
+    /// Onde o roteiro está na tela, dentro da janela da câmera: o lugar da janela própria quando
+    /// ele é destacado.
+    @MainActor
+    static func panelFrame(video: CGSize, side: ScriptModel.Side) -> CGRect? {
+        guard let window = monitorWindow else { return nil }
+        let content = window.contentRect(forFrameRect: window.frame)
+        let aspect = contentAspect(video: video, side: side)
+        let extent = panelExtent(video: video, side: side) * min(content.width / aspect.width, content.height / aspect.height)
+        let panel: CGRect
+        switch side {
+        case .right: panel = CGRect(x: content.maxX - extent, y: content.minY, width: extent, height: content.height)
+        case .left: panel = CGRect(x: content.minX, y: content.minY, width: extent, height: content.height)
+        case .top: panel = CGRect(x: content.minX, y: content.maxY - extent, width: content.width, height: extent)
+        case .bottom: panel = CGRect(x: content.minX, y: content.minY, width: content.width, height: extent)
+        }
+        return window.frameRect(forContentRect: panel)
+    }
+
+    /// Abre, fecha ou muda o roteiro de lugar: o vídeo fica no mesmo ponto da tela e do mesmo
+    /// tamanho, e a janela cresce ou encolhe em volta dele. Se a tela não comportar, tudo encolhe.
+    @MainActor
+    static func place(video: CGSize, from old: ScriptModel.Side?, to new: ScriptModel.Side?, animate: Bool) {
+        guard video.width > 0, video.height > 0,
+            let window = monitorWindow,
+            !window.styleMask.contains(.fullScreen),
+            let screen = window.screen ?? NSScreen.main
+        else { return }
+        let content = window.contentRect(forFrameRect: window.frame)
+        let before = contentAspect(video: video, side: old)
+        let scale = min(content.width / before.width, content.height / before.height)
+        let after = contentAspect(video: video, side: new)
+        let room = window.contentRect(forFrameRect: screen.visibleFrame).size
+        let newScale = min(scale, room.width / after.width, room.height / after.height)
+        let oldOffset = videoOffset(video: video, side: old, scale: scale)
+        let newOffset = videoOffset(video: video, side: new, scale: newScale)
+        let origin = CGPoint(x: content.minX + oldOffset.x - newOffset.x, y: content.minY + oldOffset.y - newOffset.y)
+        last = (video, new)
+        window.contentAspectRatio = after
+        let frame = window.frameRect(
+            forContentRect: CGRect(origin: origin, size: CGSize(width: after.width * newScale, height: after.height * newScale)))
+        setFrame(frame, of: window, on: screen, animate: animate)
+    }
+
+    @MainActor
+    private static func setFrame(_ frame: CGRect, of window: NSWindow, on screen: NSScreen, animate: Bool) {
+        var frame = frame
         let visible = screen.visibleFrame
         frame.origin.x = min(max(frame.origin.x, visible.minX), visible.maxX - frame.width)
         frame.origin.y = min(max(frame.origin.y, visible.minY), visible.maxY - frame.height)
@@ -715,7 +897,7 @@ enum WindowShaper {
     /// Botões da janela somem junto com os controles, como no QuickTime.
     @MainActor
     static func setTitlebarVisible(_ visible: Bool) {
-        guard let window = NSApp.windows.first(where: { $0.canBecomeMain }),
+        guard let window = monitorWindow,
             let titlebar = window.standardWindowButton(.closeButton)?.superview
         else { return }
         NSAnimationContext.runAnimationGroup { context in

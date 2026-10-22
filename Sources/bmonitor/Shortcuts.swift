@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Atalhos do teclado num lugar só: o menu os registra e a tela de atalhos os lista.
 enum Shortcut: CaseIterable {
-    case record, focusNow, iso, shutter, whiteBalance, tint, format, lens, audio, gainUp, gainDown, mute, grid, safeZone, rotate,
+    case record, focusNow, iso, shutter, frameRate, whiteBalance, tint, format, lens, audio, gainUp, gainDown, mute, grid, safeZone, rotate,
         script, follow, help
 
     var keyboard: KeyboardShortcut {
@@ -11,6 +11,8 @@ enum Shortcut: CaseIterable {
         case .focusNow: KeyboardShortcut("f", modifiers: [])
         case .iso: KeyboardShortcut("i", modifiers: [])
         case .shutter: KeyboardShortcut("s", modifiers: [])
+        // P, de 30p.
+        case .frameRate: KeyboardShortcut("p", modifiers: [])
         case .whiteBalance: KeyboardShortcut("w", modifiers: [])
         case .tint: KeyboardShortcut("t", modifiers: [])
         case .format: KeyboardShortcut("k", modifiers: [])
@@ -24,7 +26,7 @@ enum Shortcut: CaseIterable {
         case .safeZone: KeyboardShortcut("z", modifiers: [])
         // Longe do ⌘R: girar a janela nunca pode parar uma gravação por um Shift esquecido.
         case .rotate: KeyboardShortcut(.rightArrow, modifiers: .command)
-        // Segunda janela do app, como ⌘2 em outros apps de várias janelas.
+        // Painel lateral, como o ⌘2 de outros apps que abrem uma área ao lado.
         case .script: KeyboardShortcut("2", modifiers: .command)
         case .follow: KeyboardShortcut("v", modifiers: [])
         case .help: KeyboardShortcut("/", modifiers: .command)
@@ -37,6 +39,7 @@ enum Shortcut: CaseIterable {
         case .focusNow: String(localized: "Focar agora")
         case .iso: "ISO"
         case .shutter: "Shutter"
+        case .frameRate: String(localized: "Quadros por segundo")
         case .whiteBalance: String(localized: "Balanço de branco")
         case .tint: "Tint"
         case .format: String(localized: "Formato de gravação")
@@ -48,7 +51,7 @@ enum Shortcut: CaseIterable {
         case .grid: String(localized: "Mostrar ou esconder a grade")
         case .safeZone: String(localized: "Mostrar ou esconder a área segura")
         case .rotate: String(localized: "Girar 90°")
-        case .script: String(localized: "Mostrar o roteiro")
+        case .script: String(localized: "Mostrar ou esconder o roteiro")
         case .follow: String(localized: "Seguir a fala no roteiro")
         case .help: String(localized: "Atalhos do teclado")
         }
@@ -102,7 +105,7 @@ struct ShortcutsOverlay: View {
             rows([.record, .focusNow])
                 + [Row(keys: String(localized: "Clique"), title: String(localized: "Focar no ponto do vídeo"))]
         ),
-        (String(localized: "Abrir controle"), rows([.iso, .shutter, .whiteBalance, .tint, .format, .lens, .audio, .gainUp, .gainDown])),
+        (String(localized: "Abrir controle"), rows([.iso, .shutter, .frameRate, .whiteBalance, .tint, .format, .lens, .audio, .gainUp, .gainDown])),
         (
             String(localized: "No Mac"),
             rows([.mute, .grid, .safeZone, .rotate]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]

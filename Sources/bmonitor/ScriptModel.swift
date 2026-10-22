@@ -5,16 +5,48 @@ import NaturalLanguage
 import Observation
 import UniformTypeIdentifiers
 
-/// O roteiro da janela ao lado do monitor: o texto, a frase em que você está e o
+/// O roteiro do painel ao lado do vídeo: o texto, a frase em que você está e o
 /// acompanhamento pela voz, ouvindo o áudio da câmera.
 @MainActor @Observable
 final class ScriptModel {
+    /// Onde o roteiro fica em relação ao vídeo. Acima e abaixo só com o vídeo deitado: em pé,
+    /// a janela já é alta e o lado sobra.
+    enum Side: String, CaseIterable, Identifiable {
+        case top, bottom, left, right
+        var id: String { rawValue }
+        var isVertical: Bool { self == .top || self == .bottom }
+        var title: String {
+            switch self {
+            case .top: String(localized: "Acima do vídeo")
+            case .bottom: String(localized: "Abaixo do vídeo")
+            case .left: String(localized: "À esquerda do vídeo")
+            case .right: String(localized: "À direita do vídeo")
+            }
+        }
+        var symbol: String {
+            switch self {
+            case .top: "rectangle.topthird.inset.filled"
+            case .bottom: "rectangle.bottomthird.inset.filled"
+            case .left: "sidebar.left"
+            case .right: "sidebar.right"
+            }
+        }
+        static func choices(landscape: Bool) -> [Side] { landscape ? allCases : [.left, .right] }
+    }
+
     private(set) var text: String
     private(set) var script: Script
     private var follower: ScriptFollower
     /// Próxima palavra a ser dita; as anteriores aparecem apagadas.
     var position: Int { follower.position }
     var editing = false
+    /// O painel aberto na janela do monitor; a janela cresce para o lado dele.
+    var isOpen: Bool { didSet { UserDefaults.standard.set(isOpen, forKey: "scriptOpen") } }
+    /// Numa janela própria, fora da janela da câmera.
+    var detached: Bool { didSet { UserDefaults.standard.set(detached, forKey: "scriptDetached") } }
+    /// Uma escolha por orientação: girar o vídeo leva o roteiro para o lugar daquela orientação.
+    var portraitSide: Side { didSet { UserDefaults.standard.set(portraitSide.rawValue, forKey: "scriptSide") } }
+    var landscapeSide: Side { didSet { UserDefaults.standard.set(landscapeSide.rawValue, forKey: "scriptSideLandscape") } }
     var fontSize: Double { didSet { UserDefaults.standard.set(fontSize, forKey: "scriptFontSize") } }
     private(set) var following = false
     private(set) var listening: SpeechListener.State = .off
@@ -33,7 +65,14 @@ final class ScriptModel {
         script = parsed
         follower = ScriptFollower(script: parsed)
         language = Self.language(of: saved)
-        fontSize = UserDefaults.standard.object(forKey: "scriptFontSize") as? Double ?? 36
+        isOpen = UserDefaults.standard.bool(forKey: "scriptOpen")
+        detached = UserDefaults.standard.bool(forKey: "scriptDetached")
+        let portrait = UserDefaults.standard.string(forKey: "scriptSide").flatMap(Side.init(rawValue:)) ?? .right
+        portraitSide = portrait.isVertical ? .right : portrait
+        // Deitado, acima: com o iPhone em cima do monitor, o olho fica perto da lente.
+        landscapeSide = UserDefaults.standard.string(forKey: "scriptSideLandscape").flatMap(Side.init(rawValue:)) ?? .top
+        // Lido perto do Mac, à distância de computador (não do tripé).
+        fontSize = UserDefaults.standard.object(forKey: "scriptFontSize") as? Double ?? 28
         if let i = UserDefaults.standard.object(forKey: "scriptPosition") as? Int { follower.move(to: i) }
         speech.onHeard = { [weak self] heard in self?.heard(heard) }
         speech.onState = { [weak self] state in self?.listening = state }
@@ -83,6 +122,14 @@ final class ScriptModel {
     // MARK: - Onde você está
 
     var currentSentence: Int? { script.sentence(containing: position) }
+
+    /// Número da fala atual e total, para o canto do painel; títulos e listas contam como falas.
+    var progress: (current: Int, total: Int)? {
+        guard let block = currentBlock else { return nil }
+        let spoken = script.blocks.filter { !$0.words.isEmpty }
+        guard let index = spoken.firstIndex(where: { $0.id == block }) else { return nil }
+        return (index + 1, spoken.count)
+    }
 
     var currentBlock: Int? {
         currentSentence.map { script.words[script.sentences[$0].lowerBound].block }

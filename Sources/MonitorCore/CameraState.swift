@@ -366,6 +366,13 @@ public struct RecordFormat: Equatable, Sendable {
     /// "4K 30p".
     public var summary: String { "\(resolution) \(frameRate)p" }
 
+    /// Resolução e família do codec, para o item Formato da barra: o fps tem item próprio.
+    public var resolutionAndCodec: String {
+        let family = Self.family(codec)
+        let short = family.hasPrefix("HEVC") ? "HEVC" : family.hasPrefix("Apple ") ? String(family.dropFirst(6)) : family
+        return "\(resolution) · \(short)"
+    }
+
     /// Família do codec sem a qualidade: "HEVC (H.265)".
     public static func family(_ codec: String) -> String { codec.split(separator: ":").first.map(String.init) ?? codec }
     /// Qualidade do codec: "Max", "High"…; "Default" quando não há níveis.

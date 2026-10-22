@@ -381,9 +381,37 @@ struct GridPanel: View {
     }
 }
 
-/// Resolução, fps, codec e espaço de cor, com as opções que o iPhone publica. Os codecs ficam
-/// como a Blackmagic escreve; o espaço de cor usa os nomes da tela do Blackmagic Camera, porque
-/// a API chama de `dynamicRange` com outros nomes.
+/// Quadros por segundo, item próprio da barra ao lado do shutter. As opções são as que o iPhone
+/// publica para a resolução atual.
+struct FrameRatePanel: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        let state = model.state
+        let current = state.recordFormat
+        let option = state.supportedFormats.first { $0.resolution == current?.resolution }
+        VStack(alignment: .leading, spacing: 16) {
+            if state.recording {
+                Label("Gravando: o formato fica travado até parar.", systemImage: "lock.fill")
+                    .font(.callout).foregroundStyle(.secondary)
+            }
+            PanelSection(title: String(localized: "Quadros por segundo")) {
+                ChoiceGrid(values: option?.frameRates ?? [], selected: current?.frameRate, columns: 4, label: { $0 }) {
+                    model.setFormat(frameRate: $0)
+                }
+            }
+            .disabled(state.recording)
+            .opacity(state.recording ? 0.4 : 1)
+            Text("Trocar o formato reinicia o vídeo no Mac por um instante.")
+                .font(.callout).foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+/// Resolução, codec e espaço de cor, com as opções que o iPhone publica; o fps tem painel
+/// próprio. Os codecs ficam como a Blackmagic escreve; o espaço de cor usa os nomes da tela do
+/// Blackmagic Camera, porque a API chama de `dynamicRange` com outros nomes.
 struct FormatPanel: View {
     @Bindable var model: AppModel
 
@@ -405,11 +433,6 @@ struct FormatPanel: View {
                         values: state.supportedFormats.map(\.resolution), selected: current?.resolution, columns: 4,
                         label: { $0 }
                     ) { model.setFormat(resolution: $0) }
-                }
-                PanelSection(title: String(localized: "Quadros por segundo")) {
-                    ChoiceGrid(values: option?.frameRates ?? [], selected: current?.frameRate, columns: 4, label: { $0 }) {
-                        model.setFormat(frameRate: $0)
-                    }
                 }
                 PanelSection(title: "Codec") {
                     ChoiceGrid(values: families, selected: family, columns: 2, label: Self.short) { chosen in

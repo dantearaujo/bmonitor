@@ -2,7 +2,8 @@ import MonitorCore
 import SwiftUI
 
 /// O monitor: vídeo na janela inteira, grade, status nos cantos e a barra de controles em
-/// vidro na base. A janela tem a proporção do vídeo (ver `WindowShaper`).
+/// vidro na base. Com o roteiro aberto, ele ocupa um lado da janela no mesmo preto, e a barra
+/// continua só sobre o vídeo. A janela tem a proporção do conjunto (ver `WindowShaper`).
 struct MonitorView: View {
     @Bindable var model: AppModel
 
@@ -10,6 +11,70 @@ struct MonitorView: View {
     private let titlebarInset: CGFloat = 28
 
     var body: some View {
+        GeometryReader { geometry in
+            let side = model.scriptSide
+            let split = split(geometry.size, side: side)
+            ZStack {
+                Color.black
+                if side.isVertical {
+                    VStack(spacing: 0) {
+                        if split.panel > 0, side == .top { scriptPanel.frame(height: split.panel) }
+                        stage.frame(height: split.video)
+                        if split.panel > 0, side == .bottom { scriptPanel.frame(height: split.panel) }
+                    }
+                } else {
+                    HStack(spacing: 0) {
+                        if split.panel > 0, side == .left { scriptPanel.frame(width: split.panel) }
+                        stage.frame(width: split.video)
+                        if split.panel > 0, side == .right { scriptPanel.frame(width: split.panel) }
+                    }
+                }
+                if model.showsShortcuts { ShortcutsOverlay(model: model) }
+            }
+        }
+        .ignoresSafeArea()
+        .onContinuousHover { _ in model.pokeControls() }
+        .onChange(of: model.controlsVisible) { _, visible in WindowShaper.setTitlebarVisible(visible) }
+        .task {
+            try? await Task.sleep(for: .milliseconds(300))
+            model.shapeWindow(animate: false)
+            model.showScriptWindowIfNeeded()
+            // Desenvolvimento: `--open-script` abre o roteiro e `--script-follow` já liga o
+            // acompanhamento (com `--script-audio`, testa sem o iPhone).
+            let args = CommandLine.arguments
+            if args.contains("--open-script") || args.contains("--script-follow"), !model.script.isOpen { model.toggleScript() }
+            if args.contains("--script-follow"), !model.script.following { model.script.toggleFollowing() }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    /// Quanto do eixo do roteiro fica com o vídeo e quanto com o roteiro (larguras ao lado,
+    /// alturas acima ou abaixo). O vídeo fica com o tamanho natural e o roteiro com o resto:
+    /// enquanto a janela cresce, o roteiro aparece como uma gaveta, sem o vídeo mudar. Se não
+    /// sobrar espaço (tela cheia, janela baixa), o vídeo cede até o roteiro ter umas 5 linhas.
+    private func split(_ size: CGSize, side: ScriptModel.Side) -> (video: CGFloat, panel: CGFloat) {
+        let axis = side.isVertical ? size.height : size.width
+        guard model.attachedScriptSide != nil else { return (axis, 0) }
+        let aspect = model.displayAspect
+        let natural =
+            side.isVertical
+            ? min(size.height, size.width * aspect.height / aspect.width)
+            : min(size.width, size.height * aspect.width / aspect.height)
+        let minimum = side.isVertical ? min(220, size.height * 0.45) : min(320, size.width * 0.4)
+        let panel = max(axis - natural, minimum)
+        return (axis - panel, panel)
+    }
+
+    /// Com o roteiro acima, o vídeo não encosta nos botões da janela: os cantos sobem e o nome
+    /// da câmera sai (ele mora na faixa dos botões).
+    private var stageUnderTitlebar: Bool { model.attachedScriptSide != .top }
+
+    private var scriptPanel: some View {
+        ScriptPanel(app: model).transition(.opacity)
+    }
+
+    /// O vídeo e o que fica sobre ele: estados, grade, tally, foco e os cantos de status.
+    private var stage: some View {
         GeometryReader { geometry in
             let rect = videoRect(in: geometry.size)
             ZStack {
@@ -58,10 +123,18 @@ struct MonitorView: View {
                     case .ok, .lossy:
                         EmptyView()
                     }
-                    HUD(model: model).padding(.top, titlebarInset)
+                    StatusRow(model: model).padding(.top, stageUnderTitlebar ? titlebarInset : 0)
+                    // A barra fica sobre o vídeo; o roteiro tem a cápsula dele.
+                    ControlBar(model: model)
+                        .opacity(model.controlsVisible ? 1 : 0)
+                        .offset(y: model.controlsVisible ? 0 : 12)
+                        .animation(.easeOut(duration: 0.25), value: model.controlsVisible)
+                        .allowsHitTesting(model.controlsVisible)
+                        .padding(16)
+                        .frame(maxHeight: .infinity, alignment: .bottom)
                     // Qual iPhone está conectado: aparece com os controles, na faixa dos botões
                     // da janela. De perto é que se confere; de longe valem os cantos.
-                    if let title = model.cameraTitle {
+                    if let title = model.cameraTitle, stageUnderTitlebar {
                         Text(title)
                             .font(.system(size: 13, weight: .semibold))
                             .foregroundStyle(.secondary)
@@ -74,19 +147,9 @@ struct MonitorView: View {
                             .allowsHitTesting(false)
                     }
                 }
-                if model.showsShortcuts { ShortcutsOverlay(model: model) }
             }
             .coordinateSpace(name: "monitor")
         }
-        .ignoresSafeArea()
-        .onContinuousHover { _ in model.pokeControls() }
-        .onChange(of: model.controlsVisible) { _, visible in WindowShaper.setTitlebarVisible(visible) }
-        .task {
-            try? await Task.sleep(for: .milliseconds(300))
-            WindowShaper.fit(aspect: model.displayAspect, animate: false)
-        }
-        .modifier(OpenScriptOnLaunch(model: model))
-        .preferredColorScheme(.dark)
     }
 
     /// Clique no vídeo foca naquele ponto.
@@ -126,9 +189,8 @@ private extension CGRect {
 
 // MARK: - HUD
 
-/// Cantos de cima sempre visíveis (gravação e saúde); barra de controles na base só com
-/// o mouse em movimento.
-struct HUD: View {
+/// Cantos de cima do vídeo, sempre visíveis: gravação e saúde.
+struct StatusRow: View {
     @Bindable var model: AppModel
 
     var body: some View {
@@ -143,11 +205,6 @@ struct HUD: View {
                 topRow(showsMicName: false, tight: true, compactHealth: true, stacked: true)
             }
             Spacer(minLength: 0)
-            ControlBar(model: model)
-                .opacity(model.controlsVisible ? 1 : 0)
-                .offset(y: model.controlsVisible ? 0 : 12)
-                .animation(.easeOut(duration: 0.25), value: model.controlsVisible)
-                .allowsHitTesting(model.controlsVisible)
         }
         .padding(16)
     }
@@ -349,31 +406,58 @@ struct ControlBar: View {
             // duas linhas que cobrem mais vídeo.
             bar(compact: true, tight: true)
             VStack(spacing: 8) {
-                HStack(spacing: 2) { exposure(compact: true) }.padding(5).hudGlass(Capsule())
+                HStack(spacing: 2) { exposure(compact: true) }.padding(5).hudGlass(Capsule()).disabled(cameraGone)
                 HStack(spacing: 2) {
-                    RecordButton(model: model)
-                    copyButton
-                    separator
-                    cameraAndWindow(compact: true)
+                    Group {
+                        RecordButton(model: model)
+                        copyButton
+                        separator
+                        cameraAndWindow(compact: true)
+                    }
+                    .disabled(cameraGone)
+                    scriptToggle
                 }
                 .padding(5)
                 .hudGlass(Capsule())
             }
         }
-        .disabled(model.signal == .cameraGone)
     }
+
+    private var cameraGone: Bool { model.signal == .cameraGone }
 
     private func bar(compact: Bool, tight: Bool = false) -> some View {
         HStack(spacing: compact ? 0 : 4) {
-            exposure(compact: compact, tight: tight)
-            separator
-            RecordButton(model: model)
-            copyButton
-            separator
-            cameraAndWindow(compact: compact, tight: tight)
+            // Sem câmera, os controles dela param; o roteiro continua.
+            Group {
+                exposure(compact: compact, tight: tight)
+                separator
+                RecordButton(model: model)
+                copyButton
+                separator
+                cameraAndWindow(compact: compact, tight: tight)
+            }
+            .disabled(cameraGone)
+            scriptToggle
         }
         .padding(compact ? 5 : 6)
         .hudGlass(Capsule())
+    }
+
+    /// Abre e fecha o roteiro ao lado do vídeo; os controles dele ficam no próprio painel.
+    private var scriptToggle: some View {
+        let script = model.script
+        return Button { model.toggleScript() } label: {
+            // O roteiro em si, ligado ou desligado; junto ou em janela é escolha dentro dele.
+            Image(systemName: "note.text")
+                .font(.system(size: 15, weight: .medium)).frame(width: Theme.barItem, height: Theme.barItem)
+        }
+        .buttonStyle(HUDItemStyle(isOn: script.isOpen))
+        .help(
+            script.isOpen
+                ? String(localized: "Esconder o roteiro (\(Shortcut.script.glyph))")
+                : String(localized: "Mostrar o roteiro (\(Shortcut.script.glyph))"))
+        .accessibilityLabel(script.isOpen ? String(localized: "Esconder o roteiro") : String(localized: "Mostrar o roteiro"))
+        .contextMenu { ScriptSidePicker(model: model) }
     }
 
     /// Cópia no Mac colada no gravar: aceso, cada take vai também para o Mac. O clique direito
@@ -427,6 +511,15 @@ struct ControlBar: View {
         } content: {
             ShutterPanel(model: model)
         }
+        // Quadros por segundo ao lado do shutter, com quem ele conversa (1/30 com 30 fps).
+        ValueButton(model: model, panel: .frameRate) {
+            ValueItem(
+                label: "FPS", value: state.recordFormat?.frameRate ?? "—",
+                pending: model.pending.contains("/system/format"), failed: model.failed.contains("/system/format"),
+                compact: compact, tight: tight)
+        } content: {
+            FrameRatePanel(model: model)
+        }
         ValueButton(model: model, panel: .whiteBalance) {
             ValueItem(
                 label: "WB", value: state.whiteBalance.map { "\($0) K" } ?? "—",
@@ -454,7 +547,7 @@ struct ControlBar: View {
         separator
         ValueButton(model: model, panel: .format) {
             ValueItem(
-                label: String(localized: "Formato"), value: state.recordFormat?.summary ?? "—",
+                label: String(localized: "Formato"), value: state.recordFormat?.resolutionAndCodec ?? "—",
                 pending: model.pending.contains("/system/format") || model.pending.contains("/system/dynamicRange"),
                 failed: model.hasFailed("/system/format", "/system/dynamicRange"), compact: compact, tight: tight)
         } content: {
@@ -919,20 +1012,5 @@ struct CameraChoice: View {
         .padding(22)
         .hudGlass(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .padding(32)
-    }
-}
-
-/// Desenvolvimento: `--open-script` abre o roteiro ao abrir o app e `--script-follow` já liga o
-/// acompanhamento (com `--script-audio`, testa sem o iPhone).
-private struct OpenScriptOnLaunch: ViewModifier {
-    let model: AppModel
-    @Environment(\.openWindow) private var openWindow
-
-    func body(content: Content) -> some View {
-        content.onAppear {
-            let args = CommandLine.arguments
-            if args.contains("--open-script") || args.contains("--script-follow") { openWindow(id: "script") }
-            if args.contains("--script-follow"), !model.script.following { model.script.toggleFollowing() }
-        }
     }
 }

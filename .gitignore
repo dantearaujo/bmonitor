@@ -12,3 +12,7 @@ site/dist/
 
 # Gravações reais para testar o roteiro pela voz (voz e texto de um take do autor)
 Tests/MonitorCoreTests/Fixtures/roteiro/
+
+# Produto do app, symlink para projects/dante/bmonitor-design/app no AIOS
+PRODUCT.md
+.impeccable

@@ -1,6 +1,6 @@
 #!/bin/zsh
 # Monta "bmonitor.app" com a libsrt e o OpenSSL dentro do pacote (uma atualização do
-# Homebrew não quebra o app), ícone gerado por scripts/make-icon.swift e assinatura ad hoc.
+# Homebrew não quebra o app), ícone montado por scripts/make-icon.swift a partir de scripts/icon/ e assinatura ad hoc.
 # Uso: scripts/build-app.sh [--notarize] [--install] [--dmg] [--appcast]
 #   --notarize notariza o app (e o .dmg, com --dmg) e anexa o selo da Apple; exige o .env
 #   --install copia para /Applications; --dmg gera .build/dist/bmonitor-<versão>.dmg
@@ -15,7 +15,7 @@ cd "$(dirname "$0")/.."
 NAME="bmonitor"
 APP=".build/dist/$NAME.app"
 BUNDLE_ID="com.dantearaujo.bmonitor"
-VERSION="${VERSION:-0.9.6}"
+VERSION="${VERSION:-0.9.7}"
 BUILD="${BUILD:-$(git rev-list --count HEAD 2>/dev/null || echo 0)}"
 TAG="v$VERSION-beta"
 # Sparkle: o app lê o feed da release mais recente e só aceita atualização assinada com a chave
@@ -190,8 +190,15 @@ for arg in "$@"; do
         # Feed com a versão deste build. Rode depois de --dmg: assina o .dmg final (já com selo).
         rm -rf .build/appcast && mkdir -p .build/appcast
         cp ".build/dist/$NAME-$VERSION.dmg" .build/appcast/
-        "$SPARKLE/bin/generate_appcast" --account bmonitor \
-            --download-url-prefix "https://github.com/dantearaujo/bmonitor/releases/download/$TAG/" .build/appcast
+        # O que mudou: release-notes/<versão>.md entra no appcast e aparece na janela de
+        # atualização do app. Sem o arquivo, a janela aponta para a página de versões.
+        if [ -f "release-notes/$VERSION.md" ]; then
+            cp "release-notes/$VERSION.md" ".build/appcast/$NAME-$VERSION.md"
+        else
+            echo "aviso: sem release-notes/$VERSION.md, a atualização sai sem notas" >&2
+        fi
+        "$SPARKLE/bin/generate_appcast" --account bmonitor --embed-release-notes \
+            --download-url-prefix "${APPCAST_URL_PREFIX:-https://github.com/dantearaujo/bmonitor/releases/download/$TAG/}" .build/appcast
         cp .build/appcast/appcast.xml .build/dist/appcast.xml
         echo "appcast: .build/dist/appcast.xml (release $TAG)"
         ;;

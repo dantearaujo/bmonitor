@@ -172,6 +172,8 @@ private func recordedState() throws -> CameraState {
         "recordResolution": ["width": 3840, "height": 2160], "sensorResolution": ["width": 3840, "height": 2160],
     ])
     #expect(state.recordFormat?.summary == "4K 30p")
+    // Na barra, o Formato mostra resolução e codec; o fps tem item próprio.
+    #expect(state.recordFormat?.resolutionAndCodec == "4K · HEVC")
     #expect(RecordFormat.family("HEVC (H.265):Max") == "HEVC (H.265)")
     #expect(RecordFormat.quality("Apple ProRes 422:Default") == "Default")
     state.apply(property: "/system/supportedFormats", value: ["supportedFormats": [[
