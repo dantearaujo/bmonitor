@@ -15,6 +15,8 @@ final class WebcamStatus {
     var approval: Approval = .unknown
     /// Algum app (Meet, Zoom, FaceTime) está lendo a câmera agora.
     var inUse = false
+    /// A câmera foi ativada, mas este processo não a enxerga: só reabrindo o app.
+    var needsRelaunch = false
 }
 
 /// A webcam virtual. A extensão de câmera vem dentro do app nas builds com Developer ID
@@ -45,6 +47,13 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     private var rotatedPool: CVPixelBufferPool?
     private var rotatedSize = (width: 0, height: 0)
     private var watchingDevices = false
+    /// O macOS confirmou a extensão (aprovada, ou trocada depois de uma atualização) e já passou a
+    /// folga para ela publicar a câmera. Antes disso o app não consulta a lista de câmeras.
+    private var activated: Date?
+    private var reportedMissing = false
+    /// Desenvolvimento: `--webcam-test-pattern` manda quadros cinza à webcam, sem iPhone.
+    private static let testPattern = CommandLine.arguments.contains("--webcam-test-pattern")
+    private var patternTimer: DispatchSourceTimer?
 
     // Na main.
     private var lastHeard = Date.distantPast
@@ -67,7 +76,7 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
         guard isAvailable else { return }
         queue.async {
             self.enabled = on
-            if on { self.watchDevices() } else { self.disconnect() }
+            if on { self.startTestPattern() } else { self.disconnect() }
         }
         if on {
             activate()
@@ -112,6 +121,17 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
         for delay in [1.8, 3.6] {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { NSWorkspace.shared.open(url) }
         }
+    }
+
+    /// Fecha e reabre o bmonitor: o processo novo enxerga a câmera. Fechar pelo caminho normal
+    /// devolve a plataforma do iPhone; o shell espera o processo sair antes de abrir de novo.
+    @MainActor
+    func relaunch() {
+        let task = Process()
+        task.executableURL = URL(fileURLWithPath: "/bin/sh")
+        task.arguments = ["-c", "while kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do sleep 0.2; done; /usr/bin/open \"$0\"", Bundle.main.bundlePath]
+        try? task.run()
+        NSApp.terminate(nil)
     }
 
     // MARK: - Quem está vendo
@@ -227,27 +247,45 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
 
     // MARK: - Achar a câmera
 
-    /// A lista de câmeras que o processo vê não se atualiza sozinha: aprovada com o app aberto, a
-    /// câmera "bmonitor" não aparecia até reabrir o app (achado em 22/10, na 0.10.0). Escutar a
-    /// lista faz o CoreMediaIO mantê-la em dia; a cada mudança, a conexão é refeita.
+    /// O CoreMediaIO tira um retrato da lista de câmeras na primeira consulta do processo e não
+    /// enxerga câmera que aparece depois, nem com escuta e laço de eventos (medido em 22/10: na
+    /// 0.10.0, aprovada a extensão com o app aberto, a chamada ficava em pausa até reabrir o app).
+    /// Por isso nenhuma consulta acontece antes de o macOS confirmar a extensão, mais uma folga.
+    private func extensionConfirmed() {
+        queue.asyncAfter(deadline: .now() + 1.5) {
+            self.activated = Date()
+            self.lastAttempt = .distantPast
+            self.watchDevices()
+        }
+    }
+
+    /// Só para saber quando a câmera some (o app fecha a conexão); uma câmera nova não avisa.
     private func watchDevices() {
         guard !watchingDevices else { return }
         watchingDevices = true
         var address = address(kCMIOHardwarePropertyDevices)
         CMIOObjectAddPropertyListenerBlock(CMIOObjectID(kCMIOObjectSystemObject), &address, queue) { [weak self] _, _ in
             guard let self else { return }
-            self.log.info("lista de câmeras mudou")
-            if self.sinkQueue != nil, !self.devices().contains(self.device) { self.sinkQueue = nil }
-            self.lastAttempt = .distantPast
+            if self.sinkQueue != nil, !self.devices().contains(self.device) {
+                self.log.info("câmera virtual sumiu")
+                self.sinkQueue = nil
+            }
         }
     }
 
-    /// Acha a câmera "bmonitor" e abre o stream de entrada dela. Tenta no máximo uma vez por
-    /// segundo: antes de o usuário aprovar a extensão, ela não existe, e depois aparece sozinha.
+    /// Acha a câmera "bmonitor" e abre o stream de entrada dela, no máximo uma vez por segundo.
+    /// Sem ela 4 s depois da confirmação, este processo não vai enxergá-la: o guia pede para reabrir.
     private func connect() {
-        guard Date().timeIntervalSince(lastAttempt) > 1 else { return }
+        guard let activated, Date().timeIntervalSince(lastAttempt) > 1 else { return }
         lastAttempt = Date()
-        guard let device = devices().first(where: { uid(of: $0) == Self.deviceUID }) else { return }
+        guard let device = devices().first(where: { uid(of: $0) == Self.deviceUID }) else {
+            if !reportedMissing, Date().timeIntervalSince(activated) > 4 {
+                reportedMissing = true
+                log.error("câmera virtual ativa, mas fora da lista deste processo")
+                DispatchQueue.main.async { WebcamStatus.shared.needsRelaunch = true }
+            }
+            return
+        }
         // A extensão cria primeiro o stream de saída e depois o de entrada.
         let streams = streams(of: device)
         guard streams.count >= 2 else { return }
@@ -262,6 +300,23 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
         self.device = device
         stream = streams[1]
         log.info("câmera virtual conectada")
+    }
+
+    /// Quadros cinza a 10 fps enquanto a webcam está ligada, para testar sem o iPhone.
+    private func startTestPattern() {
+        guard Self.testPattern, patternTimer == nil else { return }
+        var gray: CVPixelBuffer?
+        CVPixelBufferCreate(kCFAllocatorDefault, 1920, 1080, kCVPixelFormatType_32BGRA,
+                            [kCVPixelBufferIOSurfacePropertiesKey as String: [:]] as CFDictionary, &gray)
+        guard let gray else { return }
+        CVPixelBufferLockBaseAddress(gray, [])
+        memset(CVPixelBufferGetBaseAddress(gray), 0x60, CVPixelBufferGetBytesPerRow(gray) * 1080)
+        CVPixelBufferUnlockBaseAddress(gray, [])
+        let timer = DispatchSource.makeTimerSource(queue: queue)
+        timer.schedule(deadline: .now(), repeating: .milliseconds(100))
+        timer.setEventHandler { [weak self] in self?.push(gray) }
+        timer.resume()
+        patternTimer = timer
     }
 
     private func disconnect() {
@@ -312,8 +367,8 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     }
 
     func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
-        // Aprovada agora: a câmera acabou de aparecer; tenta conectar já no próximo quadro.
-        queue.async { self.lastAttempt = .distantPast }
+        log.info("extensão confirmada")
+        extensionConfirmed()
         MainActor.assumeIsolated { WebcamStatus.shared.approval = Self.simulatesWaiting ? .waiting : .approved }
     }
 

@@ -293,3 +293,6 @@
 "Geral › Itens de Início e Extensões › Extensões de Câmera: clique em ⓘ e ligue \"bmonitor\"." = "General › Login Items & Extensions › Camera Extensions: click ⓘ and turn on \"bmonitor\".";
 "Abrir Ajustes" = "Open System Settings";
 "Um app de chamada está usando a câmera bmonitor" = "A call app is using the bmonitor camera";
+"Reabra o bmonitor para ligar a câmera" = "Reopen bmonitor to turn on the camera";
+"O macOS ativou a câmera com o app aberto, e ela só aparece para o bmonitor depois de reabrir." = "macOS turned on the camera while the app was open, and bmonitor only sees it after reopening.";
+"Reabrir" = "Reopen";

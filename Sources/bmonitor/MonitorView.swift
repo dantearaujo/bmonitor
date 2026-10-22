@@ -5,6 +5,7 @@ import SwiftUI
 /// vidro na base. Com o roteiro aberto, ele ocupa um lado da janela no mesmo preto, e a barra
 /// continua só sobre o vídeo. A janela tem a proporção do conjunto (ver `WindowShaper`).
 struct MonitorView: View {
+    @Environment(\.openWindow) private var openWindow
     @Bindable var model: AppModel
 
     /// Altura da barra de título oculta: os cantos de cima ficam abaixo dos botões da janela.
@@ -35,6 +36,8 @@ struct MonitorView: View {
         .ignoresSafeArea()
         .onContinuousHover { _ in model.pokeControls() }
         .onChange(of: model.controlsVisible) { _, visible in WindowShaper.setTitlebarVisible(visible) }
+        // A câmera virtual ativou, mas só aparece reabrindo o app: o guia avisa e oferece reabrir.
+        .onChange(of: WebcamStatus.shared.needsRelaunch) { _, needs in if needs { openWindow(id: "webcam") } }
         .task {
             // Estado salvo da webcam: ligada, pede a ativação (e troca a extensão depois de uma
             // atualização) e já sai girada como a janela.

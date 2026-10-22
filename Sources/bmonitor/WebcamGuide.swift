@@ -82,6 +82,12 @@ struct WebcamGuide: View {
 
     @ViewBuilder private var card: some View {
         HStack(alignment: .center, spacing: 16) {
+            if status.needsRelaunch {
+                message(String(localized: "Reabra o bmonitor para ligar a câmera"),
+                        String(localized: "O macOS ativou a câmera com o app aberto, e ela só aparece para o bmonitor depois de reabrir."))
+                Spacer(minLength: 0)
+                action(String(localized: "Reabrir")) { VirtualCamera.shared.relaunch() }
+            } else {
             switch status.approval {
             case .approved:
                 message(String(localized: "Pronta para usar"),
@@ -99,6 +105,7 @@ struct WebcamGuide: View {
                         String(localized: "Geral › Itens de Início e Extensões › Extensões de Câmera: clique em ⓘ e ligue \"bmonitor\"."))
                 Spacer(minLength: 0)
                 action(String(localized: "Abrir Ajustes")) { VirtualCamera.shared.openSettings() }
+            }
             }
         }
         .padding(18)
