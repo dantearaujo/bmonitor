@@ -274,3 +274,22 @@
 "Não deu para procurar atualizações" = "Couldn't check for updates";
 "Procurando atualizações…" = "Checking for updates…";
 "Cancelar" = "Cancel";
+
+/* Webcam */
+"Usar como webcam" = "Use as Webcam";
+"Webcam" = "Webcam";
+"O iPhone como câmera do Meet, do Zoom e do FaceTime" = "Your iPhone as the camera for Meet, Zoom and FaceTime";
+"Câmera permitida" = "Camera allowed";
+"Permita a câmera do bmonitor" = "Allow the bmonitor camera";
+"A extensão de câmera está ligada." = "The camera extension is on.";
+"Nos Ajustes, ligue \"bmonitor\" em Extensões de Câmera." = "In System Settings, turn on \"bmonitor\" under Camera Extensions.";
+"Escolha a câmera \"bmonitor\"" = "Choose the \"bmonitor\" camera";
+"Nas configurações de vídeo da chamada. O som continua no microfone que você já usa." = "In the call's video settings. Sound stays on the microphone you already use.";
+"Pronta para usar" = "Ready to use";
+"A câmera fica disponível sempre que o bmonitor estiver aberto e conectado ao iPhone." = "The camera is available whenever bmonitor is open and connected to the iPhone.";
+"Não deu para ativar a câmera" = "Couldn't turn on the camera";
+"Tentar de novo" = "Try Again";
+"Esperando a sua aprovação" = "Waiting for your approval";
+"Geral › Itens de Início e Extensões › Extensões de Câmera: clique em ⓘ e ligue \"bmonitor\"." = "General › Login Items & Extensions › Camera Extensions: click ⓘ and turn on \"bmonitor\".";
+"Abrir Ajustes" = "Open System Settings";
+"Um app de chamada está usando a câmera bmonitor" = "A call app is using the bmonitor camera";

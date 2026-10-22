@@ -1,13 +1,26 @@
-import AVFoundation
+import AppKit
 import CoreMediaIO
 import Foundation
+import Observation
 import SystemExtensions
 import VideoToolbox
 import os
 
-/// Protótipo da webcam virtual: com a extensão de câmera dentro do app (só no build de
-/// desenvolvimento, `Webcam/build-dev.sh`), pede ao macOS para ativá-la e entrega cada quadro
-/// decodificado ao stream de entrada dela. O Meet, o Zoom e os outros leem a câmera "bmonitor".
+/// O que a interface mostra da webcam: o guia da primeira vez e a cápsula de saúde.
+@MainActor @Observable
+final class WebcamStatus {
+    static let shared = WebcamStatus()
+
+    enum Approval: Equatable { case unknown, waiting, approved, failed(String) }
+    var approval: Approval = .unknown
+    /// Algum app (Meet, Zoom, FaceTime) está lendo a câmera agora.
+    var inUse = false
+}
+
+/// A webcam virtual. A extensão de câmera vem dentro do app nas builds com Developer ID
+/// (`Webcam/`); ligada, o app pede ao macOS para ativá-la e entrega cada quadro decodificado ao
+/// stream de entrada dela, girado como na janela e em 1920 × 1080 com barras. Os apps de chamada
+/// leem a câmera "bmonitor". Sem quadros, a extensão mostra "Câmera em espera".
 final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecked Sendable {
     static let shared = VirtualCamera()
     /// O mesmo da extensão (`Webcam/Extension/Camera.swift`).
@@ -15,77 +28,174 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     private static let size = (width: 1920, height: 1080)
     private let log = Logger(subsystem: "com.dantearaujo.bmonitor", category: "webcam")
     private let queue = DispatchQueue(label: "bmonitor.webcam", qos: .userInteractive)
+    /// Desenvolvimento: `--simulate-webcam-waiting` mostra o guia esperando a aprovação mesmo com a
+    /// extensão já aprovada.
+    private static let simulatesWaiting = CommandLine.arguments.contains("--simulate-webcam-waiting")
 
     // Tudo abaixo só na `queue`.
+    private var enabled = false
+    private var quarterTurns = 0
     private var sinkQueue: CMSimpleQueue?
     private var device: CMIODeviceID = 0
     private var stream: CMIOStreamID = 0
     private var lastAttempt = Date.distantPast
-    private var transfer: VTPixelTransferSession?
-    private var pool: CVPixelBufferPool?
-    private var sent = 0
-    private var dropped = 0
+    private var scaler: VTPixelTransferSession?
+    private var rotator: VTPixelRotationSession?
+    private var outputPool: CVPixelBufferPool?
+    private var rotatedPool: CVPixelBufferPool?
+    private var rotatedSize = (width: 0, height: 0)
 
-    /// Só há o que ativar quando o build trouxe a extensão.
-    var isAvailable: Bool {
+    // Na main.
+    private var lastHeard = Date.distantPast
+    private var inUseTimer: Timer?
+
+    /// Só há webcam quando o build trouxe a extensão.
+    let isAvailable: Bool = {
         let folder = Bundle.main.bundleURL.appendingPathComponent("Contents/Library/SystemExtensions")
         return (try? FileManager.default.contentsOfDirectory(atPath: folder.path).isEmpty == false) ?? false
+    }()
+
+    private var extensionID: String? { Bundle.main.bundleIdentifier.map { $0 + ".camera" } }
+
+    // MARK: - Ligar e desligar
+
+    /// Ligada, pede a ativação (que também troca a extensão antiga depois de uma atualização) e
+    /// passa a entregar quadros; desligada, solta a câmera, que volta a "Câmera em espera".
+    @MainActor
+    func setEnabled(_ on: Bool) {
+        guard isAvailable else { return }
+        queue.async {
+            self.enabled = on
+            if !on { self.disconnect() }
+        }
+        if on {
+            activate()
+            listenForUse()
+        } else {
+            WebcamStatus.shared.inUse = false
+        }
     }
 
-    func activate() {
-        guard isAvailable, let id = Bundle.main.bundleIdentifier else { return }
-        let request = OSSystemExtensionRequest.activationRequest(forExtensionWithIdentifier: id + ".camera", queue: .main)
+    func setQuarterTurns(_ turns: Int) {
+        queue.async { self.quarterTurns = ((turns % 4) + 4) % 4 }
+    }
+
+    @MainActor
+    private func activate() {
+        guard let extensionID else { return }
+        let request = OSSystemExtensionRequest.activationRequest(forExtensionWithIdentifier: extensionID, queue: .main)
         request.delegate = self
         OSSystemExtensionManager.shared.submitRequest(request)
-        log.info("pedido de ativação enviado")
-        AVCaptureDevice.requestAccess(for: .video) { [log] granted in log.info("acesso à câmera: \(granted)") }
     }
+
+    /// Abre os Ajustes na linha "Extensões de Câmera". O macOS não abre o ⓘ dela por endereço, mas
+    /// rola até a categoria. Com os Ajustes fechados, a primeira chamada só abre o painel, a
+    /// segunda chega à seção Extensões e a terceira, com a lista carregada, traz a linha à vista
+    /// (medido no macOS 26 com uma lista longa de itens de início).
+    @MainActor
+    func openSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.ExtensionsPreferences?extensionPointIdentifier=com.apple.system_extension.cmio")
+        else { return }
+        NSWorkspace.shared.open(url)
+        for delay in [1.8, 3.6] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { NSWorkspace.shared.open(url) }
+        }
+    }
+
+    // MARK: - Quem está vendo
+
+    /// A extensão avisa a cada segundo, por notificação do sistema, enquanto algum app lê a câmera.
+    @MainActor
+    private func listenForUse() {
+        guard inUseTimer == nil, let extensionID else { return }
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(), Unmanaged.passUnretained(self).toOpaque(),
+            { _, observer, _, _, _ in
+                guard let observer else { return }
+                let camera = Unmanaged<VirtualCamera>.fromOpaque(observer).takeUnretainedValue()
+                DispatchQueue.main.async { camera.heardInUse() }
+            },
+            (extensionID + ".inuse") as CFString, nil, .deliverImmediately)
+        inUseTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                let using = Date().timeIntervalSince(self.lastHeard) < 2.5
+                if WebcamStatus.shared.inUse != using { WebcamStatus.shared.inUse = using }
+            }
+        }
+    }
+
+    @MainActor
+    private func heardInUse() {
+        lastHeard = Date()
+        if !WebcamStatus.shared.inUse { WebcamStatus.shared.inUse = true }
+    }
+
+    // MARK: - Quadros
 
     func send(_ image: CVPixelBuffer) {
         guard isAvailable else { return }
         queue.async { self.push(image) }
     }
 
-    // MARK: - Quadros
-
-    private var pushes = 0
-
     private func push(_ image: CVPixelBuffer) {
-        pushes += 1
-        if pushes == 1 { log.info("primeiro quadro para a câmera virtual") }
+        guard enabled else { return }
         if sinkQueue == nil { connect() }
         guard let sinkQueue else { return }
         // Fila cheia: a extensão ainda não pegou o anterior. Descarta em vez de acumular atraso.
-        guard CMSimpleQueueGetCount(sinkQueue) < CMSimpleQueueGetCapacity(sinkQueue) else {
-            dropped += 1
-            return
-        }
-        guard let output = scaled(image), let sample = sample(output) else { return }
+        guard CMSimpleQueueGetCount(sinkQueue) < CMSimpleQueueGetCapacity(sinkQueue) else { return }
+        guard let upright = rotated(image), let output = scaled(upright), let sample = sample(output) else { return }
         CMSimpleQueueEnqueue(sinkQueue, element: Unmanaged.passRetained(sample).toOpaque())
-        sent += 1
-        if sent % 300 == 1 { log.info("quadros enviados: \(self.sent), descartados: \(self.dropped)") }
     }
 
-    /// Converte para BGRA 1920 × 1080 na GPU, com barras se a proporção for outra.
-    private func scaled(_ image: CVPixelBuffer) -> CVPixelBuffer? {
-        if transfer == nil {
-            VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &transfer)
-            if let transfer {
-                VTSessionSetProperty(transfer, key: kVTPixelTransferPropertyKey_ScalingMode, value: kVTScalingMode_Letterbox)
-            }
-            let attributes: [String: Any] = [
-                kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
-                kCVPixelBufferWidthKey as String: Self.size.width,
-                kCVPixelBufferHeightKey as String: Self.size.height,
-                kCVPixelBufferIOSurfacePropertiesKey as String: [:],
-            ]
-            CVPixelBufferPoolCreate(kCFAllocatorDefault, nil, attributes as CFDictionary, &pool)
+    /// Gira como na janela (`quarterTurns` no sentido horário).
+    private func rotated(_ image: CVPixelBuffer) -> CVPixelBuffer? {
+        guard quarterTurns != 0 else { return image }
+        let (w, h) = (CVPixelBufferGetWidth(image), CVPixelBufferGetHeight(image))
+        let size = quarterTurns % 2 == 1 ? (width: h, height: w) : (width: w, height: h)
+        if rotator == nil { VTPixelRotationSessionCreate(kCFAllocatorDefault, &rotator) }
+        if rotatedPool == nil || rotatedSize != size {
+            rotatedPool = pool(width: size.width, height: size.height, format: CVPixelBufferGetPixelFormatType(image))
+            rotatedSize = size
         }
-        guard let transfer, let pool else { return nil }
+        guard let rotator, let rotatedPool else { return nil }
+        let angle: CFString =
+            switch quarterTurns {
+            case 1: kVTRotation_CW90
+            case 2: kVTRotation_180
+            default: kVTRotation_CCW90
+            }
+        VTSessionSetProperty(rotator, key: kVTPixelRotationPropertyKey_Rotation, value: angle)
         var output: CVPixelBuffer?
-        CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, pool, &output)
-        guard let output, VTPixelTransferSessionTransferImage(transfer, from: image, to: output) == noErr else { return nil }
+        CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, rotatedPool, &output)
+        guard let output, VTPixelRotationSessionRotateImage(rotator, image, output) == noErr else { return nil }
         return output
+    }
+
+    /// BGRA 1920 × 1080 na GPU, com barras pretas se a proporção for outra (o vídeo em pé).
+    private func scaled(_ image: CVPixelBuffer) -> CVPixelBuffer? {
+        if scaler == nil {
+            VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &scaler)
+            if let scaler { VTSessionSetProperty(scaler, key: kVTPixelTransferPropertyKey_ScalingMode, value: kVTScalingMode_Letterbox) }
+            outputPool = pool(width: Self.size.width, height: Self.size.height, format: kCVPixelFormatType_32BGRA)
+        }
+        guard let scaler, let outputPool else { return nil }
+        var output: CVPixelBuffer?
+        CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, outputPool, &output)
+        guard let output, VTPixelTransferSessionTransferImage(scaler, from: image, to: output) == noErr else { return nil }
+        return output
+    }
+
+    private func pool(width: Int, height: Int, format: OSType) -> CVPixelBufferPool? {
+        let attributes: [String: Any] = [
+            kCVPixelBufferPixelFormatTypeKey as String: format,
+            kCVPixelBufferWidthKey as String: width,
+            kCVPixelBufferHeightKey as String: height,
+            kCVPixelBufferIOSurfacePropertiesKey as String: [:],
+        ]
+        var pool: CVPixelBufferPool?
+        CVPixelBufferPoolCreate(kCFAllocatorDefault, nil, attributes as CFDictionary, &pool)
+        return pool
     }
 
     private func sample(_ image: CVPixelBuffer) -> CMSampleBuffer? {
@@ -105,32 +215,32 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
 
     // MARK: - Achar a câmera
 
-    /// Acha a câmera "bmonitor" e abre o stream de entrada dela. Tenta no máximo uma vez por segundo:
-    /// antes de o usuário aprovar a extensão, ela não existe.
+    /// Acha a câmera "bmonitor" e abre o stream de entrada dela. Tenta no máximo uma vez por
+    /// segundo: antes de o usuário aprovar a extensão, ela não existe, e depois aparece sozinha.
     private func connect() {
         guard Date().timeIntervalSince(lastAttempt) > 1 else { return }
         lastAttempt = Date()
-        let all = devices()
-        guard let device = all.first(where: { uid(of: $0) == Self.deviceUID }) else {
-            log.info("câmera bmonitor não encontrada entre \(all.count) câmeras: \(all.map { self.uid(of: $0) ?? "?" }.joined(separator: ", "))")
-            return
-        }
-        let streams = streams(of: device)
-        log.info("câmera bmonitor: \(device), streams \(streams)")
+        guard let device = devices().first(where: { uid(of: $0) == Self.deviceUID }) else { return }
         // A extensão cria primeiro o stream de saída e depois o de entrada.
+        let streams = streams(of: device)
         guard streams.count >= 2 else { return }
-        let sink = streams[1]
         var queueRef: Unmanaged<CMSimpleQueue>?
-        let status = CMIOStreamCopyBufferQueue(sink, { _, _, _ in }, nil, &queueRef)
+        let status = CMIOStreamCopyBufferQueue(streams[1], { _, _, _ in }, nil, &queueRef)
         guard status == noErr, let queueRef else {
             log.error("CMIOStreamCopyBufferQueue: \(status)")
             return
         }
         sinkQueue = queueRef.takeUnretainedValue()
-        let start = CMIODeviceStartStream(device, sink)
+        CMIODeviceStartStream(device, streams[1])
         self.device = device
-        stream = sink
-        log.info("câmera virtual conectada, início do stream: \(start)")
+        stream = streams[1]
+        log.info("câmera virtual conectada")
+    }
+
+    private func disconnect() {
+        guard sinkQueue != nil else { return }
+        CMIODeviceStopStream(device, stream)
+        sinkQueue = nil
     }
 
     private func address(_ selector: Int) -> CMIOObjectPropertyAddress {
@@ -150,13 +260,9 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
         return ids
     }
 
-    private func devices() -> [CMIODeviceID] {
-        objects(of: CMIOObjectID(kCMIOObjectSystemObject), kCMIOHardwarePropertyDevices)
-    }
+    private func devices() -> [CMIODeviceID] { objects(of: CMIOObjectID(kCMIOObjectSystemObject), kCMIOHardwarePropertyDevices) }
 
-    private func streams(of device: CMIODeviceID) -> [CMIOStreamID] {
-        objects(of: device, kCMIODevicePropertyStreams)
-    }
+    private func streams(of device: CMIODeviceID) -> [CMIOStreamID] { objects(of: device, kCMIODevicePropertyStreams) }
 
     private func uid(of device: CMIODeviceID) -> String? {
         var address = address(kCMIODevicePropertyDeviceUID)
@@ -175,14 +281,17 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     }
 
     func requestNeedsUserApproval(_ request: OSSystemExtensionRequest) {
-        log.info("extensão precisa de aprovação em Ajustes do Sistema")
+        MainActor.assumeIsolated { WebcamStatus.shared.approval = .waiting }
     }
 
     func request(_ request: OSSystemExtensionRequest, didFinishWithResult result: OSSystemExtensionRequest.Result) {
-        log.info("extensão ativada: \(result.rawValue)")
+        // Aprovada agora: a câmera acabou de aparecer; tenta conectar já no próximo quadro.
+        queue.async { self.lastAttempt = .distantPast }
+        MainActor.assumeIsolated { WebcamStatus.shared.approval = Self.simulatesWaiting ? .waiting : .approved }
     }
 
     func request(_ request: OSSystemExtensionRequest, didFailWithError error: Error) {
-        log.error("ativação falhou: \(error.localizedDescription)")
+        log.error("ativação falhou: \(error.localizedDescription, privacy: .public)")
+        MainActor.assumeIsolated { WebcamStatus.shared.approval = .failed(error.localizedDescription) }
     }
 }

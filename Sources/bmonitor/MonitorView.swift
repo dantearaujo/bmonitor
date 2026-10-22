@@ -36,6 +36,10 @@ struct MonitorView: View {
         .onContinuousHover { _ in model.pokeControls() }
         .onChange(of: model.controlsVisible) { _, visible in WindowShaper.setTitlebarVisible(visible) }
         .task {
+            // Estado salvo da webcam: ligada, pede a ativação (e troca a extensão depois de uma
+            // atualização) e já sai girada como a janela.
+            VirtualCamera.shared.setQuarterTurns(model.quarterTurns)
+            VirtualCamera.shared.setEnabled(model.webcamEnabled)
             try? await Task.sleep(for: .milliseconds(300))
             model.shapeWindow(animate: false)
             model.showScriptWindowIfNeeded()
@@ -289,6 +293,7 @@ struct HealthChip: View {
 
     var body: some View {
         HStack(spacing: tight ? 10 : 14) {
+            webcam
             copy
             remaining
             battery
@@ -347,6 +352,17 @@ struct HealthChip: View {
     }
 
     /// A cópia no Mac só aparece gravando, ou quando a última falhou.
+    /// Algum app de chamada lendo a câmera "bmonitor": quem está diante da câmera precisa saber
+    /// que tem gente vendo, como sabe que está gravando.
+    @ViewBuilder private var webcam: some View {
+        if model.webcamEnabled, WebcamStatus.shared.inUse {
+            Group {
+                if compact { Image(systemName: "web.camera") } else { Label("Webcam", systemImage: "web.camera") }
+            }
+            .help(String(localized: "Um app de chamada está usando a câmera bmonitor"))
+        }
+    }
+
     @ViewBuilder private var copy: some View {
         if let failure = model.copyFailure {
             copyLabel("exclamationmark.triangle.fill").foregroundStyle(Theme.rec).help(failure)

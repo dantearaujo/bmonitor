@@ -19,8 +19,9 @@ DEV=".build/dev/bmonitor Dev.app"
 IDENTITY="Apple Development"
 
 (cd Webcam && BASE_ID=com.dantearaujo.bmonitor.dev xcodegen generate >/dev/null)
+# Versão da extensão a cada build: com a mesma versão, o macOS não troca a que já está ativa.
 xcodebuild -project Webcam/Webcam.xcodeproj -scheme Host -configuration Debug -derivedDataPath "$DD" \
-    -allowProvisioningUpdates -allowProvisioningDeviceRegistration build >/dev/null
+    CURRENT_PROJECT_VERSION="$(date +%s)" -allowProvisioningUpdates -allowProvisioningDeviceRegistration build >/dev/null
 
 # Versão alta: o Sparkle nunca oferece a release no lugar do protótipo.
 VERSION=9.9.9 scripts/build-app.sh >/dev/null
@@ -32,7 +33,6 @@ PLIST="$DEV/Contents/Info.plist"
 plutil -replace CFBundleIdentifier -string com.dantearaujo.bmonitor.dev "$PLIST"
 plutil -replace CFBundleName -string "bmonitor Dev" "$PLIST"
 plutil -replace CFBundleDisplayName -string "bmonitor Dev" "$PLIST"
-plutil -replace NSCameraUsageDescription -string "O bmonitor entrega o vídeo do iPhone à câmera virtual bmonitor." "$PLIST"
 
 mkdir -p "$DEV/Contents/Library/SystemExtensions"
 ditto "$HOST/Contents/Library/SystemExtensions" "$DEV/Contents/Library/SystemExtensions"

@@ -155,7 +155,7 @@ struct AboutView: View {
     }
 }
 
-private extension View {
+extension View {
     func pointingHandCursor() -> some View {
         onHover { inside in (inside ? NSCursor.pointingHand : NSCursor.arrow).set() }
     }

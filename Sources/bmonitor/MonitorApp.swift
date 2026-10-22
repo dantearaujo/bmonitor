@@ -48,6 +48,7 @@ struct MonitorApp: App {
                 Toggle("Salvar cópia de cada take no Mac", isOn: $model.savesCopy)
                 Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
                 Button("Mostrar cópias no Finder") { model.showCopies() }
+                WebcamMenuItem(model: model)
                 Divider()
                 Button("ISO…") { model.togglePanel(.iso) }.keyboardShortcut(.iso, typing: model.script.editing)
                 Button("Shutter…") { model.togglePanel(.shutter) }.keyboardShortcut(.shutter, typing: model.script.editing)
@@ -89,6 +90,13 @@ struct MonitorApp: App {
             }
         }
 
+        Window("Webcam", id: "webcam") {
+            WebcamGuide()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+
         Window("Sobre o bmonitor", id: "about") {
             AboutView()
         }
@@ -100,6 +108,24 @@ struct MonitorApp: App {
 
 /// "Sobre o bmonitor" abre a janela própria no lugar do painel padrão; o `openWindow` só
 /// existe dentro de uma view.
+/// "Usar como webcam", só nos builds que trazem a extensão de câmera. Ligar pela primeira vez,
+/// ou com a extensão ainda não aprovada, abre o guia.
+private struct WebcamMenuItem: View {
+    @Bindable var model: AppModel
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        if VirtualCamera.shared.isAvailable {
+            Toggle("Usar como webcam", isOn: Binding(
+                get: { model.webcamEnabled },
+                set: { on in
+                    model.webcamEnabled = on
+                    if on, WebcamStatus.shared.approval != .approved { openWindow(id: "webcam") }
+                }))
+        }
+    }
+}
+
 private struct AboutMenuItem: View {
     @Environment(\.openWindow) private var openWindow
 
@@ -210,7 +236,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
-        VirtualCamera.shared.activate()
         // Rodando pelo terminal, Ctrl-C também devolve a câmera ao estado original.
         signalSources = [SIGINT, SIGTERM].map { number in
             signal(number, SIG_IGN)

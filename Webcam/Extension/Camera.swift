@@ -1,12 +1,16 @@
 import CoreMediaIO
+import CoreText
 import CoreVideo
 import Foundation
+import ImageIO
 import IOKit.audio
 import os
 
-// Protótipo da webcam virtual. A extensão é uma câmera com dois streams: o "sink", que recebe os
-// quadros do bmonitor, e o de saída, que o Meet, o Zoom e os outros leem. Sem quadros do app,
-// a saída manda um quadro escuro, para a chamada não congelar.
+// Webcam virtual do bmonitor. A extensão é uma câmera com dois streams: o "sink", que recebe os
+// quadros do bmonitor, e o de saída, que o Meet, o Zoom e os outros leem. Sem quadros do app
+// (bmonitor fechado, iPhone desconectado, webcam desligada), a saída mostra "Câmera em espera"
+// com o ícone, para a chamada não congelar nem parecer travada. Enquanto algum app lê a saída,
+// a extensão avisa o bmonitor a cada segundo, para a cápsula de status mostrar "Webcam".
 
 let width: Int32 = 1920
 let height: Int32 = 1080
@@ -52,6 +56,8 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
     private var placeholder: CVPixelBuffer?
     private var format: CMVideoFormatDescription!
     private var received = 0
+    private var lastUsePost: UInt64 = 0
+    private let useNotification = (Bundle.main.bundleIdentifier ?? "com.dantearaujo.bmonitor.camera") + ".inuse"
 
     override init() {
         super.init()
@@ -73,7 +79,7 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
         } catch {
             log.error("addStream: \(error.localizedDescription)")
         }
-        placeholder = Self.darkFrame()
+        placeholder = Self.standbyFrame()
     }
 
     var availableProperties: Set<CMIOExtensionProperty> { [.deviceTransportType, .deviceModel] }
@@ -126,7 +132,12 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
                     CMIOExtensionScheduledOutput(sequenceNumber: sequence, hostTimeInNanoseconds: at))
             }
         }
-        // Sem quadro do app há meio segundo: quadro escuro a cada tique par, no fps da saída.
+        if outputRunning, now - lastUsePost > 1_000_000_000 {
+            lastUsePost = now
+            CFNotificationCenterPostNotification(
+                CFNotificationCenterGetDarwinNotifyCenter(), CFNotificationName(useNotification as CFString), nil, nil, true)
+        }
+        // Sem quadro do app há meio segundo: o quadro de espera, no ritmo do relógio.
         if outputRunning, now - lastFrame > 500_000_000, let placeholder, let sample = sample(placeholder, at: now) {
             output.stream.send(sample, discontinuity: [], hostTimeInNanoseconds: now)
         }
@@ -144,16 +155,42 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
         return result
     }
 
-    private static func darkFrame() -> CVPixelBuffer? {
+    /// Preto, o ícone do bmonitor apagado no centro e "Câmera em espera" embaixo, no idioma do Mac.
+    private static func standbyFrame() -> CVPixelBuffer? {
         var buffer: CVPixelBuffer?
         let attributes: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [:]]
         CVPixelBufferCreate(kCFAllocatorDefault, Int(width), Int(height), kCVPixelFormatType_32BGRA, attributes as CFDictionary, &buffer)
         guard let buffer else { return nil }
         CVPixelBufferLockBaseAddress(buffer, [])
-        if let base = CVPixelBufferGetBaseAddress(buffer) {
-            memset(base, 0x14, CVPixelBufferGetBytesPerRow(buffer) * Int(height))
+        defer { CVPixelBufferUnlockBaseAddress(buffer, []) }
+        guard let context = CGContext(
+            data: CVPixelBufferGetBaseAddress(buffer), width: Int(width), height: Int(height), bitsPerComponent: 8,
+            bytesPerRow: CVPixelBufferGetBytesPerRow(buffer), space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue | CGBitmapInfo.byteOrder32Little.rawValue)
+        else { return buffer }
+        context.setFillColor(CGColor(gray: 0, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: Int(width), height: Int(height)))
+        let icon: CGFloat = 132
+        let center = CGPoint(x: CGFloat(width) / 2, y: CGFloat(height) / 2)
+        if let url = Bundle.main.url(forResource: "StandbyIcon", withExtension: "png"),
+           let source = CGImageSourceCreateWithURL(url as CFURL, nil),
+           let image = CGImageSourceCreateImageAtIndex(source, 0, nil) {
+            context.saveGState()
+            context.setAlpha(0.55)
+            context.interpolationQuality = .high
+            context.draw(image, in: CGRect(x: center.x - icon / 2, y: center.y - icon / 2 + 22, width: icon, height: icon))
+            context.restoreGState()
         }
-        CVPixelBufferUnlockBaseAddress(buffer, [])
+        let portuguese = Locale.preferredLanguages.first?.hasPrefix("pt") ?? false
+        let text = portuguese ? "Câmera em espera" : "Camera on standby"
+        let font = CTFontCreateUIFontForLanguage(.system, 32, nil) ?? CTFontCreateWithName("Helvetica" as CFString, 32, nil)
+        let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [
+            NSAttributedString.Key(kCTFontAttributeName as String): font,
+            NSAttributedString.Key(kCTForegroundColorAttributeName as String): CGColor(gray: 1, alpha: 0.45),
+        ]))
+        let bounds = CTLineGetBoundsWithOptions(line, .useOpticalBounds)
+        context.textPosition = CGPoint(x: center.x - bounds.width / 2, y: center.y - icon / 2 - 20 - bounds.height)
+        CTLineDraw(line, context)
         return buffer
     }
 }

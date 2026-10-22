@@ -85,7 +85,19 @@ final class AppModel {
             if let safeZone { UserDefaults.standard.set(safeZone.rawValue, forKey: "lastSafeZone") }
         }
     }
-    var quarterTurns: Int { didSet { UserDefaults.standard.set(quarterTurns, forKey: "quarterTurns") } }
+    var quarterTurns: Int {
+        didSet {
+            UserDefaults.standard.set(quarterTurns, forKey: "quarterTurns")
+            VirtualCamera.shared.setQuarterTurns(quarterTurns)
+        }
+    }
+    /// A webcam virtual: desligada por padrão; ligar pede a aprovação da extensão na primeira vez.
+    var webcamEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(webcamEnabled, forKey: "webcamEnabled")
+            VirtualCamera.shared.setEnabled(webcamEnabled)
+        }
+    }
     /// Cópia de cada take no Mac, a partir do stream. Desligada por padrão.
     var savesCopy: Bool {
         didSet {
@@ -132,6 +144,7 @@ final class AppModel {
             ?? (UserDefaults.standard.bool(forKey: "showGrid") ? .thirds : .off)
         safeZone = UserDefaults.standard.string(forKey: "safeZone").flatMap(SafeZone.init(rawValue:))
         quarterTurns = UserDefaults.standard.integer(forKey: "quarterTurns")
+        webcamEnabled = UserDefaults.standard.bool(forKey: "webcamEnabled")
         // O formato da última câmera: a janela reabre com o tamanho salvo, e o layout precisa
         // da mesma proporção antes do primeiro `/system/videoFormat`, senão parte de 16:9 e
         // pula um segundo depois.
