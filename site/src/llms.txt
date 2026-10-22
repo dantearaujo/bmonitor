@@ -17,6 +17,7 @@ Key facts:
 - One iPhone at a time. With several on the network, it asks which one to use.
 - Status readable from about 3 m: recording tally (red border), timecode, remaining recording time, active microphone name, L/R audio meter in Blackmagic's colors, signal status. Framing grids. Landscape or portrait (⌘→ rotates).
 - Script: a panel inside the monitor window (beside the video, or above or below it in landscape) that follows along as you speak, using the camera's sound, with speech recognition on the Mac. It can pop out into its own window. ⌘2 shows or hides it.
+- Webcam: Camera › Use as Webcam turns the iPhone into a camera called "bmonitor" (a macOS camera extension) for Meet, Zoom, FaceTime and any app, keeping Blackmagic Camera's manual exposure, white balance, focus and LUT. Video only; audio stays on the Mac's own microphone. macOS asks once to allow the extension.
 - Keyboard: one key per control (I ISO, S shutter, P frame rate, W white balance, T tint, L lens, A audio, M mute, G grid, F focus), ⌘R records, ⌘2 toggles the script, ⌘/ lists all shortcuts.
 - Privacy: collects nothing, no analytics, no account. It talks to the iPhone on the local network and checks GitHub for updates; the script's speech recognition runs on the Mac.
 - Interface in English and Brazilian Portuguese.
