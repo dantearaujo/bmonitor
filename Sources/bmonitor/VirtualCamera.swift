@@ -1,3 +1,4 @@
+import AVFoundation
 import CoreMediaIO
 import Foundation
 import SystemExtensions
@@ -37,6 +38,7 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
         request.delegate = self
         OSSystemExtensionManager.shared.submitRequest(request)
         log.info("pedido de ativação enviado")
+        AVCaptureDevice.requestAccess(for: .video) { [log] granted in log.info("acesso à câmera: \(granted)") }
     }
 
     func send(_ image: CVPixelBuffer) {
@@ -46,7 +48,11 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
 
     // MARK: - Quadros
 
+    private var pushes = 0
+
     private func push(_ image: CVPixelBuffer) {
+        pushes += 1
+        if pushes == 1 { log.info("primeiro quadro para a câmera virtual") }
         if sinkQueue == nil { connect() }
         guard let sinkQueue else { return }
         // Fila cheia: a extensão ainda não pegou o anterior. Descarta em vez de acumular atraso.
@@ -104,8 +110,13 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     private func connect() {
         guard Date().timeIntervalSince(lastAttempt) > 1 else { return }
         lastAttempt = Date()
-        guard let device = devices().first(where: { uid(of: $0) == Self.deviceUID }) else { return }
+        let all = devices()
+        guard let device = all.first(where: { uid(of: $0) == Self.deviceUID }) else {
+            log.info("câmera bmonitor não encontrada entre \(all.count) câmeras: \(all.map { self.uid(of: $0) ?? "?" }.joined(separator: ", "))")
+            return
+        }
         let streams = streams(of: device)
+        log.info("câmera bmonitor: \(device), streams \(streams)")
         // A extensão cria primeiro o stream de saída e depois o de entrada.
         guard streams.count >= 2 else { return }
         let sink = streams[1]

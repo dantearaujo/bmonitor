@@ -42,6 +42,7 @@ targets:
       path: Extension/Info.plist
       properties:
         CFBundleDisplayName: bmonitor
+        CFBundlePackageType: SYSX
         LSMinimumSystemVersion: "14.0"
         NSSystemExtensionUsageDescription: Câmera virtual do bmonitor
         CMIOExtension:
