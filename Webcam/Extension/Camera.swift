@@ -1,5 +1,4 @@
 import CoreMediaIO
-import CoreText
 import CoreVideo
 import Foundation
 import ImageIO
@@ -8,8 +7,8 @@ import os
 
 // Webcam virtual do bmonitor. A extensão é uma câmera com dois streams: o "sink", que recebe os
 // quadros do bmonitor, e o de saída, que o Meet, o Zoom e os outros leem. Sem quadros do app
-// (bmonitor fechado, iPhone desconectado, webcam desligada), a saída mostra "Câmera em espera"
-// com o ícone, para a chamada não congelar nem parecer travada. Enquanto algum app lê a saída,
+// (bmonitor fechado, iPhone desconectado, webcam desligada), a saída mostra o ícone com o símbolo
+// de pausa, para a chamada não congelar nem parecer travada. Enquanto algum app lê a saída,
 // a extensão avisa o bmonitor a cada segundo, para a cápsula de status mostrar "Webcam".
 
 let width: Int32 = 1920
@@ -155,7 +154,7 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
         return result
     }
 
-    /// Preto, o ícone do bmonitor apagado no centro e "Câmera em espera" embaixo, no idioma do Mac.
+    /// Preto, o ícone do bmonitor apagado no centro e o símbolo de pausa embaixo.
     private static func standbyFrame() -> CVPixelBuffer? {
         var buffer: CVPixelBuffer?
         let attributes: [String: Any] = [kCVPixelBufferIOSurfacePropertiesKey as String: [:]]
@@ -181,16 +180,18 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
             context.draw(image, in: CGRect(x: center.x - icon / 2, y: center.y - icon / 2 + 22, width: icon, height: icon))
             context.restoreGState()
         }
-        let portuguese = Locale.preferredLanguages.first?.hasPrefix("pt") ?? false
-        let text = portuguese ? "Câmera em espera" : "Camera on standby"
-        let font = CTFontCreateUIFontForLanguage(.system, 32, nil) ?? CTFontCreateWithName("Helvetica" as CFString, 32, nil)
-        let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: [
-            NSAttributedString.Key(kCTFontAttributeName as String): font,
-            NSAttributedString.Key(kCTForegroundColorAttributeName as String): CGColor(gray: 1, alpha: 0.45),
-        ]))
-        let bounds = CTLineGetBoundsWithOptions(line, .useOpticalBounds)
-        context.textPosition = CGPoint(x: center.x - bounds.width / 2, y: center.y - icon / 2 - 20 - bounds.height)
-        CTLineDraw(line, context)
+        // Pausa em vez de texto: os apps espelham a prévia de quem está na câmera, e texto aparecia
+        // ao contrário para a própria pessoa. As duas barras são simétricas e dizem "parada" em
+        // qualquer idioma.
+        let bar = CGSize(width: 14, height: 44)
+        let gap: CGFloat = 14
+        let top = center.y - icon / 2 - 4
+        context.setFillColor(CGColor(gray: 1, alpha: 0.45))
+        for x in [center.x - gap / 2 - bar.width, center.x + gap / 2] {
+            let rect = CGRect(x: x, y: top - bar.height, width: bar.width, height: bar.height)
+            context.addPath(CGPath(roundedRect: rect, cornerWidth: 4, cornerHeight: 4, transform: nil))
+        }
+        context.fillPath()
         return buffer
     }
 }
