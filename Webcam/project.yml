@@ -1,0 +1,58 @@
+name: Webcam
+options:
+  deploymentTarget:
+    macOS: "14.0"
+settings:
+  base:
+    DEVELOPMENT_TEAM: PMG6QHRW7K
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: Apple Development
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "9.9.9"
+    CURRENT_PROJECT_VERSION: "1"
+    ENABLE_HARDENED_RUNTIME: YES
+targets:
+  Host:
+    type: application
+    platform: macOS
+    sources: [Host]
+    info:
+      path: Host/Info.plist
+      properties:
+        CFBundleName: bmonitor Dev
+        LSMinimumSystemVersion: "14.0"
+    entitlements:
+      path: Host/Host.entitlements
+      properties:
+        com.apple.developer.system-extension.install: true
+        com.apple.security.application-groups:
+          - $(TeamIdentifierPrefix)com.dantearaujo.bmonitor.dev
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dantearaujo.bmonitor.dev
+        PRODUCT_NAME: Host
+    dependencies:
+      - target: Camera
+        embed: true
+  Camera:
+    type: system-extension
+    platform: macOS
+    sources: [Extension]
+    info:
+      path: Extension/Info.plist
+      properties:
+        CFBundleDisplayName: bmonitor
+        LSMinimumSystemVersion: "14.0"
+        NSSystemExtensionUsageDescription: Câmera virtual do bmonitor
+        CMIOExtension:
+          CMIOExtensionMachServiceName: $(TeamIdentifierPrefix)com.dantearaujo.bmonitor.dev.camera
+    entitlements:
+      path: Extension/Camera.entitlements
+      properties:
+        com.apple.security.app-sandbox: true
+        com.apple.security.application-groups:
+          - $(TeamIdentifierPrefix)com.dantearaujo.bmonitor.dev
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dantearaujo.bmonitor.dev.camera
+        PRODUCT_NAME: com.dantearaujo.bmonitor.dev.camera

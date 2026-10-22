@@ -210,6 +210,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
+        VirtualCamera.shared.activate()
         // Rodando pelo terminal, Ctrl-C também devolve a câmera ao estado original.
         signalSources = [SIGINT, SIGTERM].map { number in
             signal(number, SIG_IGN)

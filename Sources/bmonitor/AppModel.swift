@@ -229,7 +229,10 @@ final class AppModel {
         }
         let session = StreamSession(api: api)
         let layer = displayLayer
-        session.onFrame = { VideoEnqueue.enqueue($0, into: layer) }
+        session.onFrame = {
+            VideoEnqueue.enqueue($0, into: layer)
+            VirtualCamera.shared.send($0)
+        }
         session.audio.isMuted = muted
         session.recorder.onFinish = { [weak self] url, error in self?.copyFinished(url, error) }
         session.onAudioBuffer = { [speech = script.speech] in speech.append($0) }
