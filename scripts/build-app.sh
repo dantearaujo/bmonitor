@@ -15,7 +15,7 @@ cd "$(dirname "$0")/.."
 NAME="bmonitor"
 APP=".build/dist/$NAME.app"
 BUNDLE_ID="com.dantearaujo.bmonitor"
-VERSION="${VERSION:-0.9.7}"
+VERSION="${VERSION:-0.9.8}"
 BUILD="${BUILD:-$(git rev-list --count HEAD 2>/dev/null || echo 0)}"
 TAG="v$VERSION-beta"
 # Sparkle: o app lê o feed da release mais recente e só aceita atualização assinada com a chave

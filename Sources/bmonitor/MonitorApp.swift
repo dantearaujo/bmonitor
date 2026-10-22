@@ -21,7 +21,10 @@ struct MonitorApp: App {
     }
 
     var body: some Scene {
-        WindowGroup("bmonitor") {
+        // Uma janela só: com `WindowGroup`, ⌘N abria outro monitor e o macOS reabria todas ao
+        // abrir o app, mas o vídeo só aparece numa. O id mantém "MonitorView" no identificador
+        // da janela, que o `WindowShaper` e o fechar-encerra procuram.
+        Window("bmonitor", id: "MonitorView") {
             MonitorView(model: model)
                 .frame(minWidth: 480, minHeight: 270)
                 // Título da janela no menu Janela e no Mission Control.

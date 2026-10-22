@@ -390,9 +390,9 @@ struct HealthChip: View {
     }
 }
 
-/// Barra de vidro: exposição à esquerda, gravar no meio, lente, áudio e janela à direita.
-/// Em janela estreita ela compacta (letra e respiro menores, mesmos rótulos) antes de, em
-/// último caso, virar duas linhas. Sem câmera, fica apagada: os valores são velhos.
+/// Barra de vidro: exposição à esquerda, gravar no centro exato da janela, lente, áudio e
+/// janela à direita. Em janela estreita ela compacta (letra e respiro menores, mesmos rótulos)
+/// antes de, em último caso, virar duas linhas. Sem câmera, fica apagada: os valores são velhos.
 struct ControlBar: View {
     @Bindable var model: AppModel
 
@@ -407,18 +407,24 @@ struct ControlBar: View {
             bar(compact: true, tight: true)
             VStack(spacing: 8) {
                 HStack(spacing: 2) { exposure(compact: true) }.padding(5).hudGlass(Capsule()).disabled(cameraGone)
-                HStack(spacing: 2) {
-                    Group {
-                        RecordButton(model: model)
-                        copyButton
+                RecordCenteredLayout(spacing: 2, padding: 5) {
+                    glass
+                    HStack(spacing: 2) {
+                        camera(compact: true)
                         separator
-                        cameraAndWindow(compact: true)
                     }
                     .disabled(cameraGone)
-                    scriptToggle
+                    RecordButton(model: model).disabled(cameraGone)
+                    HStack(spacing: 2) {
+                        Group {
+                            copyButton
+                            separator
+                            window
+                        }
+                        .disabled(cameraGone)
+                        scriptToggle
+                    }
                 }
-                .padding(5)
-                .hudGlass(Capsule())
             }
         }
     }
@@ -426,21 +432,34 @@ struct ControlBar: View {
     private var cameraGone: Bool { model.signal == .cameraGone }
 
     private func bar(compact: Bool, tight: Bool = false) -> some View {
-        HStack(spacing: compact ? 0 : 4) {
+        let spacing: CGFloat = compact ? 0 : 4
+        return RecordCenteredLayout(spacing: spacing, padding: compact ? 5 : 6) {
+            glass
             // Sem câmera, os controles dela param; o roteiro continua.
-            Group {
+            HStack(spacing: spacing) {
                 exposure(compact: compact, tight: tight)
                 separator
-                RecordButton(model: model)
-                copyButton
-                separator
-                cameraAndWindow(compact: compact, tight: tight)
             }
             .disabled(cameraGone)
-            scriptToggle
+            RecordButton(model: model).disabled(cameraGone)
+            HStack(spacing: spacing) {
+                Group {
+                    copyButton
+                    separator
+                    camera(compact: compact, tight: tight)
+                    separator
+                    window
+                }
+                .disabled(cameraGone)
+                scriptToggle
+            }
         }
-        .padding(compact ? 5 : 6)
-        .hudGlass(Capsule())
+    }
+
+    /// O vidro da barra, desenhado pelo `RecordCenteredLayout` só em volta dos controles. Pega o
+    /// clique: errar um botão por pouco não pode virar foco no vídeo embaixo.
+    private var glass: some View {
+        Color.clear.hudGlass(Capsule()).contentShape(Capsule())
     }
 
     /// Abre e fecha o roteiro ao lado do vídeo; os controles dele ficam no próprio painel.
@@ -555,7 +574,7 @@ struct ControlBar: View {
         }
     }
 
-    @ViewBuilder private func cameraAndWindow(compact: Bool, tight: Bool = false) -> some View {
+    @ViewBuilder private func camera(compact: Bool, tight: Bool = false) -> some View {
         ValueButton(model: model, panel: .lens) {
             ValueItem(
                 label: compact
@@ -588,7 +607,9 @@ struct ControlBar: View {
                 ? String(localized: "Ligar o som da câmera no Mac (\(Shortcut.mute.glyph))")
                 : String(localized: "Silenciar o som no Mac (\(Shortcut.mute.glyph))"))
         .accessibilityLabel(model.muted ? String(localized: "Som no Mac desligado") : String(localized: "Som no Mac ligado"))
-        separator
+    }
+
+    @ViewBuilder private var window: some View {
         ValueButton(model: model, panel: .grid, isOn: model.grid != .off || model.safeZone != nil) {
             Image(systemName: "squareshape.split.3x3").font(.system(size: 15, weight: .medium)).frame(width: Theme.barItem, height: Theme.barItem)
                 .accessibilityLabel("Grade")
@@ -1012,5 +1033,39 @@ struct CameraChoice: View {
         .padding(22)
         .hudGlass(RoundedRectangle(cornerRadius: 18, style: .continuous))
         .padding(32)
+    }
+}
+
+/// O gravar no centro exato da barra, e a barra centrada na janela: como nos apps de câmera, o
+/// botão fica sempre no mesmo lugar, embaixo do meio do quadro. Os dois lados encostam nele; o
+/// vidro (primeira subview) abraça só os controles, e a sobra do lado mais curto fica
+/// transparente, do lado de fora. Subviews: vidro, esquerda, gravar, direita.
+struct RecordCenteredLayout: Layout {
+    var spacing: CGFloat
+    var padding: CGFloat
+
+    private func sizes(_ subviews: Subviews) -> (left: CGSize, center: CGSize, right: CGSize) {
+        (subviews[1].sizeThatFits(.unspecified), subviews[2].sizeThatFits(.unspecified), subviews[3].sizeThatFits(.unspecified))
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let (left, center, right) = sizes(subviews)
+        return CGSize(
+            width: 2 * (max(left.width, right.width) + spacing + padding) + center.width,
+            height: max(left.height, center.height, right.height) + 2 * padding)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let (left, center, right) = sizes(subviews)
+        let middle = CGPoint(x: bounds.midX, y: bounds.midY)
+        let leftEdge = middle.x - center.width / 2 - spacing
+        let rightEdge = middle.x + center.width / 2 + spacing
+        subviews[1].place(at: CGPoint(x: leftEdge, y: middle.y), anchor: .trailing, proposal: ProposedViewSize(left))
+        subviews[2].place(at: middle, anchor: .center, proposal: ProposedViewSize(center))
+        subviews[3].place(at: CGPoint(x: rightEdge, y: middle.y), anchor: .leading, proposal: ProposedViewSize(right))
+        let glass = CGRect(
+            x: leftEdge - left.width - padding, y: bounds.minY,
+            width: left.width + center.width + right.width + 2 * (spacing + padding), height: bounds.height)
+        subviews[0].place(at: glass.origin, anchor: .topLeading, proposal: ProposedViewSize(glass.size))
     }
 }
