@@ -25,14 +25,19 @@ public final class SRTListener {
     /// Porta em que o listener escuta, definida por `listen()`.
     public private(set) var port: UInt16
     private let latencyMs: Int32
+    private let tsbpd: Bool
     private var server: SRTSOCKET = SRT_INVALID_SOCK
     private var client: SRTSOCKET = SRT_INVALID_SOCK
     private var lastPayload = Date.distantPast
 
     /// `port` é a primeira tentativa; `listen()` sobe até nove portas se ela estiver ocupada.
-    public init(port: UInt16, latencyMs: Int32) {
+    /// Com `tsbpd` falso, o receptor não segura os pacotes até o horário de entrega do SRT e
+    /// entrega cada um assim que chega em ordem: some o buffer de 60 ms que o iPhone impõe,
+    /// e perda de pacote passa a custar a espera do reenvio (um RTT, ~13 ms na Wi-Fi de casa).
+    public init(port: UInt16, latencyMs: Int32, tsbpd: Bool = true) {
         self.port = port
         self.latencyMs = latencyMs
+        self.tsbpd = tsbpd
     }
 
     /// Abre o socket na primeira porta livre e devolve qual foi.
@@ -45,6 +50,13 @@ public final class SRTListener {
             let socket = srt_create_socket()
             var latency = latencyMs
             srt_setsockflag(socket, SRTO_RCVLATENCY, &latency, Int32(MemoryLayout<Int32>.size))
+            if !tsbpd {
+                // As opções do listener passam para a conexão aceita. O descarte de pacote
+                // atrasado depende do horário de entrega e sai junto.
+                var off = false
+                srt_setsockflag(socket, SRTO_TSBPDMODE, &off, Int32(MemoryLayout<Bool>.size))
+                srt_setsockflag(socket, SRTO_TLPKTDROP, &off, Int32(MemoryLayout<Bool>.size))
+            }
             var addr = sockaddr_in()
             addr.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
             addr.sin_family = sa_family_t(AF_INET)
@@ -82,7 +94,10 @@ public final class SRTListener {
             var negotiated: Int32 = 0
             var size = Int32(MemoryLayout<Int32>.size)
             srt_getsockflag(socket, SRTO_RCVLATENCY, &negotiated, &size)
-            onConnect?(negotiated)
+            var held = true
+            var heldSize = Int32(MemoryLayout<Bool>.size)
+            srt_getsockflag(socket, SRTO_TSBPDMODE, &held, &heldSize)
+            onConnect?(held ? negotiated : 0)
 
             while true {
                 let n = buffer.withUnsafeMutableBytes {

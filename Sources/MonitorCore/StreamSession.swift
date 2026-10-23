@@ -39,9 +39,10 @@ public final class StreamSession {
     private var fps: Double = 0
     private var lostBaseline: Int32 = 0
 
-    public init(api: CameraAPI, port: UInt16 = 9000, latencyMs: Int32 = 40) {
+    /// `tsbpd` falso entrega cada pacote assim que chega, sem o buffer do SRT (ver `SRTListener`).
+    public init(api: CameraAPI, port: UInt16 = 9000, latencyMs: Int32 = 40, tsbpd: Bool = true) {
         self.api = api
-        self.listener = SRTListener(port: port, latencyMs: latencyMs)
+        self.listener = SRTListener(port: port, latencyMs: latencyMs, tsbpd: tsbpd)
         decoder.onFrame = { [weak self] image in
             self?.countFrame()
             self?.onFrame?(image)

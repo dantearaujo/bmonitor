@@ -6,10 +6,14 @@ import Testing
 
 /// Transmissor SRT local: conecta em 127.0.0.1:<porta> e manda `count` mensagens de 1316 bytes
 /// (7 pacotes TS, como o iPhone), cada uma marcada com o índice no primeiro byte.
-private func sendMessages(port: UInt16, count: Int, passphrase: String? = nil) throws {
+/// `peerLatencyMs` impõe o buffer mínimo ao receptor, como o iPhone faz com os 60 ms dele.
+private func sendMessages(port: UInt16, count: Int, passphrase: String? = nil, peerLatencyMs: Int32? = nil) throws {
     srt_startup()
     let socket = srt_create_socket()
     defer { srt_close(socket) }
+    if var peerLatencyMs {
+        srt_setsockflag(socket, SRTO_PEERLATENCY, &peerLatencyMs, Int32(MemoryLayout<Int32>.size))
+    }
     if let passphrase {
         var bytes = Array(passphrase.utf8CString)
         srt_setsockflag(socket, SRTO_PASSPHRASE, &bytes, Int32(passphrase.utf8.count))
@@ -28,7 +32,8 @@ private func sendMessages(port: UInt16, count: Int, passphrase: String? = nil) t
         #expect(srt_sendmsg(socket, &message, 1316, -1, 1) == 1316)
         usleep(2000)
     }
-    usleep(300_000)
+    // Fechar antes de o receptor entregar descarta o que estava no buffer dele.
+    usleep(300_000 + UInt32(peerLatencyMs ?? 0) * 1000)
 }
 
 /// O receptor do app (SRTListener) recebe tudo o que um transmissor SRT manda, na ordem.
@@ -44,6 +49,34 @@ private func sendMessages(port: UInt16, count: Int, passphrase: String? = nil) t
     #expect(received.sizes.count == 30)
     #expect(received.sizes.allSatisfy { $0 == 1316 })
     #expect(received.firstBytes == (0..<30).map { UInt8($0) })
+}
+
+/// Sem o buffer de entrega, a mensagem chega na hora mesmo com o transmissor impondo 400 ms;
+/// com ele, chega depois dos 400 ms.
+@Test(arguments: [false, true]) func bufferOffDeliversOnArrival(tsbpd: Bool) throws {
+    let listener = SRTListener(port: tsbpd ? 9170 : 9180, latencyMs: 20, tsbpd: tsbpd)
+    let port = try listener.listen()
+    let firstArrival = Received()
+    let negotiated = Received()
+    listener.onConnect = { latency in withUnsafeBytes(of: latency) { negotiated.append($0) } }
+    listener.onPayload = { _ in
+        var now = DispatchTime.now().uptimeNanoseconds
+        if firstArrival.sizes.isEmpty { withUnsafeBytes(of: &now) { firstArrival.append($0) } }
+    }
+    Thread { listener.run() }.start()
+
+    let start = DispatchTime.now().uptimeNanoseconds
+    try sendMessages(port: port, count: 1, peerLatencyMs: 400)
+    let arrival = try #require(firstArrival.first.map { $0.withUnsafeBytes { $0.load(as: UInt64.self) } })
+    let waitedMs = Double(arrival - start) / 1e6
+    let reported = try #require(negotiated.first.map { $0.withUnsafeBytes { $0.load(as: Int32.self) } })
+    if tsbpd {
+        #expect(waitedMs > 400)
+        #expect(reported >= 400)
+    } else {
+        #expect(waitedMs < 100)
+        #expect(reported == 0)
+    }
 }
 
 /// Um par SRT com senha: o handshake e a cifra passam pelo OpenSSL empacotado.
@@ -86,4 +119,5 @@ private final class Received: @unchecked Sendable {
     func append(_ bytes: UnsafeRawBufferPointer) { lock.withLock { payloads.append(Array(bytes)) } }
     var sizes: [Int] { lock.withLock { payloads.map(\.count) } }
     var firstBytes: [UInt8] { lock.withLock { payloads.compactMap(\.first) } }
+    var first: [UInt8]? { lock.withLock { payloads.first } }
 }

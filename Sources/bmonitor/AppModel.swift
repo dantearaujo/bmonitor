@@ -240,7 +240,10 @@ final class AppModel {
         events.onConnection = { [weak self] connected in
             DispatchQueue.main.async { self?.eventsConnectionChanged(connected) }
         }
-        let session = StreamSession(api: api)
+        // Sem o buffer de entrega do SRT: cada pacote vai para a tela assim que chega (~60 ms a
+        // menos). `defaults write com.dantearaujo.bmonitor srtBuffer -bool YES` volta ao buffer
+        // que o iPhone pede, para Wi-Fi que perde muito pacote.
+        let session = StreamSession(api: api, tsbpd: UserDefaults.standard.bool(forKey: "srtBuffer"))
         let layer = displayLayer
         session.onFrame = {
             VideoEnqueue.enqueue($0, into: layer)
