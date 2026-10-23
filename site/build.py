@@ -2,7 +2,7 @@
 """Gera site/dist a partir dos modelos em src/ e de um JSON de textos por página e idioma.
 
 Uso: python3 site/build.py
-Cada página tem um modelo (src/index.html, src/guide.html) e os textos em i18n/ (a página
+Cada página tem um modelo (src/index.html, src/guide.html, src/steamos.html) e os textos em i18n/ (a página
 inicial em i18n/<idioma>.json, as outras em i18n/<página>/<idioma>.json, por cima dos textos
 da inicial). O caminho de cada página sai da chave "path". {{>nome}} inclui src/partials/nome.html.
 Chave que falta num idioma ou placeholder sem valor derruba o build, para as versões não divergirem.
@@ -27,7 +27,7 @@ EXTRA = {
     "pt": {"alt_lang": "en", "readme_url": f"{REPO}/blob/main/README.pt-BR.md#configurar-o-iphone"},
 }
 # Páginas além da inicial: nome do modelo em src/ e da pasta de textos em i18n/.
-PAGES = ["index", "guide"]
+PAGES = ["index", "guide", "steamos"]
 
 
 SITE = "https://bmonitor.app"
@@ -101,6 +101,37 @@ def guide_jsonld(s: dict) -> str:
     return dump(data)
 
 
+def steamos_jsonld(s: dict) -> str:
+    """Página da versão para SteamOS e trilha."""
+    url = SITE + s["path"]
+    data = [
+        {
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "name": plain(s["title"]),
+            "description": plain(s["description"]),
+            "url": url,
+            "inLanguage": s["lang"],
+            "about": {
+                "@type": "SoftwareApplication",
+                "name": "bmonitor for SteamOS",
+                "applicationCategory": "MultimediaApplication",
+                "operatingSystem": "SteamOS",
+                "author": {"@type": "Person", "name": "Dante Araujo", "url": "https://instagram.com/dantearaujo"},
+            },
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {"@type": "ListItem", "position": 1, "name": "bmonitor", "item": SITE + s["home"]},
+                {"@type": "ListItem", "position": 2, "name": "SteamOS", "item": url},
+            ],
+        },
+    ]
+    return dump(data)
+
+
 def include(template: str) -> str:
     return re.sub(r"\{\{>(\w+)\}\}", lambda m: (SRC / "partials" / f"{m.group(1)}.html").read_text().rstrip("\n"), template)
 
@@ -163,9 +194,11 @@ def main():
         for l, s in texts.items():
             other = next(o for k, o in texts.items() if k != l)
             values = {**s, **EXTRA[l], "home": home[l]["path"], "guide_path": pages["guide"][l]["path"],
+                      "steamos_path": pages["steamos"][l]["path"],
                       "alt_path": other["path"], "alternates": "\n".join(heads),
-                      "guide_current": ' aria-current="page"' if page == "guide" else ""}
-            values["jsonld"] = jsonld(values) if page == "index" else guide_jsonld(values)
+                      "guide_current": ' aria-current="page"' if page == "guide" else "",
+                      "steamos_current": ' aria-current="page"' if page == "steamos" else ""}
+            values["jsonld"] = {"index": jsonld, "guide": guide_jsonld, "steamos": steamos_jsonld}[page](values)
             out = DIST / s["path"].strip("/") / "index.html"
             out.parent.mkdir(parents=True, exist_ok=True)
             page_html = render(template, values, f"{page}/{l}")

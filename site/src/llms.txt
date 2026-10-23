@@ -29,6 +29,7 @@ Key facts:
 - [Download bmonitor (.dmg, latest version)](https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg)
 - [Website](https://bmonitor.app/): overview, setup steps and FAQ ([Português](https://bmonitor.app/pt/))
 - [How to see yourself while filming with the iPhone's back camera](https://bmonitor.app/iphone-back-camera-monitor/): six options compared, including Blackmagic Camera's remote mode, AirPlay and Continuity Camera ([Português](https://bmonitor.app/pt/monitor-camera-traseira-iphone/))
+- [bmonitor for SteamOS](https://bmonitor.app/steamos/): the handheld version for the Lenovo Legion Go S, opened from the Steam library; in testing, no download yet ([Português](https://bmonitor.app/pt/steamos/))
 - [Full documentation for LLMs](https://bmonitor.app/llms-full.txt): the complete README, including setup, troubleshooting and what the app changes on the iPhone
 - [Source code on GitHub](https://github.com/dantearaujo/bmonitor)
 - [Releases and changelog](https://github.com/dantearaujo/bmonitor/releases)

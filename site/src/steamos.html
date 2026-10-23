@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="{{lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{title}}</title>
+<meta name="description" content="{{description}}">
+<link rel="canonical" href="https://bmonitor.app{{path}}">
+{{alternates}}
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="bmonitor">
+<meta property="og:locale" content="{{og_locale}}">
+<meta property="og:title" content="{{title}}">
+<meta property="og:description" content="{{description}}">
+<meta property="og:url" content="https://bmonitor.app{{path}}">
+<meta property="og:image" content="https://bmonitor.app/assets/og.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f5f5f7">
+<link rel="icon" type="image/png" href="/assets/icon-small.png">
+<link rel="apple-touch-icon" href="/assets/icon.png">
+<link rel="preload" as="image" href="/assets/creator-desk.webp" fetchpriority="high">
+<link rel="alternate" type="text/plain" title="LLM summary" href="/llms.txt">
+<link rel="stylesheet" href="/style.css">
+<script type="application/ld+json">{{jsonld}}</script>
+<script defer src="/main.js"></script>
+</head>
+<body class="steamos">
+{{>sprite}}
+
+<a class="skip" href="#main">{{skip}}</a>
+
+{{>nav}}
+
+<main id="main">
+  <section class="hero">
+    <img class="hero-icon" src="/assets/icon.png" alt="" width="132" height="132">
+    <p class="hero-name">bmonitor <span>{{s_name_suffix}}</span></p>
+    <h1 class="hero-title">{{s_hero_title}}</h1>
+    <p class="hero-sub">{{s_hero_sub}}</p>
+    <div class="cta">
+      <a class="btn btn-dark" href="https://github.com/dantearaujo/bmonitor"><svg class="ic"><use href="#i-github"/></svg>{{s_cta_follow}}</a>
+      <a class="btn btn-link" href="{{home}}">{{s_cta_mac}}<svg class="ic"><use href="#i-chev-r"/></svg></a>
+    </div>
+    <p class="hero-meta">{{s_hero_meta}}</p>
+
+    <figure class="deck" data-deck>
+      <div class="deck-body">
+        <span class="stick stick-l" aria-hidden="true"></span>
+        <span class="dpad" aria-hidden="true"><i></i></span>
+        <span class="mini mini-view" aria-hidden="true"></span>
+        <span class="mini mini-menu" aria-hidden="true"></span>
+        <div class="face" role="group" aria-label="{{s_face_label}}">
+          <button type="button" class="fb fb-y" data-key="shutter" aria-label="Y · {{s_key_shutter}}">Y</button>
+          <button type="button" class="fb fb-x" data-key="iso" aria-label="X · ISO">X</button>
+          <button type="button" class="fb fb-b" data-key="close" aria-label="B · {{s_key_close}}">B</button>
+          <button type="button" class="fb fb-a" data-key="close" aria-label="A · {{s_key_confirm}}">A</button>
+        </div>
+        <span class="stick stick-r" aria-hidden="true"></span>
+
+        <div class="deck-glass">
+          <div class="deck-screen">
+            <div class="ds is-rec" data-app>
+              <div class="ds-video" data-video>
+                <img src="/assets/creator-desk.webp" alt="{{illustration_note}}" width="2048" height="1152">
+                <span class="ds-golden" aria-hidden="true"></span>
+                <span class="ds-tally" aria-hidden="true"></span>
+                <span class="reticle" data-reticle aria-hidden="true"></span>
+                <div class="ds-hud" aria-hidden="true">
+                  <div class="cap cap-rec">
+                    <span class="dot"></span><b class="rec-word" data-recword>REC</b><span class="tc" data-tc>00:12:48:06</span>
+                    <span class="sep opt"></span>
+                    <svg class="ic opt"><use href="#i-mic"/></svg><span class="mic opt">iPhone</span>
+                    <span class="meter opt" data-meter><i></i><i></i></span>
+                  </div>
+                  <div class="cap cap-health">
+                    <svg class="ic"><use href="#i-drive"/></svg><span>36 min</span>
+                    <span class="batt opt"><i></i></span><svg class="ic bolt opt"><use href="#i-bolt"/></svg><span class="opt">70%</span>
+                    <svg class="ic"><use href="#i-signal"/></svg>
+                  </div>
+                </div>
+              </div>
+
+              <div class="ruler" data-ruler="iso" aria-hidden="true">
+                <p class="r-head">ISO</p>
+                <div class="r-row"><span>64</span><span>80</span><span class="on focus">100</span><span>125</span><span>160</span><span>200</span><span>250</span><span>320</span></div>
+              </div>
+              <div class="ruler" data-ruler="shutter" aria-hidden="true">
+                <p class="r-head">Shutter</p>
+                <div class="r-row"><span>1/30</span><span>1/48</span><span>1/50</span><span class="on focus">1/60</span><span>1/96</span><span>1/100</span><span>1/120</span></div>
+                <p class="r-head">FPS</p>
+                <div class="r-row"><span>24 fps</span><span>25 fps</span><span class="on">30 fps</span><span>48 fps</span><span>50 fps</span><span>60 fps</span></div>
+              </div>
+
+              <div class="ds-band">
+                <div class="ds-pill">
+                  <button type="button" class="dv" data-open="iso"><small><kbd class="k-round">X</kbd>ISO</small><b>100</b></button>
+                  <button type="button" class="dv" data-open="shutter"><small><kbd class="k-round">Y</kbd>Shutter · 30p</small><b>1/60</b></button>
+                  <span class="dv"><small><kbd class="k-round">B</kbd>WB · tint +0</small><b>3050K</b></span>
+                  <span class="dv opt"><small><kbd class="k-round">A</kbd>{{s_focus}}</small><b>Auto</b></span>
+                  <button class="rec-btn" type="button" data-rec aria-pressed="true" aria-label="{{hud_record}}"><span></span><kbd class="k-rt" aria-hidden="true">RT</kbd></button>
+                  <span class="dv"><small><kbd><svg class="ic"><use href="#i-tri-lr"/></svg></kbd>{{s_lens}} · 48 mm</small><b>2×</b></span>
+                  <span class="dv opt"><small><kbd>LB RB</kbd>Zoom</small><b>1.0×</b></span>
+                  <span class="dsep opt"></span>
+                  <span class="dv opt"><small><kbd><svg class="ic"><use href="#i-tri-down"/></svg></kbd>{{s_audio}}</small><b>iPhone</b></span>
+                  <span class="dv opt"><small><kbd><svg class="ic"><use href="#i-tri-up"/></svg></kbd>{{s_grid}}</small><b>{{s_golden}}</b></span>
+                  <span class="dv"><small><kbd><svg class="ic"><use href="#i-menu"/></svg></kbd>{{s_more}}</small><b class="dots"><i></i><i></i><i></i></b></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b class="hint-keys">{{s_deck_hint}}</b><b class="hint-touch">{{s_deck_hint_touch}}</b> <span>{{s_deck_note}}</span></figcaption>
+    </figure>
+  </section>
+
+  <section class="facts" aria-label="{{facts_title}}">
+    <ul>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{s_fact_1}}</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{s_fact_2}}</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{s_fact_3}}</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{s_fact_4}}</li>
+      <li><svg class="ic"><use href="#i-check"/></svg>{{s_fact_5}}</li>
+    </ul>
+  </section>
+
+  <section class="s-map">
+    <h2 class="sec-title center">{{s_map_title}}</h2>
+    <p class="sec-sub center">{{s_map_sub}}</p>
+    <div class="map" role="img" aria-label="{{s_map_alt}}">
+      <div class="map-head"><p>{{s_map_head}}</p><span>{{s_map_release}}</span></div>
+      <div class="map-cols" aria-hidden="true">
+        <dl>
+          <dt>{{s_map_camera}}</dt>
+          <div><kbd>RT</kbd><dd>{{s_m_rt}}</dd></div>
+          <div><kbd class="k-round">X</kbd><dd>ISO</dd></div>
+          <div><kbd class="k-round">Y</kbd><dd>{{s_m_y}}</dd></div>
+          <div><kbd class="k-round">B</kbd><dd>{{s_m_b}}</dd></div>
+          <div><kbd class="k-round">A</kbd><dd>{{s_m_a}}</dd></div>
+          <div><kbd><svg class="ic"><use href="#i-tri-lr"/></svg></kbd><dd>{{s_m_lr}}</dd></div>
+          <div><kbd>LB RB</kbd><dd>Zoom</dd></div>
+          <div><kbd>R3</kbd><dd>{{s_m_r3}}</dd></div>
+          <div><kbd>R</kbd><dd>{{s_m_rs}}</dd></div>
+        </dl>
+        <dl>
+          <dt>Monitor</dt>
+          <div><kbd><svg class="ic"><use href="#i-tri-up"/></svg></kbd><dd>{{s_m_up}}</dd></div>
+          <div><kbd><svg class="ic"><use href="#i-tri-down"/></svg></kbd><dd>{{s_m_down}}</dd></div>
+          <div><kbd>L3</kbd><dd>{{s_m_l3}}</dd></div>
+          <div><kbd>View</kbd><dd>{{s_m_view}}</dd></div>
+          <div><kbd>L</kbd><dd>{{s_m_ls}}</dd></div>
+          <div><kbd><svg class="ic"><use href="#i-menu"/></svg></kbd><dd>{{s_m_menu}}</dd></div>
+          <div><kbd>LT</kbd><dd>{{s_m_lt}}</dd></div>
+          <div><kbd><svg class="ic"><use href="#i-touch"/></svg></kbd><dd>{{s_m_touch}}</dd></div>
+        </dl>
+      </div>
+    </div>
+  </section>
+
+  <section class="s-points">
+    <h2 class="sec-title center">{{s_points_title}}</h2>
+    <p class="sec-sub center">{{s_points_sub}}</p>
+    <ul class="wc-points">
+      <li><b>{{s_p1_lead}}</b> {{s_p1_body}}</li>
+      <li><b>{{s_p2_lead}}</b> {{s_p2_body}}</li>
+      <li><b>{{s_p3_lead}}</b> {{s_p3_body}}</li>
+    </ul>
+  </section>
+
+  <section class="s-script">
+    <h2 class="sec-title center">{{s_script_title}}</h2>
+    <p class="sec-sub center">{{s_script_sub}}</p>
+    <figure class="script-shot">
+      <div class="deck-screen solo">
+        <div class="ds ds-split">
+          <div class="ds-video">
+            <img src="/assets/creator-lamp.webp" alt="" loading="lazy" width="2048" height="1152">
+            <span class="cap ds-mini"><span class="dot"></span><b class="rec-word">STBY</b><span class="tc">00:12:48:06</span></span>
+          </div>
+          <aside class="ds-pane" aria-hidden="true">
+            <div class="ds-pane-flow">{{screen_script_body}}</div>
+          </aside>
+          <div class="ds-band">
+            <div class="ds-pill">
+              <span class="dv"><small><kbd class="k-round">X</kbd>ISO</small><b>100</b></span>
+              <span class="dv"><small><kbd class="k-round">Y</kbd>Shutter · 30p</small><b>1/60</b></span>
+              <span class="dv opt"><small><kbd class="k-round">B</kbd>WB · tint +0</small><b>3050K</b></span>
+              <span class="rec-btn"><span></span></span>
+              <span class="dv"><small><kbd><svg class="ic"><use href="#i-tri-lr"/></svg></kbd>{{s_lens}} · 48 mm</small><b>2×</b></span>
+              <span class="dv opt"><small><kbd>LB RB</kbd>Zoom</small><b>1.0×</b></span>
+              <span class="dv"><small><kbd><svg class="ic"><use href="#i-menu"/></svg></kbd>{{s_more}}</small><b class="dots"><i></i><i></i><i></i></b></span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption>{{s_script_caption}}</figcaption>
+    </figure>
+    <ol class="steps steps-3">
+      <li><h3>{{s_st1_title}}</h3><p>{{s_st1_body}}</p></li>
+      <li><h3>{{s_st2_title}}</h3><p>{{s_st2_body}}</p></li>
+      <li><h3>{{s_st3_title}}</h3><p>{{s_st3_body}}</p></li>
+    </ol>
+  </section>
+
+  <section class="s-lat">
+    <h2 class="sec-title center">{{s_lat_title}}</h2>
+    <p class="sec-sub center">{{s_lat_sub}}</p>
+    <figure class="lat">
+      <div class="lat-row is-us">
+        <p class="lat-name">Legion Go S</p>
+        <div class="lat-track" style="--w: 280"><i></i><b>280 ms</b></div>
+      </div>
+      <div class="lat-row">
+        <p class="lat-name">Mac</p>
+        <div class="lat-track" style="--w: 272"><i></i><b>272 ms</b></div>
+      </div>
+      <div class="lat-axis" aria-hidden="true"><span>0</span><span>100</span><span>200</span><span>300 ms</span></div>
+      <figcaption>{{s_lat_caption}}</figcaption>
+    </figure>
+  </section>
+
+  <section class="faq">
+    <h2 class="sec-title">{{s_faq_title}}</h2>
+    <dl class="qa">
+      <div><dt>{{s_q1}}</dt><dd>{{s_a1}}</dd></div>
+      <div><dt>{{s_q2}}</dt><dd>{{s_a2}}</dd></div>
+      <div><dt>{{s_q3}}</dt><dd>{{s_a3}}</dd></div>
+      <div><dt>{{s_q4}}</dt><dd>{{s_a4}}</dd></div>
+      <div><dt>{{s_q5}}</dt><dd>{{s_a5}}</dd></div>
+    </dl>
+  </section>
+
+  <section class="close">
+    <img src="/assets/icon.png" alt="" width="88" height="88" loading="lazy">
+    <h2 class="close-title">{{s_close_title}}</h2>
+    <div class="cta">
+      <a class="btn btn-dark" href="https://github.com/dantearaujo/bmonitor/releases/latest/download/bmonitor.dmg"><svg class="ic"><use href="#i-download"/></svg>{{cta_download}}</a>
+      <a class="btn btn-link" href="https://github.com/dantearaujo/bmonitor">{{s_cta_follow}}<svg class="ic"><use href="#i-chev-r"/></svg></a>
+    </div>
+    <p class="hero-meta">{{close_meta}}</p>
+  </section>
+</main>
+
+{{>foot}}
+</body>
+</html>

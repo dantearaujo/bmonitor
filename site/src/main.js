@@ -206,4 +206,65 @@
     }, { threshold: 0.55 });
     seen.observe(call);
   }
+
+  // SteamOS: X and Y open their ruler above the band item, B and A close it, like on the console
+  const deck = document.querySelector("[data-deck]");
+  if (deck) {
+    const ds = deck.querySelector(".ds");
+    const rulers = [...deck.querySelectorAll("[data-ruler]")];
+    let open = null;
+    let idle;
+    const place = (ruler, item) => {
+      const box = ds.getBoundingClientRect();
+      const r = item.getBoundingClientRect();
+      const half = ruler.offsetWidth / 2;
+      const margin = box.width * (16 / 1280);
+      const center = r.left + r.width / 2 - box.left;
+      const left = Math.min(Math.max(center, half + margin), box.width - half - margin);
+      ruler.style.left = `${left}px`;
+      ruler.style.setProperty("--arrow", `${center - left + half}px`);
+    };
+    const show = (name) => {
+      rulers.forEach((r) => r.classList.toggle("is-open", r.dataset.ruler === name));
+      deck.querySelectorAll("[data-open]").forEach((b) => b.classList.toggle("is-open", b.dataset.open === name));
+      open = name === "close" ? null : name;
+      if (open) place(deck.querySelector(`[data-ruler="${open}"]`), deck.querySelector(`[data-open="${open}"]`));
+      clearTimeout(idle);
+      // The console closes a ruler after 5 s without input
+      if (open) idle = setTimeout(() => show("close"), 5000);
+    };
+    deck.querySelectorAll("[data-key]").forEach((b) => b.addEventListener("click", () => show(b.dataset.key)));
+    deck.querySelectorAll("[data-open]").forEach((b) => b.addEventListener("click", () => show(open === b.dataset.open ? "close" : b.dataset.open)));
+    addEventListener("resize", () => { if (open) show(open); });
+
+    // Once, when the console comes into view: press X, then B
+    if ("IntersectionObserver" in window && !reduce) {
+      const press = (key) => {
+        const b = deck.querySelector(`.fb-${key}`);
+        b?.classList.add("is-down");
+        setTimeout(() => b?.classList.remove("is-down"), 160);
+      };
+      const once = new IntersectionObserver(([en]) => {
+        if (!en.isIntersecting) return;
+        once.disconnect();
+        setTimeout(() => { if (open) return; press("x"); show("iso"); }, 1400);
+        setTimeout(() => { if (open !== "iso") return; press("b"); show("close"); }, 3800);
+      }, { threshold: 0.6 });
+      once.observe(deck);
+    }
+  }
+
+  // SteamOS: the latency bars grow once, when they come into view
+  const lat = document.querySelector(".lat");
+  if (lat) {
+    document.documentElement.classList.add("js");
+    if ("IntersectionObserver" in window && !reduce) {
+      const grow = new IntersectionObserver(([en]) => {
+        if (!en.isIntersecting) return;
+        grow.disconnect();
+        lat.classList.add("is-in");
+      }, { threshold: 0.5 });
+      grow.observe(lat);
+    } else lat.classList.add("is-in");
+  }
 })();
