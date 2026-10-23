@@ -192,4 +192,18 @@
     addEventListener("resize", update);
     update();
   }
+
+  // Webcam: the call starts on the Mac's camera and switches to bmonitor once, when it comes into view
+  const call = document.querySelector("[data-call]");
+  if (call && "IntersectionObserver" in window && !reduce) {
+    call.classList.add("is-pre");
+    const seen = new IntersectionObserver(([en]) => {
+      if (!en.isIntersecting) return;
+      seen.disconnect();
+      setTimeout(() => call.classList.add("is-hover"), 700);
+      setTimeout(() => call.classList.remove("is-pre"), 1250);
+      setTimeout(() => call.classList.remove("is-hover"), 1700);
+    }, { threshold: 0.55 });
+    seen.observe(call);
+  }
 })();

@@ -223,6 +223,47 @@
     </div>
   </section>
 
+  <section class="webcam" id="webcam">
+    <h2 class="sec-title center">{{webcam_title}}</h2>
+    <p class="sec-sub center">{{webcam_sub}}</p>
+    <figure class="call" data-call>
+      <div class="call-win" role="img" aria-label="{{webcam_alt}}">
+        <span class="call-lights" aria-hidden="true"><i></i><i></i><i></i></span>
+        <div class="call-stage" aria-hidden="true">
+          <div class="tile tile-you">
+            <img src="/assets/creator-lamp.webp" alt="" loading="lazy" width="2048" height="1152">
+            <span class="tile-off"><svg class="ic"><use href="#i-video-off"/></svg></span>
+            <span class="tile-name">{{webcam_you}}</span>
+          </div>
+          <div class="tile tile-them">
+            <span class="avatar">A</span>
+            <span class="tile-name"><svg class="ic"><use href="#i-mic"/></svg>Ana</span>
+          </div>
+        </div>
+        <div class="call-bar" aria-hidden="true">
+          <span class="cb"><svg class="ic"><use href="#i-mic"/></svg></span>
+          <span class="cb cb-cam is-open"><svg class="ic"><use href="#i-video"/></svg></span>
+          <span class="cb"><svg class="ic"><use href="#i-share"/></svg></span>
+          <span class="cb cb-leave"><svg class="ic"><use href="#i-leave"/></svg></span>
+          <div class="cam-menu">
+            <p class="cm-head">{{webcam_menu_camera}}</p>
+            <p class="cm-item cm-bmonitor"><svg class="ic"><use href="#i-check"/></svg>bmonitor</p>
+            <p class="cm-item"><svg class="ic"><use href="#i-check"/></svg>{{webcam_menu_mac_camera}}</p>
+            <p class="cm-item"><svg class="ic"><use href="#i-check"/></svg>{{webcam_menu_iphone_camera}}</p>
+            <p class="cm-head cm-mic">{{webcam_menu_mic}}</p>
+            <p class="cm-item cm-mic is-on"><svg class="ic"><use href="#i-check"/></svg>{{webcam_menu_mac_mic}}</p>
+          </div>
+        </div>
+      </div>
+      <figcaption>{{webcam_caption}} <span>{{webcam_illustration}}</span></figcaption>
+    </figure>
+    <ul class="wc-points">
+      <li><b>{{webcam_1_lead}}</b> {{webcam_1_body}}</li>
+      <li><b>{{webcam_2_lead}}</b> {{webcam_2_body}}</li>
+      <li><b>{{webcam_3_lead}}</b> {{webcam_3_body}}</li>
+    </ul>
+  </section>
+
   <section class="setup" id="setup">
     <h2 class="sec-title center">{{setup_title}}</h2>
     <p class="sec-sub center">{{setup_sub}}</p>
@@ -240,6 +281,7 @@
     <dl class="qa">
       <div><dt>{{q9}}</dt><dd>{{a9}}</dd></div>
       <div><dt>{{q10}}</dt><dd>{{a10}}</dd></div>
+      <div><dt>{{q12}}</dt><dd>{{a12}}</dd></div>
       <div><dt>{{q1}}</dt><dd>{{a1}}</dd></div>
       <div><dt>{{q2}}</dt><dd>{{a2}}</dd></div>
       <div><dt>{{q3}}</dt><dd>{{a3}}</dd></div>
