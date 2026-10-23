@@ -57,6 +57,10 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
     private var received = 0
     private var lastUsePost: UInt64 = 0
     private let useNotification = (Bundle.main.bundleIdentifier ?? "com.dantearaujo.bmonitor.camera") + ".inuse"
+    /// O app avisa a cada quadro posto no stream de entrada (`VirtualCamera.push`).
+    private let frameNotification = (Bundle.main.bundleIdentifier ?? "com.dantearaujo.bmonitor.camera") + ".frame"
+    private var delaySum: UInt64 = 0
+    private var delayMax: UInt64 = 0
 
     override init() {
         super.init()
@@ -79,6 +83,13 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
             log.error("addStream: \(error.localizedDescription)")
         }
         placeholder = Self.standbyFrame()
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(), Unmanaged.passUnretained(self).toOpaque(),
+            { _, observer, _, _, _ in
+                guard let observer else { return }
+                Unmanaged<CameraDeviceSource>.fromOpaque(observer).takeUnretainedValue().frameArrived()
+            },
+            frameNotification as CFString, nil, .deliverImmediately)
     }
 
     var availableProperties: Set<CMIOExtensionProperty> { [.deviceTransportType, .deviceModel] }
@@ -115,22 +126,38 @@ final class CameraDeviceSource: NSObject, CMIOExtensionDeviceSource {
         timer = nil
     }
 
+    /// O app pôs um quadro: busca na hora. O relógio só cobre aviso perdido e o quadro de espera.
+    private func frameArrived() { queue.async { self.consume() } }
+
+    /// Busca o que o app mandou e repassa à saída; com mais quadros na fila, busca de novo.
+    private func consume() {
+        guard let client = sinkClient else { return }
+        sink.stream.consumeSampleBuffer(from: client) { [weak self] buffer, sequence, _, hasMore, _ in
+            guard let self, let buffer else { return }
+            let at = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
+            // O app carimba o quadro com o relógio do host ao pô-lo na fila: a diferença é a espera aqui.
+            let sent = CMSampleBufferGetPresentationTimeStamp(buffer)
+            let delay = sent.isValid ? at &- UInt64(max(0, sent.seconds) * 1e9) : 0
+            self.queue.async {
+                self.lastFrame = at
+                self.received += 1
+                if delay < 1_000_000_000 { self.delaySum += delay; self.delayMax = max(self.delayMax, delay) }
+                if self.received % 300 == 0 {
+                    log.info("quadros recebidos: \(self.received), espera média \(self.delaySum / 300_000) µs, maior \(self.delayMax / 1000) µs")
+                    self.delaySum = 0
+                    self.delayMax = 0
+                }
+                if self.outputRunning { self.output.stream.send(buffer, discontinuity: [], hostTimeInNanoseconds: at) }
+                if hasMore { self.consume() }
+            }
+            self.sink.stream.notifyScheduledOutputChanged(
+                CMIOExtensionScheduledOutput(sequenceNumber: sequence, hostTimeInNanoseconds: at))
+        }
+    }
+
     private func tick() {
         let now = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
-        if let client = sinkClient {
-            sink.stream.consumeSampleBuffer(from: client) { [weak self] buffer, sequence, _, _, _ in
-                guard let self, let buffer else { return }
-                let at = clock_gettime_nsec_np(CLOCK_UPTIME_RAW)
-                self.queue.async {
-                    self.lastFrame = at
-                    self.received += 1
-                    if self.received % 300 == 1 { log.info("quadros recebidos: \(self.received)") }
-                    if self.outputRunning { self.output.stream.send(buffer, discontinuity: [], hostTimeInNanoseconds: at) }
-                }
-                self.sink.stream.notifyScheduledOutputChanged(
-                    CMIOExtensionScheduledOutput(sequenceNumber: sequence, hostTimeInNanoseconds: at))
-            }
-        }
+        consume()
         if outputRunning, now - lastUsePost > 1_000_000_000 {
             lastUsePost = now
             CFNotificationCenterPostNotification(

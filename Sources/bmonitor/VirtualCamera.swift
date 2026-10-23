@@ -1,9 +1,10 @@
 import AppKit
+import CoreImage
 import CoreMediaIO
 import Foundation
+import Metal
 import Observation
 import SystemExtensions
-import VideoToolbox
 import os
 
 /// O que a interface mostra da webcam: o guia da primeira vez e a cápsula de saúde.
@@ -41,11 +42,12 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     private var device: CMIODeviceID = 0
     private var stream: CMIOStreamID = 0
     private var lastAttempt = Date.distantPast
-    private var scaler: VTPixelTransferSession?
-    private var rotator: VTPixelRotationSession?
     private var outputPool: CVPixelBufferPool?
-    private var rotatedPool: CVPixelBufferPool?
-    private var rotatedSize = (width: 0, height: 0)
+    /// Sem gestão de cor: converte YCbCr em RGB pela matriz do quadro, como o VideoToolbox fazia
+    /// (medido em 22/10: diferença de no máximo 1 em 255, em Rec.709 e em HLG).
+    private lazy var renderer: CIContext? = MTLCreateSystemDefaultDevice().map {
+        CIContext(mtlDevice: $0, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull(), .cacheIntermediates: false])
+    }
     private var watchingDevices = false
     /// O macOS confirmou a extensão (aprovada, ou trocada depois de uma atualização) e já passou a
     /// folga para ela publicar a câmera. Antes disso o app não consulta a lista de câmeras.
@@ -66,6 +68,8 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
     }()
 
     private var extensionID: String? { Bundle.main.bundleIdentifier.map { $0 + ".camera" } }
+    /// O mesmo nome que a extensão escuta (`Webcam/Extension/Camera.swift`).
+    private lazy var frameNotification: CFString? = extensionID.map { ($0 + ".frame") as CFString }
 
     // MARK: - Ligar e desligar
 
@@ -176,45 +180,42 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
         guard let sinkQueue else { return }
         // Fila cheia: a extensão ainda não pegou o anterior. Descarta em vez de acumular atraso.
         guard CMSimpleQueueGetCount(sinkQueue) < CMSimpleQueueGetCapacity(sinkQueue) else { return }
-        guard let upright = rotated(image), let output = scaled(upright), let sample = sample(output) else { return }
+        guard let output = render(image), let sample = sample(output) else { return }
         CMSimpleQueueEnqueue(sinkQueue, element: Unmanaged.passRetained(sample).toOpaque())
+        // Acorda a extensão para buscar o quadro já, em vez de esperar o relógio dela.
+        if let frameNotification {
+            CFNotificationCenterPostNotification(
+                CFNotificationCenterGetDarwinNotifyCenter(), CFNotificationName(frameNotification), nil, nil, true)
+        }
     }
 
-    /// Gira como na janela (`quarterTurns` no sentido horário).
-    private func rotated(_ image: CVPixelBuffer) -> CVPixelBuffer? {
-        guard quarterTurns != 0 else { return image }
-        let (w, h) = (CVPixelBufferGetWidth(image), CVPixelBufferGetHeight(image))
-        let size = quarterTurns % 2 == 1 ? (width: h, height: w) : (width: w, height: h)
-        if rotator == nil { VTPixelRotationSessionCreate(kCFAllocatorDefault, &rotator) }
-        if rotatedPool == nil || rotatedSize != size {
-            rotatedPool = pool(width: size.width, height: size.height, format: CVPixelBufferGetPixelFormatType(image))
-            rotatedSize = size
-        }
-        guard let rotator, let rotatedPool else { return nil }
-        let angle: CFString =
-            switch quarterTurns {
-            case 1: kVTRotation_CW90
-            case 2: kVTRotation_180
-            default: kVTRotation_CCW90
-            }
-        VTSessionSetProperty(rotator, key: kVTPixelRotationPropertyKey_Rotation, value: angle)
-        var output: CVPixelBuffer?
-        CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, rotatedPool, &output)
-        guard let output, VTPixelRotationSessionRotateImage(rotator, image, output) == noErr else { return nil }
-        return output
-    }
-
-    /// BGRA 1920 × 1080 na GPU, com barras pretas se a proporção for outra (o vídeo em pé).
-    private func scaled(_ image: CVPixelBuffer) -> CVPixelBuffer? {
-        if scaler == nil {
-            VTPixelTransferSessionCreate(allocator: kCFAllocatorDefault, pixelTransferSessionOut: &scaler)
-            if let scaler { VTSessionSetProperty(scaler, key: kVTPixelTransferPropertyKey_ScalingMode, value: kVTScalingMode_Letterbox) }
-            outputPool = pool(width: Self.size.width, height: Self.size.height, format: kCVPixelFormatType_32BGRA)
-        }
-        guard let scaler, let outputPool else { return nil }
+    /// Gira como na janela (`quarterTurns` no sentido horário) e põe em BGRA 1920 × 1080, com
+    /// barras pretas se a proporção for outra (o vídeo em pé), numa passada só de GPU. Girar e
+    /// reduzir com o VideoToolbox custava 4,3 ms por quadro 4K deitado e 11 ms em pé; assim, 1,2 ms.
+    private func render(_ image: CVPixelBuffer) -> CVPixelBuffer? {
+        if outputPool == nil { outputPool = pool(width: Self.size.width, height: Self.size.height, format: kCVPixelFormatType_32BGRA) }
+        guard let renderer, let outputPool else { return nil }
         var output: CVPixelBuffer?
         CVPixelBufferPoolCreatePixelBuffer(kCFAllocatorDefault, outputPool, &output)
-        guard let output, VTPixelTransferSessionTransferImage(scaler, from: image, to: output) == noErr else { return nil }
+        guard let output else { return nil }
+        let orientation: CGImagePropertyOrientation =
+            switch quarterTurns {
+            case 1: .right
+            case 2: .down
+            case 3: .left
+            default: .up
+            }
+        let frame = CGRect(x: 0, y: 0, width: Self.size.width, height: Self.size.height)
+        var picture = CIImage(cvPixelBuffer: image).oriented(orientation)
+        let scale = min(frame.width / picture.extent.width, frame.height / picture.extent.height)
+        picture = picture.transformed(by: CGAffineTransform(scaleX: scale, y: scale))
+        picture = picture.transformed(by: CGAffineTransform(
+            translationX: (frame.width - picture.extent.width) / 2 - picture.extent.minX,
+            y: (frame.height - picture.extent.height) / 2 - picture.extent.minY))
+        let composed = picture.composited(over: CIImage(color: .black).cropped(to: frame))
+        guard let task = try? renderer.startTask(toRender: composed, to: CIRenderDestination(pixelBuffer: output)),
+            (try? task.waitUntilCompleted()) != nil
+        else { return nil }
         return output
     }
 
@@ -224,6 +225,7 @@ final class VirtualCamera: NSObject, OSSystemExtensionRequestDelegate, @unchecke
             kCVPixelBufferWidthKey as String: width,
             kCVPixelBufferHeightKey as String: height,
             kCVPixelBufferIOSurfacePropertiesKey as String: [:],
+            kCVPixelBufferMetalCompatibilityKey as String: true,
         ]
         var pool: CVPixelBufferPool?
         CVPixelBufferPoolCreate(kCFAllocatorDefault, nil, attributes as CFDictionary, &pool)
