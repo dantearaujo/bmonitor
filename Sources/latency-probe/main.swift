@@ -2,11 +2,13 @@
 // e mostra o vídeo ao lado de um relógio em milissegundos. Filmando o relógio com o iPhone,
 // a diferença entre o relógio e a imagem dele no vídeo é o atraso vidro a vidro.
 //
-// Uso: latency-probe --camera <ip-do-iphone> [--port 9000] [--latency 40] [--mac-ip <en0>]
+// Uso: latency-probe --camera <ip-do-iphone> [--port 9000] [--latency 40] [--no-tsbpd] [--metal] [--mac-ip <en0>]
 
 import AVFoundation
 import AppKit
+import CoreImage
 import Darwin
+import Metal
 import MonitorCore
 
 // MARK: - Argumentos
@@ -37,11 +39,14 @@ func ipv4(of interface: String) -> String? {
 setvbuf(stdout, nil, _IOLBF, 0)
 
 guard let cameraHost = argument("--camera") else {
-    print("uso: latency-probe --camera <ip-do-iphone> [--port 9000] [--latency 40] [--mac-ip <en0>]")
+    print("uso: latency-probe --camera <ip-do-iphone> [--port 9000] [--latency 40] [--no-tsbpd] [--metal] [--mac-ip <en0>]")
     exit(1)
 }
 let port = UInt16(argument("--port") ?? "9000")!
 let latency = Int32(argument("--latency") ?? "40")!
+let tsbpd = !CommandLine.arguments.contains("--no-tsbpd")
+/// Exibe por uma `CAMetalLayer` sem esperar o vsync, no lugar da `AVSampleBufferDisplayLayer`.
+let useMetal = CommandLine.arguments.contains("--metal")
 guard let macIP = argument("--mac-ip") ?? ipv4(of: "en0") else { fatalError("sem IP em en0; use --mac-ip") }
 
 // MARK: - Janela: relógio à esquerda, vídeo à direita
@@ -72,6 +77,23 @@ let videoView = NSView(frame: NSRect(x: windowSize.width / 2, y: 0, width: windo
 videoView.layer = videoLayer
 videoView.wantsLayer = true
 
+let metalDevice = MTLCreateSystemDefaultDevice()!
+let metalQueue = metalDevice.makeCommandQueue()!
+let metalLayer = CAMetalLayer()
+let metalContext = CIContext(mtlDevice: metalDevice, options: [.workingColorSpace: NSNull(), .outputColorSpace: NSNull(), .cacheIntermediates: false])
+if useMetal {
+    metalLayer.device = metalDevice
+    metalLayer.pixelFormat = .bgra8Unorm
+    metalLayer.framebufferOnly = false
+    metalLayer.displaySyncEnabled = false
+    metalLayer.maximumDrawableCount = 2
+    metalLayer.backgroundColor = NSColor.darkGray.cgColor
+    let scale = window.backingScaleFactor
+    metalLayer.contentsScale = scale
+    metalLayer.drawableSize = CGSize(width: videoView.frame.width * scale, height: videoView.frame.height * scale)
+    videoView.layer = metalLayer
+}
+
 window.contentView?.addSubview(clock)
 window.contentView?.addSubview(videoView)
 window.makeKeyAndOrderFront(nil)
@@ -84,7 +106,26 @@ RunLoop.main.add(ticker, forMode: .common)
 
 // MARK: - Pipeline: SRT → TS → VideoToolbox → camada
 
+/// O quadro vai para a textura da tela numa passada de GPU e é apresentado assim que pronto.
+func displayMetal(_ image: CVPixelBuffer) {
+    guard let drawable = metalLayer.nextDrawable(), let commands = metalQueue.makeCommandBuffer() else { return }
+    let size = metalLayer.drawableSize
+    var picture = CIImage(cvPixelBuffer: image)
+    let fit = min(size.width / picture.extent.width, size.height / picture.extent.height)
+    picture = picture.transformed(by: CGAffineTransform(scaleX: fit, y: fit))
+    picture = picture.transformed(by: CGAffineTransform(
+        translationX: (size.width - picture.extent.width) / 2, y: (size.height - picture.extent.height) / 2))
+    let destination = CIRenderDestination(mtlTexture: drawable.texture, commandBuffer: commands)
+    destination.isFlipped = true
+    _ = try? metalContext.startTask(
+        toRender: picture.composited(over: CIImage(color: .black).cropped(to: CGRect(origin: .zero, size: size))),
+        to: destination)
+    commands.present(drawable)
+    commands.commit()
+}
+
 func display(_ image: CVPixelBuffer) {
+    if useMetal { return displayMetal(image) }
     var format: CMVideoFormatDescription?
     CMVideoFormatDescriptionCreateForImageBuffer(allocator: nil, imageBuffer: image, formatDescriptionOut: &format)
     guard let format else { return }
@@ -112,21 +153,35 @@ final class Meter {
     private var frames = 0
     private var assembleNs: UInt64 = 0
     private var decodeNs: UInt64 = 0
+    private var lastDone: UInt64 = 0
+    private var maxGapNs: UInt64 = 0
+    private var lateFrames = 0
 
-    func add(assemble: UInt64, decode: UInt64) {
+    /// O intervalo entre quadros prontos mede o engasgo: a 30 fps o normal é 33 ms, e um quadro
+    /// conta como atrasado quando chega mais de 50 ms depois do anterior.
+    func add(assemble: UInt64, decode: UInt64, done: UInt64) {
         lock.lock(); defer { lock.unlock() }
         frames += 1; assembleNs += assemble; decodeNs += decode
+        if lastDone > 0 {
+            let gap = done - lastDone
+            maxGapNs = max(maxGapNs, gap)
+            if gap > 50_000_000 { lateFrames += 1 }
+        }
+        lastDone = done
     }
 
-    func drain() -> (frames: Int, assembleMs: Double, decodeMs: Double) {
+    func drain() -> (frames: Int, assembleMs: Double, decodeMs: Double, maxGapMs: Double, late: Int) {
         lock.lock(); defer { lock.unlock() }
-        defer { frames = 0; assembleNs = 0; decodeNs = 0 }
-        guard frames > 0 else { return (0, 0, 0) }
-        return (frames, Double(assembleNs) / Double(frames) / 1e6, Double(decodeNs) / Double(frames) / 1e6)
+        defer { frames = 0; assembleNs = 0; decodeNs = 0; maxGapNs = 0; lateFrames = 0 }
+        guard frames > 0 else { return (0, 0, 0, 0, 0) }
+        return (
+            frames, Double(assembleNs) / Double(frames) / 1e6, Double(decodeNs) / Double(frames) / 1e6,
+            Double(maxGapNs) / 1e6, lateFrames
+        )
     }
 }
 
-let listener = SRTListener(port: port, latencyMs: latency)
+let listener = SRTListener(port: port, latencyMs: latency, tsbpd: tsbpd)
 let demuxer = TSDemuxer()
 let decoder = VideoDecoder()
 let meter = Meter()
@@ -136,10 +191,10 @@ demuxer.onVideo = { unit in
     let ready = DispatchTime.now().uptimeNanoseconds
     decoder.decode(unit)
     let done = DispatchTime.now().uptimeNanoseconds
-    meter.add(assemble: ready - unit.firstPacketAt, decode: done - ready)
+    meter.add(assemble: ready - unit.firstPacketAt, decode: done - ready, done: done)
 }
 listener.onPayload = { demuxer.feed($0) }
-listener.onConnect = { print("SRT conectado, latência negociada \($0) ms") }
+listener.onConnect = { print(tsbpd ? "SRT conectado, latência negociada \($0) ms" : "SRT conectado, sem buffer de entrega") }
 listener.onDisconnect = { print("SRT desconectado") }
 
 let receiver = Thread { listener.run() }
@@ -150,8 +205,9 @@ let report = Timer(timeInterval: 2, repeats: true) { _ in
     let m = meter.drain()
     let s = listener.stats()
     print(String(
-        format: "%.0f fps | montagem %.1f ms | decodificação %.1f ms | SRT buffer %d ms, RTT %.1f ms, perdidos %d",
-        Double(m.frames) / 2, m.assembleMs, m.decodeMs, s?.tsbpdDelayMs ?? 0, s?.rttMs ?? 0, s?.lostPackets ?? 0))
+        format: "%.0f fps | montagem %.1f ms | decodificação %.1f ms | maior intervalo %.0f ms, atrasados %d | SRT buffer %d ms, RTT %.1f ms, perdidos %d",
+        Double(m.frames) / 2, m.assembleMs, m.decodeMs, m.maxGapMs, m.late, s?.tsbpdDelayMs ?? 0, s?.rttMs ?? 0,
+        s?.lostPackets ?? 0))
 }
 RunLoop.main.add(report, forMode: .common)
 
