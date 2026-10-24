@@ -21,9 +21,11 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <p align="center"><b>⚠️ Public beta (0.10.2).</b> It works every day on the author's setup, but so far it has been tested on two Macs (macOS 26 and macOS 14) and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 
+<p align="center"><img src="docs/readme/mac-monitor-en.webp" width="880" alt="bmonitor on the Mac: the iPhone's live video with REC, timecode, audio meter and the control bar, and the script panel beside it"></p>
+
 The app speaks English and Brazilian Portuguese, following your Mac's language.
 
-**On a handheld:** a test build for SteamOS turns a Lenovo Legion Go S into the same monitor and remote control, opened from the Steam library. See [bmonitor for SteamOS](https://bmonitor.app/steamos/) or [download the 0.1.1 Flatpak](https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.1-beta).
+**On a handheld:** a test build for SteamOS turns a Lenovo Legion Go S into the same monitor and remote control, opened from the Steam library. See [bmonitor for SteamOS](#bmonitor-for-steamos-test-build).
 
 ---
 
@@ -41,6 +43,25 @@ You record yourself with an iPhone on a tripod. bmonitor turns the Mac next to i
 - **Webcam:** turn on **Camera › Use as Webcam** and the iPhone becomes a camera called "bmonitor" in Meet, Zoom, FaceTime and any other app, with Blackmagic Camera's manual exposure, white balance and LUT. Video only: keep using the microphone you already use. The picture runs at least as far behind as the monitor, about 0.3 s. The first time, macOS asks you to allow the camera extension, and bmonitor shows you where.
 - **Updates itself:** when a new version is out, bmonitor shows what changed and asks before installing. It checks when you open it and once a day. You can also use **bmonitor › Check for Updates…**.
 - **Readable from 3 m:** status lives in the top corners and stays large. The control bar appears when you move the mouse and hides after 3 s.
+
+<p align="center"><img src="docs/readme/mac-webcam-en.webp" width="760" alt="A video call with bmonitor picked as the camera, next to the MacBook and iPhone cameras"></p>
+
+<p align="center"><sub>Interfaces drawn to the app's real layout, from <a href="https://bmonitor.app">bmonitor.app</a>. The people are AI-generated illustrations.</sub></p>
+
+## bmonitor for SteamOS (test build)
+
+The same monitor and remote control on a handheld with SteamOS, opened from the Steam library like a game. Every controller button opens one setting directly, and touch does the same. Tested so far only on the **Lenovo Legion Go S**.
+
+<p align="center"><img src="docs/readme/deck-monitor-en.webp" width="880" alt="bmonitor on a Legion Go S: live video with REC, timecode and the value band at the bottom, each value with the button that opens it"></p>
+
+<p align="center"><img src="docs/readme/deck-controls-en.webp" width="760" alt="Button map: RT records, X ISO, Y shutter, B white balance, A focus, d-pad lens, LB and RB zoom; up grid, down audio, View script, Menu more, LT this map"></p>
+
+<p align="center"><img src="docs/readme/deck-script-en.webp" width="760" alt="Script open on the handheld: the video moves left and the script takes the right side"></p>
+
+- **Script from your phone:** game mode has nowhere to paste text, so the handheld shows an address and a QR code. Paste one script or several on your phone; hold View to switch, and each push on the left stick moves to the next paragraph.
+- **Latency:** 280 ms glass to glass in the author's test, against 272 ms on the Mac with the same iPhone.
+- **Install:** in desktop mode, download the `.flatpak` from the [0.1.1 release](https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.1-beta), run `flatpak install --user ~/Downloads/bmonitor-deck-0.1.1.flatpak` in Konsole, add bmonitor in Steam as a non-Steam game and open it from game mode. It doesn't update itself yet.
+- **More:** [bmonitor.app/steamos](https://bmonitor.app/steamos/).
 
 ## Requirements
 

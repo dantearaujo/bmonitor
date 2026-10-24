@@ -21,9 +21,11 @@ Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
 <p align="center"><b>⚠️ Beta público (0.10.2).</b> Funciona todo dia no setup do autor, mas até agora foi testado em dois Macs (macOS 26 e macOS 14) e um iPhone. Espere arestas e <a href="https://github.com/dantearaujo/bmonitor/issues">relate o que encontrar</a>.</p>
 
+<p align="center"><img src="docs/readme/mac-monitor-pt.webp" width="880" alt="O bmonitor no Mac: o vídeo ao vivo do iPhone com REC, timecode, medidor de áudio e a barra de controles, e o painel do roteiro ao lado"></p>
+
 O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
 
-**No console portátil:** uma versão de teste para SteamOS transforma o Lenovo Legion Go S no mesmo monitor e controle remoto, aberto pela biblioteca do Steam. Veja o [bmonitor para SteamOS](https://bmonitor.app/pt/steamos/) ou [baixe o Flatpak 0.1.1](https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.1-beta).
+**No console portátil:** uma versão de teste para SteamOS transforma o Lenovo Legion Go S no mesmo monitor e controle remoto, aberto pela biblioteca do Steam. Veja o [bmonitor para SteamOS](#bmonitor-para-steamos-versão-de-teste).
 
 ---
 
@@ -41,6 +43,25 @@ Você se grava com um iPhone no tripé. O bmonitor transforma o Mac ao lado no m
 - **Webcam:** ligue **Câmera › Usar como webcam** e o iPhone vira uma câmera chamada "bmonitor" no Meet, no Zoom, no FaceTime e em qualquer app, com a exposição manual, o balanço de branco e a LUT do Blackmagic Camera. Só vídeo: o som continua no microfone que você já usa. A imagem chega pelo menos com o atraso do monitor, uns 0,3 s. Na primeira vez, o macOS pede para permitir a extensão de câmera, e o bmonitor mostra onde.
 - **Atualiza sozinho:** quando sai versão nova, o bmonitor mostra o que mudou e pergunta antes de instalar. Ele procura ao abrir e uma vez por dia. Também dá para usar **bmonitor › Procurar atualizações…**.
 - **Legível a 3 m:** o status fica nos cantos de cima, em letra grande. A barra de controles aparece quando você mexe o mouse e some depois de 3 s.
+
+<p align="center"><img src="docs/readme/mac-webcam-pt.webp" width="760" alt="Uma chamada de vídeo com o bmonitor escolhido como câmera, ao lado das câmeras do MacBook e do iPhone"></p>
+
+<p align="center"><sub>Interfaces desenhadas no layout real do app, do <a href="https://bmonitor.app/pt/">bmonitor.app</a>. As pessoas são ilustrações geradas por IA.</sub></p>
+
+## bmonitor para SteamOS (versão de teste)
+
+O mesmo monitor e controle remoto num console portátil com SteamOS, aberto pela biblioteca do Steam como um jogo. Cada botão do controle abre um ajuste direto, e o toque faz o mesmo. Até agora testado só no **Lenovo Legion Go S**.
+
+<p align="center"><img src="docs/readme/deck-monitor-pt.webp" width="880" alt="O bmonitor num Legion Go S: vídeo ao vivo com REC, timecode e a faixa de valores embaixo, cada valor com o botão que o abre"></p>
+
+<p align="center"><img src="docs/readme/deck-controls-pt.webp" width="760" alt="Mapa dos botões: RT grava, X ISO, Y shutter, B balanço de branco, A foco, direcional lente, LB e RB zoom; para cima grade, para baixo áudio, View roteiro, Menu mais, LT este mapa"></p>
+
+<p align="center"><img src="docs/readme/deck-script-pt.webp" width="760" alt="Roteiro aberto no console: o vídeo vai para a esquerda e o roteiro ocupa a direita"></p>
+
+- **Roteiro pelo celular:** no modo jogo não tem onde colar texto, então o console mostra um endereço e um QR. Cole um ou vários roteiros no celular; segure View para trocar, e cada toque no analógico esquerdo vai ao próximo parágrafo.
+- **Atraso:** 280 ms vidro a vidro no teste do autor, contra 272 ms do Mac com o mesmo iPhone.
+- **Instalar:** no modo desktop, baixe o `.flatpak` da [versão 0.1.1](https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.1-beta), rode `flatpak install --user ~/Downloads/bmonitor-deck-0.1.1.flatpak` no Konsole, adicione o bmonitor no Steam como jogo não Steam e abra pelo modo jogo. Ainda não se atualiza sozinho.
+- **Mais:** [bmonitor.app/pt/steamos](https://bmonitor.app/pt/steamos/).
 
 ## Requisitos
 
