@@ -19,9 +19,11 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <p align="center"><sub>Latest version · macOS 14 Sonoma or later · Apple Silicon and Intel · <a href="#install">how to install</a> · <a href="https://bmonitor.app">bmonitor.app</a></sub></p>
 
-<p align="center"><b>⚠️ Public beta (0.9.6).</b> It works every day on the author's setup, but so far it has been tested on two Macs (macOS 26 and macOS 14) and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
+<p align="center"><b>⚠️ Public beta (0.10.2).</b> It works every day on the author's setup, but so far it has been tested on two Macs (macOS 26 and macOS 14) and one iPhone. Expect rough edges and <a href="https://github.com/dantearaujo/bmonitor/issues">report them</a>.</p>
 
 The app speaks English and Brazilian Portuguese, following your Mac's language.
+
+**On a handheld:** a test build for SteamOS turns a Lenovo Legion Go S into the same monitor and remote control, opened from the Steam library. See [bmonitor for SteamOS](https://bmonitor.app/steamos/) or [download the 0.1.0 Flatpak](https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.0-beta).
 
 ---
 
