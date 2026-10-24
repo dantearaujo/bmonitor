@@ -23,7 +23,7 @@ Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
 O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
 
-**No console portátil:** uma versão de teste para SteamOS transforma o Lenovo Legion Go S no mesmo monitor e controle remoto, aberto pela biblioteca do Steam. Veja o [bmonitor para SteamOS](https://bmonitor.app/pt/steamos/) ou [baixe o Flatpak 0.1.0](https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.0-beta).
+**No console portátil:** uma versão de teste para SteamOS transforma o Lenovo Legion Go S no mesmo monitor e controle remoto, aberto pela biblioteca do Steam. Veja o [bmonitor para SteamOS](https://bmonitor.app/pt/steamos/) ou [baixe o Flatpak 0.1.1](https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.1-beta).
 
 ---
 
