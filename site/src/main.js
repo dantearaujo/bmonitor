@@ -7,6 +7,20 @@
   addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
+  // Copiar o comando de instalar; o botão diz "Copiado" por 2 s.
+  document.querySelectorAll("[data-copy]").forEach((b) => {
+    const label = b.querySelector("span"), idle = label.textContent;
+    b.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(document.getElementById(b.dataset.copy).textContent);
+        label.textContent = b.dataset.done;
+        setTimeout(() => (label.textContent = idle), 2000);
+      } catch (e) {
+        getSelection().selectAllChildren(document.getElementById(b.dataset.copy));
+      }
+    });
+  });
+
   // Menu bar clock
   const clock = document.querySelector("[data-clock]");
   if (clock) {

@@ -555,7 +555,25 @@ button.dv:hover, .dv.is-open { background: rgba(255, 255, 255, 0.2); }
 /* Roteiro ao lado do vídeo: o vídeo encolhe para a esquerda e a coluna do roteiro fica à direita */
 .s-map, .s-script, .faq { padding: clamp(80px, 11vw, 140px) var(--gutter); }
 .s-points, .s-lat { background: var(--paper); padding: clamp(80px, 11vw, 140px) var(--gutter); }
-.steamos .close { background: var(--paper); }
+/* Instalar: cinza entre o atraso e o FAQ, que passa ao branco; o fecho volta ao cinza. */
+.install { padding: clamp(80px, 11vw, 140px) var(--gutter); text-align: center; }
+.install .steps { text-align: left; }
+.install .hero-meta { margin-top: 14px; }
+.steamos .faq { background: var(--paper); }
+.steamos .close { background: var(--bg); }
+.term { max-width: 760px; margin: clamp(56px, 7vw, 84px) auto 0; text-align: left; border-top: 1px solid var(--line); padding-top: 28px; }
+.term h3 { font-size: 19px; letter-spacing: -0.02em; margin-bottom: 8px; }
+.term > p { font-size: 15px; color: var(--ink-2); line-height: 1.5; max-width: 62ch; text-wrap: pretty; }
+.term-box { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 10px 10px 10px 18px; border-radius: 12px; background: var(--paper); }
+.term-box code { flex: 1; min-width: 0; padding: 6px 0; background: none; font-size: 13px; line-height: 1.55; color: var(--ink); overflow-wrap: anywhere; }
+.term-copy { flex: none; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 980px; background: var(--ink); color: #fff; font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 0.2s ease, transform 0.2s ease; }
+.term-copy:hover { background: #3a3a3c; }
+.term-copy:active { transform: scale(0.98); }
+.term-copy .ic { width: 16px; height: 16px; }
+@media (max-width: 560px) {
+  .term-box { flex-direction: column; align-items: stretch; padding: 14px; }
+  .term-copy { justify-content: center; }
+}
 .script-shot { max-width: 1000px; margin: clamp(44px, 6vw, 72px) auto 0; }
 .deck-screen.solo { width: 100%; border-radius: 16px; box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22); }
 .ds-split { grid-template-columns: 60% 40%; grid-template-rows: calc(var(--u) * 720) calc(var(--u) * 80); }

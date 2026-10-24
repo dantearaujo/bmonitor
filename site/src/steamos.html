@@ -38,7 +38,7 @@
     <h1 class="hero-title">{{s_hero_title}}</h1>
     <p class="hero-sub">{{s_hero_sub}}</p>
     <div class="cta">
-      <a class="btn btn-dark" href="https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.1-beta"><svg class="ic"><use href="#i-download"/></svg>{{s_cta_download}}</a>
+      <a class="btn btn-dark" href="#install"><svg class="ic"><use href="#i-download"/></svg>{{s_cta_download}}</a>
       <a class="btn btn-link" href="{{home}}">{{s_cta_mac}}<svg class="ic"><use href="#i-chev-r"/></svg></a>
     </div>
     <p class="hero-meta">{{s_hero_meta}}</p>
@@ -217,6 +217,30 @@
       <div class="lat-axis" aria-hidden="true"><span>0</span><span>100</span><span>200</span><span>300 ms</span></div>
       <figcaption>{{s_lat_caption}}</figcaption>
     </figure>
+  </section>
+
+  <section class="install" id="install">
+    <h2 class="sec-title center">{{s_inst_title}}</h2>
+    <p class="sec-sub center">{{s_inst_sub}}</p>
+    <ol class="steps">
+      <li><h3>{{s_inst_1_title}}</h3><p>{{s_inst_1_body}}</p></li>
+      <li><h3>{{s_inst_2_title}}</h3><p>{{s_inst_2_body}}</p></li>
+      <li><h3>{{s_inst_3_title}}</h3><p>{{s_inst_3_body}}</p></li>
+      <li><h3>{{s_inst_4_title}}</h3><p>{{s_inst_4_body}}</p></li>
+    </ol>
+    <div class="cta">
+      <a class="btn btn-dark" href="https://github.com/dantearaujo/bmonitor/releases/download/deck-v0.1.1-beta/bmonitor-deck-0.1.1.flatpak" download><svg class="ic"><use href="#i-download"/></svg>{{s_inst_file}}</a>
+      <a class="btn btn-link" href="https://github.com/dantearaujo/bmonitor/releases/tag/deck-v0.1.1-beta">{{s_inst_notes}}<svg class="ic"><use href="#i-chev-r"/></svg></a>
+    </div>
+    <p class="hero-meta">{{s_inst_meta}}</p>
+    <div class="term">
+      <h3>{{s_inst_term_title}}</h3>
+      <p>{{s_inst_term_body}}</p>
+      <div class="term-box">
+        <code id="install-cmd">curl -LO https://github.com/dantearaujo/bmonitor/releases/download/deck-v0.1.1-beta/bmonitor-deck-0.1.1.flatpak && flatpak install --user -y ./bmonitor-deck-0.1.1.flatpak</code>
+        <button class="term-copy" type="button" data-copy="install-cmd" data-done="{{s_inst_copied}}"><svg class="ic"><use href="#i-copy"/></svg><span>{{s_inst_copy}}</span></button>
+      </div>
+    </div>
   </section>
 
   <section class="faq">
