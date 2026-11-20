@@ -1,28 +1,42 @@
 # Record with a Mac microphone
 
-Connect BMonitor to Blackmagic Camera and open the **Audio** popover. Choose the built-in Mac microphone or a connected microphone under **Monitor microphone**. Allow microphone access when macOS prompts. The meter follows the selected input even with **Listen on Mac** turned off. Expand **iPhone audio** to adjust the audio Blackmagic Camera uses.
+The image comes from the iPhone; the sound comes from the Mac's built-in microphone or any microphone connected to the Mac. bmonitor puts them in one file, already in sync, so the take needs no editing.
 
-Selecting a Mac microphone enables a local copy for each take. Start and stop recording from BMonitor or Blackmagic Camera as usual. Use **Camera → Show Copies in Finder** or the existing copy controls to locate the files. Select **iPhone** to return to the original monitoring and copy settings.
+## Choose the microphone
 
-| Mac recording setting | Files |
+Connect bmonitor to Blackmagic Camera and open the **Audio** popover. Choose the Mac input under **Monitor microphone** and allow microphone access when macOS asks. The meter follows the selected input. **Keep an audio source on in the iPhone**: its sound is the reference bmonitor uses to sync the Mac audio, and is not what ends up playing.
+
+Selecting a Mac microphone turns on the Mac copy of each take. Start and stop recording from bmonitor or Blackmagic Camera as usual.
+
+## What each take produces
+
+When a take stops, bmonitor writes, in the copies folder:
+
+| File | Contents |
 | --- | --- |
-| Replace iPhone audio | A video MOV with the Mac microphone as its audio track |
-| Save Mac mic to a separate file | The usual video MOV plus an audio-only `- Mac Mic.mov` with the same timeline origin |
-| Keep two audio tracks in the video | One MOV with independent iPhone and Mac audio tracks |
+| `<clip> bmonitor.mov` | The stream image (camera resolution, 8 Mb/s) with the Mac audio, synced |
+| `<clip> bmonitor - Mac Mic.mov` | The Mac microphone alone, 48 kHz 24-bit PCM, kept for the original merge below |
 
-The Mac recording uses the compressed HEVC video from the SRT live stream. Resolution and bitrate depend on the stream. Blackmagic Camera continues saving its own original clip to the iPhone with the phone's audio settings.
+The **Recording on the Mac** setting chooses what happens to the iPhone audio in the merged file:
 
-## Check audio and video sync
+| Setting | Merged file |
+| --- | --- |
+| Replace iPhone audio | Image + Mac audio only |
+| Keep two audio tracks in the video | Image + Mac audio (playing) + iPhone audio (disabled, available to the editor) |
+| Save Mac mic to a separate file | No merge: image with iPhone audio, plus the Mac audio file |
 
-1. Use the packaged macOS app so that the microphone privacy prompt is available. Connect the iPhone and select the built-in Mac microphone. Check that speaking moves the live meter.
-2. In **Replace iPhone audio** mode, leave **Microphone delay** at 300 ms for the first take. Record a visible clap close to the Mac microphone.
-3. Open the local MOV in an editor with frame stepping and an audio waveform. Compare the frame where the hands touch with the start of the clap waveform. If audio is 80 ms early, add 80 ms to **Microphone delay**. If audio is 80 ms late, subtract 80 ms. Record again to verify. Recheck after changing the connection or SRT buffering.
-4. Record a longer take with claps at the beginning and end. Compare each waveform against its corresponding video frame to check for drift. Repeat with a USB microphone and each recording mode. For the separate file, place both clips at timeline zero. For the two-track MOV, solo each track in an editor.
-5. Check access and disconnect handling. Deny permission and confirm iPhone audio remains selected. Re-enable access in **System Settings → Privacy & Security → Microphone**. Unplug the selected USB microphone during a take. Check the meter and the saved-copy warning, then reconnect and reselect the microphone for another take.
-6. Play the iPhone's original file and confirm it still uses the audio set in Blackmagic Camera.
+## Full-quality original
 
-## Timing model
+Blackmagic Camera keeps the original clip (full resolution and bitrate) on the iPhone, and its API does not let it be downloaded over the network. Copy it to the Mac (AirDrop, cable, Files), then choose **Camera → Merge iPhone Original with Mac Audio…** and select one or more clips. bmonitor finds the Mac audio of each take by the clip name (`A001_11210140_C001.mov` → `A001_11210140_C001 bmonitor - Mac Mic.mov` in the copies folder), aligns it and writes `A001_11210140_C001 Mac.mov` next to it. The image, timecode and other tracks are copied as they are, without re-encoding. If the Mac audio file is not found, bmonitor asks for it.
 
-AVFoundation converts microphone sample timestamps onto the Mac host clock. The recorder observes incoming SRT video PTS against the same clock. It uses the earliest arrivals in successive windows to estimate the relative rate while reducing the effect of network jitter. The microphone delay adds a user-calibrated constant to this mapping. The default 300 ms is based on the project's measured live-stream delay. The SRT stream supplies no shared capture clock with the Mac, so a one-way latency change can still affect alignment.
+## How the sync works
 
-The recorder keeps its keyframe pre-roll and stop tail. It assigns the Mac samples to the video timeline and encodes them as AAC. In separate-file mode both writers start at the same video PTS. In two-track mode the phone AAC and Mac AAC remain independently editable. Selecting a microphone starts capture for metering, and a recording event controls when samples are written to disk.
+1. While recording, AVFoundation stamps each microphone sample with the Mac host clock, and `MicrophoneSync` maps that clock onto the stream's video timestamps (correcting the slow drift between the two clocks). **Microphone delay** adds a constant on top; it now only sets the starting guess.
+2. When the take closes, `AudioAlignment` compares the Mac audio with the iPhone audio recorded in the same take (GCC-PHAT cross-correlation at 8 kHz, voice band, first 120 s) and finds the exact offset. Both microphones hear the same room, so the peak is sharp even with different mics. In the stream copy the search is ±1 s around the guess; for the original clip, any offset.
+3. `MacAudioMerger` copies the video samples into the new file and inserts the Mac audio at that offset.
+
+If the comparison is not conclusive (the iPhone audio was off, or silence), the stream copy keeps the clock-based position and shows a warning; the original merge stops with an error instead of guessing.
+
+## Checking sync
+
+Record a clap in front of the camera. In an editor with frame stepping and waveforms, the frame where the hands touch should line up with the start of the clap within one frame. Running the app binary from a terminal prints the offset found for each take: `cópia no Mac: microfone em +0.120 s, confiança 51.5`.

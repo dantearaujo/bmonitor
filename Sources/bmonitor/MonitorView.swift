@@ -546,6 +546,8 @@ struct ControlBar: View {
         .contextMenu {
             Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
             Button("Mostrar cópias no Finder") { model.showCopies() }
+            Button("Juntar original do iPhone ao som do Mac…") { model.mergeOriginals() }
+                .disabled(model.mergingOriginals)
         }
         .disabled(model.macMicrophone != nil)
     }

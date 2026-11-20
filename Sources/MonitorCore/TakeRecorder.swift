@@ -65,6 +65,8 @@ public final class TakeRecorder {
         var lastMicrophone: CMTime = .negativeInfinity
         var microphoneGap = false
         var expectsPhoneAudio = false
+        /// Modo do microfone no começo do take; trocar no meio não muda este arquivo.
+        var mode: MicrophoneMode?
         var format: CMFormatDescription
         var start: CMTime
         var lastVideo: CMTime
@@ -237,7 +239,7 @@ public final class TakeRecorder {
         var url = part == 1 ? armed.url : Self.partURL(armed.url, part)
         // O AVAssetWriter falha se o arquivo existe: a continuação pula para o próximo número livre.
         while FileManager.default.fileExists(atPath: url.path)
-            || (microphoneMode == .separate && FileManager.default.fileExists(atPath: Self.microphoneURL(url).path))
+            || (microphoneMode != nil && FileManager.default.fileExists(atPath: Self.microphoneURL(url).path))
         {
             part += 1
             url = Self.partURL(armed.url, part)
@@ -254,13 +256,17 @@ public final class TakeRecorder {
             writer.add(video)
             var audio: AVAssetWriterInput?
             var sidecar: AVAssetWriter?
-            if microphoneMode == .separate {
+            // O microfone do Mac vai sempre para um arquivo ao lado, em PCM: é dele que sai o som
+            // do take e é ele que depois se junta ao original do iPhone.
+            if microphoneMode != nil {
                 sidecar = try AVAssetWriter(outputURL: Self.microphoneURL(url), fileType: .mov)
             }
-            if microphoneMode != .replace, let audioFormat {
+            // O som do iPhone entra até no modo substituir: é a referência que sincroniza o Mac,
+            // e a junção no fim do take tira a trilha.
+            if let audioFormat {
                 let input = AVAssetWriterInput(mediaType: .audio, outputSettings: nil, sourceFormatHint: audioFormat)
                 input.expectsMediaDataInRealTime = true
-                if microphoneMode == .both { input.metadata = Self.trackTitle("iPhone") }
+                if microphoneMode != nil { input.metadata = Self.trackTitle("iPhone") }
                 if writer.canAdd(input) {
                     writer.add(input)
                     audio = input
@@ -269,10 +275,13 @@ public final class TakeRecorder {
             var microphone: AVAssetWriterInput?
             if microphoneMode != nil {
                 let input = AVAssetWriterInput(mediaType: .audio, outputSettings: [
-                    AVFormatIDKey: kAudioFormatMPEG4AAC,
+                    AVFormatIDKey: kAudioFormatLinearPCM,
                     AVSampleRateKey: 48_000,
                     AVNumberOfChannelsKey: 1,
-                    AVEncoderBitRateKey: 96_000,
+                    AVLinearPCMBitDepthKey: 24,
+                    AVLinearPCMIsFloatKey: false,
+                    AVLinearPCMIsBigEndianKey: false,
+                    AVLinearPCMIsNonInterleaved: false,
                 ])
                 input.expectsMediaDataInRealTime = true
                 input.metadata = Self.trackTitle("Mac Microphone")
@@ -291,7 +300,7 @@ public final class TakeRecorder {
             sidecar?.startSession(atSourceTime: start)
             take = Take(
                 writer: writer, video: video, audio: audio, microphone: microphone, sidecar: sidecar,
-                expectsPhoneAudio: microphoneMode == .both, format: format, start: start, lastVideo: .negativeInfinity,
+                expectsPhoneAudio: microphoneMode == .both, mode: microphoneMode, format: format, start: start, lastVideo: .negativeInfinity,
                 url: url, base: armed.url, quarterTurns: armed.quarterTurns, part: part)
             print("cópia no Mac: gravando \(url.lastPathComponent)")
         } catch {
@@ -352,11 +361,45 @@ public final class TakeRecorder {
                 audioError = nil
             }
             let error = failedWriter.map { $0.error ?? CocoaError(.fileWriteUnknown) }
-            finished(failedWriter?.outputURL ?? current.url, error)
-            if error == nil, let warning = audioError?.errorDescription {
-                DispatchQueue.main.async { [onWarning] in onWarning?(warning) }
+            let report = { [self] (warning: String?) in
+                finished(failedWriter?.outputURL ?? current.url, error)
+                if error == nil, let warning = warning ?? audioError?.errorDescription {
+                    DispatchQueue.main.async { [onWarning] in onWarning?(warning) }
+                }
+                completion?()
             }
-            completion?()
+            guard error == nil, let mode = current.mode, mode != .separate, current.lastMicrophone.isNumeric else {
+                report(nil)
+                return
+            }
+            Task.detached { [queue] in
+                let warning = await Self.mergeMicrophone(into: current.url, keepPhoneAudio: mode == .both)
+                queue.async { report(warning) }
+            }
+        }
+    }
+
+    /// Junta o microfone do Mac ao vídeo do take, alinhado pelo som do iPhone. Os dois já estão
+    /// na mesma linha do tempo pelo relógio (`MicrophoneSync`); a comparação corrige o atraso
+    /// da rede, que o relógio não vê. Se não juntar, os dois arquivos ficam como estão.
+    static func mergeMicrophone(into movie: URL, keepPhoneAudio: Bool) async -> String? {
+        let microphone = microphoneURL(movie)
+        do {
+            let folder = try FileManager.default.url(
+                for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: movie, create: true)
+            let merged = folder.appendingPathComponent(movie.lastPathComponent)
+            defer { try? FileManager.default.removeItem(at: folder) }
+            let result = try await MacAudioMerger.merge(
+                video: movie, microphone: microphone, output: merged, keepPhoneAudio: keepPhoneAudio,
+                expectedOffset: 0, window: 1)
+            _ = try FileManager.default.replaceItemAt(movie, withItemAt: merged)
+            print("cópia no Mac: microfone em \(String(format: "%+.3f", result.offset)) s, confiança \(result.confidence.map { String(format: "%.1f", $0) } ?? "-")")
+            return result.synced
+                ? nil
+                : String(localized: "O som do Mac não pôde ser sincronizado pelo som do iPhone; valeu o atraso do microfone.")
+        } catch {
+            print("cópia no Mac: não juntou o microfone em \(movie.lastPathComponent): \(error)")
+            return String(localized: "O som do Mac ficou em um arquivo separado: \(error.localizedDescription)")
         }
     }
 

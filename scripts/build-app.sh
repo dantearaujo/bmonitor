@@ -41,7 +41,7 @@ cp .build/icon/AppIcon.icns "$APP/Contents/Resources/"
 cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
 # Ícone do Blackmagic Camera no guia da busca (ver Trademarks em THIRD_PARTY_NOTICES.md).
 cp assets/blackmagic-camera.png "$APP/Contents/Resources/"
-# Traduções: português é a base (chaves no código); en.lproj traduz para inglês.
+# Traduções: português é a base (chaves no código); en.lproj traduz para inglês e tr.lproj para turco.
 cp -R Localization/*.lproj "$APP/Contents/Resources/"
 
 # Bibliotecas para dentro do pacote; build-deps.sh já as deixou com nomes @rpath.
@@ -71,6 +71,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <array>
         <string>en</string>
         <string>pt-BR</string>
+        <string>tr</string>
     </array>
     <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundleVersion</key><string>$BUILD</string>

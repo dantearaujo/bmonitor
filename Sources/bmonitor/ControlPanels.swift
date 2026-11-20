@@ -520,6 +520,7 @@ struct AudioPanel: View {
     @Bindable var model: AppModel
     @State private var confirmSilence = false
     @State private var microphones: [MacMicrophone] = []
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         let current = model.state.audioInputs[0]
@@ -569,10 +570,12 @@ struct AudioPanel: View {
                     Text("Atraso do microfone: \(Int(model.microphoneDelayMs)) ms")
                 }
                 .disabled(!model.canChangeMicrophone)
-                Text("O clipe no iPhone segue a origem de áudio do Blackmagic Camera. Uma cópia é salva no Mac a cada take.")
+                Text("Cada take sai no Mac num arquivo só, com o som do Mac sincronizado pelo som do iPhone: deixe o áudio do iPhone ligado. Para a imagem original, traga o clipe do iPhone e use Câmera › Juntar original do iPhone ao som do Mac.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                Button("Como funciona?") { openWindow(id: "microphone-guide") }
+                    .buttonStyle(.link)
                 if !microphones.contains(where: { $0.id == microphone.id }) {
                     Text("O microfone do Mac foi desconectado.")
                         .font(.callout)

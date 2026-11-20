@@ -671,6 +671,83 @@ final class AppModel {
         session.recorder.begin(url: url, quarterTurns: quarterTurns)
     }
 
+    // MARK: - Original do iPhone com o som do Mac
+
+    /// Juntando originais: o item do menu fica desligado até terminar.
+    var mergingOriginals = false
+
+    /// O clipe original sai do iPhone (AirDrop, cabo, Arquivos) com o nome que o take tinha,
+    /// "A001_10210835_C009.mov"; o som do Mac desse take está na pasta das cópias como
+    /// "A001_10210835_C009 bmonitor - Mac Mic.mov". O resultado, na mesma pasta, é
+    /// "A001_10210835_C009 Mac.mov": a imagem original, sem recodificar, com o som do Mac.
+    func mergeOriginals() {
+        guard !mergingOriginals else { return }
+        let panel = NSOpenPanel()
+        panel.allowsMultipleSelection = true
+        panel.canChooseDirectories = false
+        panel.allowedContentTypes = [.movie]
+        panel.prompt = String(localized: "Juntar")
+        panel.message = String(localized: "Escolha os clipes originais trazidos do iPhone")
+        guard panel.runModal() == .OK, !panel.urls.isEmpty else { return }
+        var jobs: [(clip: URL, microphone: URL)] = []
+        for clip in panel.urls {
+            if let microphone = macMicrophoneFile(for: clip) ?? chooseMacMicrophoneFile(for: clip) {
+                jobs.append((clip, microphone))
+            }
+        }
+        guard !jobs.isEmpty else { return }
+        let folder = copyFolder
+        let keepPhoneAudio = microphoneMode != .replace
+        mergingOriginals = true
+        Task {
+            var done: [URL] = []
+            var failures: [String] = []
+            for job in jobs {
+                let stem = job.clip.deletingPathExtension().lastPathComponent
+                var output = folder.appendingPathComponent("\(stem) Mac.mov")
+                var n = 2
+                while FileManager.default.fileExists(atPath: output.path) {
+                    output = folder.appendingPathComponent("\(stem) Mac (\(n)).mov")
+                    n += 1
+                }
+                do {
+                    let result = try await MacAudioMerger.merge(
+                        video: job.clip, microphone: job.microphone, output: output, keepPhoneAudio: keepPhoneAudio)
+                    print("original: \(stem) com o microfone em \(String(format: "%+.3f", result.offset)) s")
+                    done.append(output)
+                } catch {
+                    failures.append("\(job.clip.lastPathComponent): \(error.localizedDescription)")
+                }
+            }
+            mergingOriginals = false
+            if !done.isEmpty { NSWorkspace.shared.activateFileViewerSelecting(done) }
+            if !failures.isEmpty {
+                let alert = NSAlert()
+                alert.messageText = String(localized: "Alguns clipes não foram juntados")
+                alert.informativeText = failures.joined(separator: "\n\n")
+                alert.runModal()
+            }
+        }
+    }
+
+    /// O som do Mac do take, achado pelo nome do clipe na pasta das cópias. Num take que o
+    /// stream partiu em "(2)", vale o primeiro arquivo.
+    private func macMicrophoneFile(for clip: URL) -> URL? {
+        let stem = clip.deletingPathExtension().lastPathComponent
+        let names = (try? FileManager.default.contentsOfDirectory(atPath: copyFolder.path)) ?? []
+        let matches = names.filter { $0.hasPrefix("\(stem) bmonitor") && $0.hasSuffix(" - Mac Mic.mov") }.sorted()
+        return matches.first.map { copyFolder.appendingPathComponent($0) }
+    }
+
+    private func chooseMacMicrophoneFile(for clip: URL) -> URL? {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.movie, .audio]
+        panel.directoryURL = copyFolder
+        panel.prompt = String(localized: "Usar este som")
+        panel.message = String(localized: "Não achei o som do Mac de \(clip.lastPathComponent). Escolha o arquivo do microfone.")
+        return panel.runModal() == .OK ? panel.url : nil
+    }
+
     private func copyFinished(_ url: URL, _ error: Error?) {
         if let error {
             copyFailure = String(localized: "A cópia \(url.lastPathComponent) não foi salva: \(error.localizedDescription)")

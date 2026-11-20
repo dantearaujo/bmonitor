@@ -51,6 +51,8 @@ struct MonitorApp: App {
                 .disabled(model.macMicrophone != nil)
                 Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
                 Button("Mostrar cópias no Finder") { model.showCopies() }
+                Button("Juntar original do iPhone ao som do Mac…") { model.mergeOriginals() }
+                    .disabled(model.mergingOriginals)
                 WebcamMenuItem(model: model)
                 Divider()
                 Button("ISO…") { model.togglePanel(.iso) }.keyboardShortcut(.iso, typing: model.script.editing)
@@ -90,11 +92,19 @@ struct MonitorApp: App {
             }
             CommandGroup(replacing: .help) {
                 Button("Atalhos do teclado") { model.toggleShortcuts() }.keyboardShortcut(.help, typing: model.script.editing)
+                MicrophoneGuideMenuItem()
             }
         }
 
         Window("Webcam", id: "webcam") {
             WebcamGuide()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+
+        Window("Gravar com o microfone do Mac", id: "microphone-guide") {
+            MicrophoneGuide(model: model)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
@@ -126,6 +136,14 @@ private struct WebcamMenuItem: View {
                     if on, WebcamStatus.shared.approval != .approved { openWindow(id: "webcam") }
                 }))
         }
+    }
+}
+
+private struct MicrophoneGuideMenuItem: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Gravar com o microfone do Mac") { openWindow(id: "microphone-guide") }
     }
 }
 
