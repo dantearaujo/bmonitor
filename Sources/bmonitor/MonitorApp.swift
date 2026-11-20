@@ -45,7 +45,10 @@ struct MonitorApp: App {
                     .disabled(model.phase != .connected)
                 Button("Focar agora") { model.focusNow() }.keyboardShortcut(.focusNow, typing: model.script.editing)
                 Divider()
-                Toggle("Salvar cópia de cada take no Mac", isOn: $model.savesCopy)
+                Toggle("Salvar cópia de cada take no Mac", isOn: Binding(
+                    get: { model.recordsLocalCopy }, set: { model.savesCopy = $0 }
+                ))
+                .disabled(model.macMicrophone != nil)
                 Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
                 Button("Mostrar cópias no Finder") { model.showCopies() }
                 WebcamMenuItem(model: model)

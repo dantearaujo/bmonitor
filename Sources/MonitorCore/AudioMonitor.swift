@@ -128,6 +128,18 @@ public final class AudioMonitor: @unchecked Sendable {
         if !player.isPlaying { player.play() }
     }
 
+    func reset() {
+        stop()
+        lock.withLock {
+            peaks.removeAll()
+            holds.removeAll()
+            holdAt.removeAll()
+            updatedAt = 0
+            queued = 0
+            primed = false
+        }
+    }
+
     public func stop() {
         player.stop()
         engine.stop()

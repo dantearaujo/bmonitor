@@ -179,3 +179,99 @@ private func encodeADTS(seconds: Double) throws -> [AudioAccessUnit] {
     return units
 }
 
+
+@Test(arguments: TakeRecorder.MicrophoneMode.allCases)
+func copyRecordsSelectedMicrophoneMode(mode: TakeRecorder.MicrophoneMode) async throws {
+    let url = temporaryMovie()
+    let sidecar = TakeRecorder.microphoneURL(url)
+    defer {
+        try? FileManager.default.removeItem(at: url)
+        try? FileManager.default.removeItem(at: sidecar)
+    }
+    let recorder = TakeRecorder(tail: 0)
+    let delay = CMTime(value: 300, timescale: 1000)
+    try #require(recorder.configureMicrophone(mode, delay: delay))
+    let phoneAudio = try encodeADTS(seconds: 2)
+    recorder.appendAudio(try #require(phoneAudio.first))
+    recorder.begin(url: url, quarterTurns: 0)
+    #expect(!recorder.configureMicrophone(nil, delay: .zero))
+    let pcm = try microphoneSample()
+    let base = CMTime(seconds: 100, preferredTimescale: 48_000)
+    for (index, frame) in try encodeHEVC(frames: 60, keyframeEvery: 30).enumerated() {
+        let time = frame.sample.presentationTimeStamp
+        recorder.appendVideo(frame.sample, keyframe: frame.keyframe, hostTime: base + time)
+        if index < 50 {
+            recorder.appendMicrophone(pcm, hostTime: base + time)
+        }
+        for unit in phoneAudio where unit.pts.map({ $0 / 3000 == Int64(index) }) == true {
+            recorder.appendAudio(unit)
+        }
+    }
+    recorder.endBlocking()
+
+    let movie = AVURLAsset(url: url)
+    #expect(try await movie.loadTracks(withMediaType: .video).count == 1)
+    let tracks = try await movie.loadTracks(withMediaType: .audio)
+    #expect(tracks.count == (mode == .both ? 2 : 1))
+    #expect(FileManager.default.fileExists(atPath: sidecar.path) == (mode == .separate))
+    let audioAsset = mode == .separate ? AVURLAsset(url: sidecar) : movie
+    let audioTracks = try await audioAsset.loadTracks(withMediaType: .audio)
+    var microphone: AVAssetTrack?
+    for track in audioTracks {
+        let format = try #require(try await track.load(.formatDescriptions).first)
+        if CMAudioFormatDescriptionGetStreamBasicDescription(format)?.pointee.mChannelsPerFrame == 1 {
+            microphone = track
+        }
+    }
+    let mic = try #require(microphone)
+    let segments = try await mic.load(.segments)
+    let media = try #require(segments.first { !$0.isEmpty })
+    #expect(abs(media.timeMapping.target.start.seconds - 0.3) < 0.04)
+    #expect(try await mic.load(.timeRange).end.seconds > 1.7)
+}
+
+@Test func microphoneSyncCompensatesForClockDriftAndResetsWithVideo() throws {
+    var sync = MicrophoneSync()
+    func time(_ seconds: Double) -> CMTime { CMTime(seconds: seconds, preferredTimescale: 1_000_000) }
+    let rate = 1.0004
+    let delay = time(0.3)
+    for frame in 0...18_000 {
+        let elapsed = Double(frame) / 30
+        let jitter = Double(frame % 9) * 0.003
+        _ = sync.observe(video: time(elapsed * rate), arrival: time(100 + elapsed + jitter))
+    }
+    let pts = try #require(sync.presentationTime(for: time(700), delay: delay))
+    #expect(abs(pts.seconds - (600 * rate + 0.3)) < 0.04)
+    let resetDetected = sync.observe(video: .zero, arrival: time(800))
+    #expect(resetDetected)
+    let reset = try #require(sync.presentationTime(for: time(800), delay: delay))
+    #expect(abs(reset.seconds - 0.3) < 0.001)
+}
+
+private func microphoneSample() throws -> CMSampleBuffer {
+    let frames = 1600
+    let bytes = frames * MemoryLayout<Int16>.size
+    var asbd = AudioStreamBasicDescription(
+        mSampleRate: 48_000, mFormatID: kAudioFormatLinearPCM,
+        mFormatFlags: kAudioFormatFlagIsSignedInteger | kAudioFormatFlagIsPacked,
+        mBytesPerPacket: 2, mFramesPerPacket: 1, mBytesPerFrame: 2,
+        mChannelsPerFrame: 1, mBitsPerChannel: 16, mReserved: 0)
+    var description: CMAudioFormatDescription?
+    try #require(CMAudioFormatDescriptionCreate(
+        allocator: kCFAllocatorDefault, asbd: &asbd, layoutSize: 0, layout: nil,
+        magicCookieSize: 0, magicCookie: nil, extensions: nil, formatDescriptionOut: &description) == noErr)
+    let format = try #require(description)
+    var storage: CMBlockBuffer?
+    try #require(CMBlockBufferCreateWithMemoryBlock(
+        allocator: kCFAllocatorDefault, memoryBlock: nil, blockLength: bytes,
+        blockAllocator: kCFAllocatorDefault, customBlockSource: nil, offsetToData: 0, dataLength: bytes,
+        flags: kCMBlockBufferAssureMemoryNowFlag, blockBufferOut: &storage) == noErr)
+    let block = try #require(storage)
+    try #require(CMBlockBufferFillDataBytes(with: 0, blockBuffer: block, offsetIntoDestination: 0, dataLength: bytes) == noErr)
+    var sample: CMSampleBuffer?
+    try #require(CMAudioSampleBufferCreateReadyWithPacketDescriptions(
+        allocator: kCFAllocatorDefault, dataBuffer: block, formatDescription: format,
+        sampleCount: frames, presentationTimeStamp: .zero, packetDescriptions: nil,
+        sampleBufferOut: &sample) == noErr)
+    return try #require(sample)
+}

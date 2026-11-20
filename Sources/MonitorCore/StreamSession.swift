@@ -23,6 +23,10 @@ public final class StreamSession {
     /// Defina antes de `start()`.
     public var onAudioBuffer: ((AVAudioPCMBuffer) -> Void)?
 
+    private let audioLock = NSLock()
+    private var microphone: MicrophoneCapture?
+    private var stopped = false
+
     private let api: CameraAPI
     private let listener: SRTListener
     private let restartGate = Gate()
@@ -50,14 +54,51 @@ public final class StreamSession {
         decoder.onSample = { [recorder] in recorder.appendVideo($0, keyframe: $1) }
         demuxer.onVideo = { [weak self] in self?.decoder.decode($0) }
         demuxer.onAudio = { [weak self] in
-            self?.audioDecoder.decode($0)
-            self?.recorder.appendAudio($0)
+            guard let self else { return }
+            let unit = $0
+            audioLock.withLock {
+                guard !self.stopped else { return }
+                if self.microphone == nil { self.audioDecoder.decode(unit) }
+                self.recorder.appendAudio(unit)
+            }
         }
         audioDecoder.onBuffer = { [weak self, audio] buffer in
             audio.play(buffer)
             self?.onAudioBuffer?(buffer)
         }
         listener.onPayload = { [weak self] in self?.demuxer.feed($0) }
+    }
+
+    public func selectMicrophone(id: String?, mode: TakeRecorder.MicrophoneMode, delay: CMTime) async throws -> Bool {
+        let capture = id.map { _ in MicrophoneCapture() }
+        if let id, let capture {
+            capture.onSample = { [weak self] source, sample, hostTime, buffer in
+                guard let self else { return }
+                audioLock.withLock {
+                    guard self.microphone === source else { return }
+                    self.recorder.appendMicrophone(sample, hostTime: hostTime)
+                    self.audio.play(buffer)
+                    self.onAudioBuffer?(buffer)
+                }
+            }
+            try await capture.start(id: id)
+        }
+        let changed = audioLock.withLock {
+            guard !stopped, recorder.configureMicrophone(capture == nil ? nil : mode, delay: delay, resetInput: true) else { return false }
+            microphone?.stop()
+            microphone = capture
+            audio.reset()
+            return true
+        }
+        if !changed { capture?.stop() }
+        return changed
+    }
+
+    public func configureMicrophoneRecording(mode: TakeRecorder.MicrophoneMode, delay: CMTime) -> Bool {
+        audioLock.withLock {
+            guard !stopped, microphone != nil else { return false }
+            return recorder.configureMicrophone(mode, delay: delay)
+        }
     }
 
     /// Começa a escutar e pede o stream à câmera.
@@ -116,7 +157,12 @@ public final class StreamSession {
 
     /// Para o stream e devolve a plataforma original.
     public func stop() async {
-        audio.stop()
+        audioLock.withLock {
+            stopped = true
+            microphone?.stop()
+            microphone = nil
+            audio.stop()
+        }
         try? await api.stopStream()
         if let originalPlatform { try? await api.setActivePlatform(originalPlatform) }
     }

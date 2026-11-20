@@ -119,6 +119,10 @@ Recording stays on the iPhone, in the quality you chose there. The stream to the
 
 bmonitor collects nothing: no accounts, no analytics. It talks to the iPhone on your local network and, to check for updates, to GitHub. The script's speech recognition runs on the Mac.
 
+## Recording with a Mac microphone
+
+Choose a Mac input in the Audio popover to use it with the iPhone video stream. See the [recording modes and sync test](docs/mac-microphone.md).
+
 ## Build from source
 
 ```sh

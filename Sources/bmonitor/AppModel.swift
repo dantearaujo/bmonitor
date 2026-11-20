@@ -50,6 +50,61 @@ final class AppModel {
 
     /// Entrada que recusou uma escrita de ganho.
     var gainRefusedInput: String?
+    var macMicrophone: MacMicrophone?
+    private(set) var microphoneMode: TakeRecorder.MicrophoneMode =
+        UserDefaults.standard.string(forKey: "microphoneMode").flatMap(TakeRecorder.MicrophoneMode.init(rawValue:)) ?? .replace
+    private(set) var microphoneDelayMs: Double =
+        UserDefaults.standard.object(forKey: "microphoneDelayMs") as? Double ?? 300
+
+    var changingMicrophone = false
+    var microphoneError: String?
+    var canChangeMicrophone: Bool {
+        eventsConnected && phase == .connected && !state.recording && !changingMicrophone
+            && !pending.contains("/transports/0/record")
+    }
+
+    func selectMicrophone(_ device: MacMicrophone?) {
+        guard canChangeMicrophone, device != macMicrophone, let session else { return }
+        changingMicrophone = true
+        microphoneError = nil
+        Task {
+            defer { changingMicrophone = false }
+            do {
+                let changed = try await session.selectMicrophone(
+                    id: device?.id, mode: microphoneMode, delay: microphoneDelay)
+                guard session === self.session else { return }
+                if changed {
+                    macMicrophone = device
+                    if device != nil, state.recording, !savesCopy { beginCopy() }
+                } else {
+                    microphoneError = String(localized: "Aguarde a cópia terminar para trocar o microfone.")
+                }
+            } catch {
+                microphoneError = AVCaptureDevice.authorizationStatus(for: .audio) == .authorized
+                    ? String(localized: "Não foi possível abrir o microfone selecionado.")
+                    : String(localized: "Permita o acesso do bmonitor em Ajustes do Sistema › Privacidade e Segurança › Microfone.")
+            }
+        }
+    }
+
+    private var microphoneDelay: CMTime { CMTime(seconds: microphoneDelayMs / 1000, preferredTimescale: 48_000) }
+
+    func configureMicrophone(mode: TakeRecorder.MicrophoneMode, delayMs: Double) {
+        guard canChangeMicrophone, delayMs.isFinite, (-1000...1500).contains(delayMs) else { return }
+        let delay = CMTime(seconds: delayMs / 1000, preferredTimescale: 48_000)
+        guard session?.configureMicrophoneRecording(mode: mode, delay: delay) == true else {
+            microphoneError = String(localized: "Aguarde a cópia terminar para trocar o microfone.")
+            return
+        }
+        microphoneError = nil
+        microphoneMode = mode
+        microphoneDelayMs = delayMs
+        UserDefaults.standard.set(mode.rawValue, forKey: "microphoneMode")
+        UserDefaults.standard.set(delayMs, forKey: "microphoneDelayMs")
+    }
+
+    var recordsLocalCopy: Bool { savesCopy || macMicrophone != nil }
+
     var localNetworkDenied = false
     var onNetwork = true
     /// Nunca conectou a um iPhone: a busca mostra o guia inteiro desde o primeiro instante.
@@ -102,8 +157,10 @@ final class AppModel {
     var savesCopy: Bool {
         didSet {
             UserDefaults.standard.set(savesCopy, forKey: "savesCopy")
-            if savesCopy, state.recording { beginCopy() }
-            if !savesCopy { session?.recorder.end() }
+            if macMicrophone == nil {
+                if savesCopy, state.recording { beginCopy() }
+                if !savesCopy { session?.recorder.end() }
+            }
         }
     }
     var copyFolder: URL { didSet { UserDefaults.standard.set(copyFolder.path, forKey: "copyFolder") } }
@@ -119,7 +176,7 @@ final class AppModel {
     }
 
     @ObservationIgnored let displayLayer = AVSampleBufferDisplayLayer()
-    /// O roteiro da janela ao lado; ouve a fala no áudio da câmera.
+    /// O roteiro da janela ao lado; ouve a fala na origem selecionada.
     let script = ScriptModel()
     /// A janela própria do roteiro, quando ele está destacado da janela da câmera.
     @ObservationIgnored private var scriptWindow: ScriptWindow?
@@ -232,6 +289,8 @@ final class AppModel {
     func connect(_ camera: Discovery.Camera) {
         phase = .connecting(camera.host)
         gainRefusedInput = nil
+        macMicrophone = nil
+        microphoneError = nil
         let api = CameraAPI(host: camera.host)
         let events = CameraEvents(host: camera.host, properties: CameraState.properties)
         events.onChange = { [weak self] property, value in
@@ -251,6 +310,7 @@ final class AppModel {
         }
         session.audio.isMuted = muted
         session.recorder.onFinish = { [weak self] url, error in self?.copyFinished(url, error) }
+        session.recorder.onWarning = { [weak self] warning in self?.copyFailure = warning }
         session.onAudioBuffer = { [speech = script.speech] in speech.append($0) }
         self.api = api
         self.events = events
@@ -270,7 +330,7 @@ final class AppModel {
     // MARK: - Controles da câmera
 
     func toggleRecord() {
-        guard eventsConnected, !pending.contains("/transports/0/record") else { return }
+        guard eventsConnected, !changingMicrophone, !pending.contains("/transports/0/record") else { return }
         set("/transports/0/record", ["recording": !state.recording])
     }
 
@@ -591,6 +651,7 @@ final class AppModel {
     /// nome, vale data e timecode, com ponto no lugar de ":", que o Finder não aceita.
     private func beginCopy() {
         guard let session else { return }
+        copyFailure = nil
         let name: String
         if let clip = state.clipName, !clip.isEmpty {
             name = "\(clip) bmonitor"
@@ -613,8 +674,6 @@ final class AppModel {
     private func copyFinished(_ url: URL, _ error: Error?) {
         if let error {
             copyFailure = String(localized: "A cópia \(url.lastPathComponent) não foi salva: \(error.localizedDescription)")
-        } else {
-            copyFailure = nil
         }
     }
 
@@ -747,7 +806,7 @@ final class AppModel {
         let previousSize = state.videoSize
         let wasRecording = state.recording
         state.apply(property: property, value: value)
-        if savesCopy, state.recording != wasRecording, !Self.simulatesRecording {
+        if recordsLocalCopy, state.recording != wasRecording, !Self.simulatesRecording {
             if state.recording { beginCopy() } else { session?.recorder.end() }
         }
         if let simulated = Self.simulatedRemaining { state.remainingRecordTime = simulated }
