@@ -783,7 +783,7 @@ struct AudioMeterView: View {
 
     var body: some View {
         Canvas { context, size in
-            let channels = max(meter?.peaks.count ?? 0, 2)
+            let channels = meter.map { max($0.peaks.count, 1) } ?? 2
             let labelWidth: CGFloat = large ? 14 : 0
             let scaleHeight: CGFloat = large ? 16 : 0
             let gap: CGFloat = large ? 4 : 2
@@ -795,10 +795,11 @@ struct AudioMeterView: View {
                 let y = CGFloat(channel) * (height + gap)
                 if large {
                     context.draw(
-                        Text(channel == 0 ? "L" : "R").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary),
+                        Text(channels == 1 ? "M" : channels == 2 ? (channel == 0 ? "L" : "R") : "\(channel + 1)").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary),
                         at: CGPoint(x: labelWidth / 2 - 2, y: y + height / 2))
                 }
-                let level = meter.map { $0.peaks[channel] } ?? -120
+                let reading = meter?.channel(at: channel)
+                let level = reading?.peak ?? -120
                 for zone in Self.zones {
                     let rect = CGRect(x: x(zone.from), y: y, width: x(zone.to) - x(zone.from), height: height)
                     context.fill(Path(rect), with: .color(zone.color.opacity(0.24)))
@@ -807,7 +808,7 @@ struct AudioMeterView: View {
                         context.fill(Path(CGRect(x: rect.minX, y: y, width: lit, height: height)), with: .color(zone.color))
                     }
                 }
-                if let hold = meter?.holds[channel], hold > -60 {
+                if let hold = reading?.hold, hold > -60 {
                     let color = Self.zones.first { hold < $0.to }?.color ?? Theme.rec
                     let mark = large ? 2.5 : 1.5
                     context.fill(
