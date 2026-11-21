@@ -2,7 +2,8 @@ import AVFoundation
 import CoreMedia
 
 /// Grava no Mac uma cópia do stream que chega do iPhone, sem recodificar: o HEVC e o AAC vão
-/// do jeito que vieram para um `.mov`. É a qualidade do stream (resolução da câmera, 8 Mb/s), não
+/// do jeito que vieram para um `.mov`. O áudio opcional do Mac é codificado em AAC.
+/// A imagem tem a qualidade do stream (resolução da câmera, 8 Mb/s), não
 /// o arquivo original do iPhone.
 ///
 /// Tudo roda numa fila própria: quem recebe o stream só entrega e volta. O vídeo vai para a
@@ -12,8 +13,29 @@ import CoreMedia
 /// atrás. Por isso a cópia guarda o vídeo desde o último quadro-chave (o arquivo começa um
 /// pouco antes do REC) e continua `tail` segundos depois do STOP.
 public final class TakeRecorder {
+    public enum MicrophoneMode: String, CaseIterable, Identifiable {
+        case replace, separate, both
+
+        public var id: String { rawValue }
+    }
+
+    private enum RecordingError: LocalizedError {
+        case noVideo, noMicrophone, interruptedMicrophone, noPhoneAudio, incompleteStream(Int)
+
+        var errorDescription: String? {
+            switch self {
+            case .noVideo: String(localized: "Nenhum quadro de vídeo chegou para a cópia.")
+            case .noMicrophone: String(localized: "A cópia não recebeu áudio do microfone do Mac.")
+            case .interruptedMicrophone: String(localized: "A cópia foi salva com interrupções no áudio do Mac.")
+            case .noPhoneAudio: String(localized: "A cópia foi salva sem uma trilha de áudio do iPhone.")
+            case .incompleteStream(let percent):
+                String(localized: "O iPhone mandou só \(percent)% do vídeo neste formato. A cópia saiu na velocidade certa, mas aos saltos; a 30 fps ela sai lisa. O original no iPhone não é afetado.")
+            }
+        }
+    }
     /// Chamado na thread principal quando um arquivo fecha: o endereço e o erro, se houve.
     public var onFinish: ((URL, Error?) -> Void)?
+    public var onWarning: ((String) -> Void)?
     /// Segundos que a cópia continua depois de `end()`.
     public let tail: TimeInterval
 
@@ -26,6 +48,15 @@ public final class TakeRecorder {
     private var audioPreroll: [CMSampleBuffer] = []
     private var audioFormat: CMAudioFormatDescription?
     private var audioConfig: [Int] = []
+    /// Um quadro AAC de silêncio no formato do stream, para os buracos do som do iPhone.
+    private var silence: (config: [Int], payload: Data)?
+    private var microphoneMode: MicrophoneMode?
+    private var microphoneDelay: CMTime = .zero
+    private var microphonePreroll: [CMSampleBuffer] = []
+    private var microphoneSync = MicrophoneSync()
+    /// Linha do tempo do arquivo: o PTS do iPhone, puxado para o relógio do Mac quando o
+    /// iPhone não manda o stream inteiro (60 fps no iPhone 14).
+    private var timeline = StreamTimeline()
     private var take: Take?
     /// Pedido de gravar ainda sem arquivo: espera o próximo quadro-chave.
     private var armed: (url: URL, quarterTurns: Int, part: Int)?
@@ -36,10 +67,23 @@ public final class TakeRecorder {
         var writer: AVAssetWriter
         var video: AVAssetWriterInput
         var audio: AVAssetWriterInput?
+        var microphone: AVAssetWriterInput?
+        var sidecar: AVAssetWriter?
+        var lastMicrophone: CMTime = .negativeInfinity
+        var microphoneGap = false
+        var expectsPhoneAudio = false
+        /// Modo do microfone no começo do take; trocar no meio não muda este arquivo.
+        var mode: MicrophoneMode?
+        /// `streamSpan` e `outSpan` da linha no começo: no fim, quanto do tempo o stream cobriu.
+        var spans: (stream: Double, out: Double)
         var format: CMFormatDescription
         var start: CMTime
         var lastVideo: CMTime
         var lastAudio: CMTime = .negativeInfinity
+        /// Onde o próximo quadro AAC do iPhone começa: o arquivo põe um quadro colado no outro.
+        var nextAudio: CMTime = .invalid
+        var phoneFrames = 0
+        var silentFrames = 0
         var url: URL
         /// Endereço pedido em `begin`, de onde saem os nomes das continuações.
         var base: URL
@@ -56,6 +100,7 @@ public final class TakeRecorder {
     public func begin(url: URL, quarterTurns: Int) {
         queue.async { [self] in
             if take != nil { close() }
+            cancelArmed()
             stopping = false
             armed = (url, quarterTurns, 1)
             if let key = preroll.first, Self.isKeyframe(key) { open(at: key) }
@@ -65,11 +110,11 @@ public final class TakeRecorder {
     /// Fecha o arquivo depois de `tail` segundos.
     public func end() {
         queue.async { [self] in
-            armed = nil
-            guard take != nil else { return }
+            cancelArmed()
+            guard let url = take?.url else { return }
             stopping = true
             queue.asyncAfter(deadline: .now() + tail) { [self] in
-                if stopping { close() }
+                if stopping, take?.url == url { close() }
             }
         }
     }
@@ -78,7 +123,7 @@ public final class TakeRecorder {
     public func endBlocking(timeout: TimeInterval = 3) {
         let done = DispatchSemaphore(value: 0)
         queue.async { [self] in
-            armed = nil
+            cancelArmed()
             stopping = false
             if take != nil { close { done.signal() } } else { done.signal() }
         }
@@ -87,7 +132,11 @@ public final class TakeRecorder {
 
     /// Um quadro de vídeo já pronto para o decodificador (NAL com tamanho de 4 bytes).
     public func appendVideo(_ sample: CMSampleBuffer, keyframe: Bool) {
-        queue.async { [self] in video(sample, keyframe: keyframe) }
+        appendVideo(sample, keyframe: keyframe, hostTime: CMClock.hostTimeClock.time)
+    }
+
+    func appendVideo(_ sample: CMSampleBuffer, keyframe: Bool, hostTime: CMTime) {
+        queue.async { [self] in video(sample, keyframe: keyframe, hostTime: hostTime) }
     }
 
     /// Um PES de áudio com seus quadros ADTS.
@@ -95,14 +144,54 @@ public final class TakeRecorder {
         queue.async { [self] in audio(unit) }
     }
 
+    func configureMicrophone(_ mode: MicrophoneMode?, delay: CMTime, resetInput: Bool = false) -> Bool {
+        queue.sync {
+            guard take == nil, armed == nil else { return false }
+            microphoneMode = mode
+            if resetInput || mode == nil || delay != microphoneDelay { microphonePreroll.removeAll() }
+            microphoneDelay = delay
+            return true
+        }
+    }
+
+    func appendMicrophone(_ sample: CMSampleBuffer, hostTime: CMTime) {
+        guard sample.numSamples > 0 else { return }
+        queue.async { [self] in
+            guard microphoneMode != nil,
+                let pts = microphoneSync.presentationTime(for: hostTime, delay: microphoneDelay),
+                var timing = try? sample.sampleTimingInfo(at: 0)
+            else { return }
+            timing.presentationTimeStamp = pts
+            timing.decodeTimeStamp = .invalid
+            var retimed: CMSampleBuffer?
+            guard CMSampleBufferCreateCopyWithNewTiming(
+                allocator: kCFAllocatorDefault, sampleBuffer: sample,
+                sampleTimingEntryCount: 1, sampleTimingArray: &timing, sampleBufferOut: &retimed
+            ) == noErr, let retimed else { return }
+            bufferAudio(retimed, in: &microphonePreroll)
+            writeAudio(retimed, microphone: true)
+        }
+    }
+
+    private func cancelArmed() {
+        if microphoneMode != nil, let armed { finished(armed.url, RecordingError.noVideo) }
+        armed = nil
+    }
+
     // MARK: - Na fila
 
-    private func video(_ sample: CMSampleBuffer, keyframe: Bool) {
-        Self.markSync(sample, keyframe: keyframe)
-        let pts = sample.presentationTimeStamp
+    private func video(_ original: CMSampleBuffer, keyframe: Bool, hostTime: CMTime) {
+        Self.markSync(original, keyframe: keyframe)
+        let streamPTS = original.presentationTimeStamp
+        let restarted = streamPTS <= lastSeenVideo
+        lastSeenVideo = streamPTS
+        // Daqui em diante tudo fala na linha do arquivo, não no PTS do iPhone.
+        let pts = timeline.map(stream: streamPTS, host: hostTime)
+        guard let sample = Self.retimed(original, pts) else { return }
         // O pré-roll só vale do quadro-chave em diante e no mesmo relógio.
-        if keyframe || pts <= lastSeenVideo { preroll.removeAll() }
-        lastSeenVideo = pts
+        if keyframe || restarted { preroll.removeAll() }
+        let clockReset = microphoneSync.observe(video: pts, arrival: hostTime)
+        if clockReset { microphonePreroll.removeAll() }
         if !preroll.isEmpty || keyframe { preroll.append(sample) }
         // Teto de memória se os quadros-chave sumirem: a cópia espera o próximo.
         if preroll.count > 900 { preroll.removeAll() }
@@ -111,7 +200,7 @@ public final class TakeRecorder {
             guard let format = sample.formatDescription else { return }
             // Stream reiniciado (o relógio voltou) ou formato novo: este arquivo fecha e o
             // take continua num arquivo "(2)" a partir do próximo quadro-chave.
-            if pts <= current.lastVideo || !CMFormatDescriptionEqual(format, otherFormatDescription: current.format) {
+            if restarted || pts <= current.lastVideo || !CMFormatDescriptionEqual(format, otherFormatDescription: current.format) {
                 let next = (current.base, current.quarterTurns, current.part + 1)
                 let continues = !stopping
                 close()
@@ -130,21 +219,97 @@ public final class TakeRecorder {
 
     private func audio(_ unit: AudioAccessUnit) {
         guard let base = unit.pts else { return }
+        // Na linha do arquivo, pela relação do último quadro de vídeo. Antes do vídeo não há
+        // linha: o som só dá o formato da trilha.
+        let raw = CMTime(value: base, timescale: 90_000)
+        let start = timeline.position(of: raw)
         var offset: Int64 = 0
         for frame in AudioDecoder.adtsFrames(unit.data) {
-            guard let sample = audioSample(frame, pts: CMTime(value: base, timescale: 90_000) + CMTime(value: offset, timescale: Int32(frame.sampleRate)))
+            guard let sample = audioSample(frame, pts: (start ?? raw) + CMTime(value: offset, timescale: Int32(frame.sampleRate))),
+                start != nil
             else { continue }
             offset += 1024
-            audioPreroll.append(sample)
-            if var current = take, let input = current.audio, sample.presentationTimeStamp >= current.start,
-                sample.presentationTimeStamp > current.lastAudio, input.isReadyForMoreMediaData, input.append(sample)
-            {
-                current.lastAudio = sample.presentationTimeStamp
-                take = current
-            }
+            bufferAudio(sample, in: &audioPreroll)
+            fillPhoneAudioGap(before: sample.presentationTimeStamp, like: frame)
+            writeAudio(sample, microphone: false)
+            take?.phoneFrames += 1
         }
-        // Mais que o pré-roll de vídeo precisa: um quadro-chave a cada poucos segundos.
-        if audioPreroll.count > 500 { audioPreroll.removeFirst(audioPreroll.count - 500) }
+    }
+
+    private func bufferAudio(_ sample: CMSampleBuffer, in samples: inout [CMSampleBuffer]) {
+        samples.append(sample)
+        if samples.count > 500 { samples.removeFirst(samples.count - 500) }
+    }
+
+    private func writeAudio(_ sample: CMSampleBuffer, microphone: Bool) {
+        guard var current = take, let input = microphone ? current.microphone : current.audio else { return }
+        let last = microphone ? current.lastMicrophone : current.lastAudio
+        let pts = sample.presentationTimeStamp
+        guard pts >= current.start, pts > last, input.isReadyForMoreMediaData, input.append(sample) else { return }
+        if microphone {
+            let previous = last.isNumeric ? last : current.start
+            if (pts - previous).seconds > 1 { current.microphoneGap = true }
+            current.lastMicrophone = pts
+        } else {
+            current.lastAudio = pts
+            let next = (current.nextAudio.isNumeric ? current.nextAudio : pts) + sample.duration
+            current.nextAudio = next.isNumeric ? next : .invalid
+        }
+        take = current
+    }
+
+    /// O arquivo cola cada quadro AAC no anterior, sem buraco: com o stream incompleto, o som
+    /// do iPhone encolhia e se soltava da imagem. O buraco vira silêncio, quadro a quadro.
+    private func fillPhoneAudioGap(before pts: CMTime, like frame: AudioDecoder.ADTSFrame) {
+        guard let current = take, current.audio != nil, current.nextAudio.isNumeric, pts > current.nextAudio else { return }
+        let frameSeconds = 1024 / Double(frame.sampleRate)
+        let missing = Int(((pts - current.nextAudio).seconds / frameSeconds).rounded())
+        guard missing > 0, let payload = silentPayload(like: frame) else { return }
+        var blank = frame
+        blank.payload = payload
+        for _ in 0..<min(missing, 48_000) {
+            guard let next = take?.nextAudio, let sample = audioSample(blank, pts: next) else { return }
+            writeAudio(sample, microphone: false)
+            take?.silentFrames += 1
+        }
+    }
+
+    private func silentPayload(like frame: AudioDecoder.ADTSFrame) -> Data? {
+        let config = [frame.objectType, frame.sampleRateIndex, frame.channels]
+        if let silence, silence.config == config { return silence.payload }
+        guard let payload = Self.silentAAC(sampleRate: Double(frame.sampleRate), channels: AVAudioChannelCount(frame.channels))
+        else { return nil }
+        silence = (config, payload)
+        return payload
+    }
+
+    /// Um quadro AAC-LC de silêncio, codificado aqui (o segundo: o primeiro carrega o atraso
+    /// do codificador).
+    static func silentAAC(sampleRate: Double, channels: AVAudioChannelCount) -> Data? {
+        guard let pcm = AVAudioFormat(commonFormat: .pcmFormatFloat32, sampleRate: sampleRate, channels: channels, interleaved: false),
+            let aac = AVAudioFormat(settings: [
+                AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: sampleRate, AVNumberOfChannelsKey: channels,
+            ]),
+            let converter = AVAudioConverter(from: pcm, to: aac),
+            let input = AVAudioPCMBuffer(pcmFormat: pcm, frameCapacity: 4096)
+        else { return nil }
+        input.frameLength = 4096
+        for channel in 0..<Int(channels) { input.floatChannelData?[channel].update(repeating: 0, count: 4096) }
+        let output = AVAudioCompressedBuffer(format: aac, packetCapacity: 8, maximumPacketSize: max(converter.maximumOutputPacketSize, 1536))
+        var fed = false
+        var error: NSError?
+        converter.convert(to: output, error: &error) { _, status in
+            if fed {
+                status.pointee = .noDataNow
+                return nil
+            }
+            fed = true
+            status.pointee = .haveData
+            return input
+        }
+        guard error == nil, output.packetCount > 1, let packets = output.packetDescriptions else { return nil }
+        let packet = packets[1]
+        return Data(bytes: output.data + Int(packet.mStartOffset), count: Int(packet.mDataByteSize))
     }
 
     private func open(at keyframe: CMSampleBuffer) {
@@ -153,7 +318,9 @@ public final class TakeRecorder {
         var part = armed.part
         var url = part == 1 ? armed.url : Self.partURL(armed.url, part)
         // O AVAssetWriter falha se o arquivo existe: a continuação pula para o próximo número livre.
-        while part > 1, FileManager.default.fileExists(atPath: url.path) {
+        while FileManager.default.fileExists(atPath: url.path)
+            || (microphoneMode != nil && FileManager.default.fileExists(atPath: Self.microphoneURL(url).path))
+        {
             part += 1
             url = Self.partURL(armed.url, part)
         }
@@ -168,19 +335,53 @@ public final class TakeRecorder {
             video.transform = Self.transform(quarterTurns: armed.quarterTurns, width: CGFloat(size.width), height: CGFloat(size.height))
             writer.add(video)
             var audio: AVAssetWriterInput?
+            var sidecar: AVAssetWriter?
+            // O microfone do Mac vai sempre para um arquivo ao lado, em PCM: é dele que sai o som
+            // do take e é ele que depois se junta ao original do iPhone.
+            if microphoneMode != nil {
+                sidecar = try AVAssetWriter(outputURL: Self.microphoneURL(url), fileType: .mov)
+            }
+            // O som do iPhone entra até no modo substituir: é a referência que sincroniza o Mac,
+            // e a junção no fim do take tira a trilha.
             if let audioFormat {
                 let input = AVAssetWriterInput(mediaType: .audio, outputSettings: nil, sourceFormatHint: audioFormat)
                 input.expectsMediaDataInRealTime = true
+                if microphoneMode != nil { input.metadata = Self.trackTitle("iPhone") }
                 if writer.canAdd(input) {
                     writer.add(input)
                     audio = input
                 }
             }
+            var microphone: AVAssetWriterInput?
+            if microphoneMode != nil {
+                let input = AVAssetWriterInput(mediaType: .audio, outputSettings: [
+                    AVFormatIDKey: kAudioFormatLinearPCM,
+                    AVSampleRateKey: 48_000,
+                    AVNumberOfChannelsKey: 1,
+                    AVLinearPCMBitDepthKey: 24,
+                    AVLinearPCMIsFloatKey: false,
+                    AVLinearPCMIsBigEndianKey: false,
+                    AVLinearPCMIsNonInterleaved: false,
+                ])
+                input.expectsMediaDataInRealTime = true
+                input.metadata = Self.trackTitle("Mac Microphone")
+                let destination = sidecar ?? writer
+                guard destination.canAdd(input) else { throw CocoaError(.featureUnsupported) }
+                destination.add(input)
+                microphone = input
+            }
             guard writer.startWriting() else { throw writer.error ?? CocoaError(.fileWriteUnknown) }
+            if let sidecar, !sidecar.startWriting() {
+                writer.cancelWriting()
+                throw sidecar.error ?? CocoaError(.fileWriteUnknown)
+            }
             let start = keyframe.presentationTimeStamp
             writer.startSession(atSourceTime: start)
+            sidecar?.startSession(atSourceTime: start)
             take = Take(
-                writer: writer, video: video, audio: audio, format: format, start: start, lastVideo: .negativeInfinity,
+                writer: writer, video: video, audio: audio, microphone: microphone, sidecar: sidecar,
+                expectsPhoneAudio: microphoneMode == .both, mode: microphoneMode,
+                spans: (timeline.streamSpan, timeline.outSpan), format: format, start: start, lastVideo: .negativeInfinity,
                 url: url, base: armed.url, quarterTurns: armed.quarterTurns, part: part)
             print("cópia no Mac: gravando \(url.lastPathComponent)")
         } catch {
@@ -195,13 +396,20 @@ public final class TakeRecorder {
             current.lastVideo = sample.presentationTimeStamp
             take = current
         }
-        for sample in audioPreroll where sample.presentationTimeStamp >= start(of: take) {
-            guard var current = take, let input = current.audio, sample.presentationTimeStamp > current.lastAudio,
-                input.isReadyForMoreMediaData, input.append(sample)
-            else { continue }
-            current.lastAudio = sample.presentationTimeStamp
-            take = current
-        }
+        for sample in audioPreroll { writeAudio(sample, microphone: false) }
+        for sample in microphonePreroll { writeAudio(sample, microphone: true) }
+    }
+
+    private static func trackTitle(_ title: String) -> [AVMetadataItem] {
+        let item = AVMutableMetadataItem()
+        item.identifier = .commonIdentifierTitle
+        item.value = title as NSString
+        return [item]
+    }
+
+    static func microphoneURL(_ movie: URL) -> URL {
+        movie.deletingLastPathComponent()
+            .appendingPathComponent(movie.deletingPathExtension().lastPathComponent + " - Mac Mic.mov")
     }
 
     private func start(of take: Take?) -> CMTime { take?.start ?? .positiveInfinity }
@@ -213,13 +421,73 @@ public final class TakeRecorder {
         }
         take = nil
         stopping = false
-        current.video.markAsFinished()
-        current.audio?.markAsFinished()
-        current.writer.finishWriting { [self] in
-            let error = current.writer.status == .completed ? nil : current.writer.error ?? CocoaError(.fileWriteUnknown)
-            print("cópia no Mac: \(error == nil ? "salva" : "falhou") \(current.url.lastPathComponent)\(error.map { ": \($0)" } ?? "")")
-            finished(current.url, error)
-            completion?()
+        let writers = [current.writer, current.sidecar].compactMap { $0 }
+        let group = DispatchGroup()
+        for writer in writers where writer.status == .writing {
+            group.enter()
+            writer.finishWriting { group.leave() }
+        }
+        group.notify(queue: queue) { [self] in
+            let failedWriter = writers.first { $0.status != .completed }
+            let audioError: RecordingError?
+            if current.microphone != nil && !current.lastMicrophone.isNumeric {
+                audioError = .noMicrophone
+            } else if current.microphone != nil
+                && (current.microphoneGap || (current.lastVideo - current.lastMicrophone).seconds > 1)
+            {
+                audioError = .interruptedMicrophone
+            } else if current.expectsPhoneAudio && !current.lastAudio.isNumeric {
+                audioError = .noPhoneAudio
+            } else {
+                audioError = nil
+            }
+            let error = failedWriter.map { $0.error ?? CocoaError(.fileWriteUnknown) }
+            // Quanto do tempo de verdade o stream do iPhone cobriu neste take.
+            let outSpan = timeline.outSpan - current.spans.out
+            let coverage = outSpan > 2 ? (timeline.streamSpan - current.spans.stream) / outSpan : 1
+            let incomplete = coverage < 0.9 ? RecordingError.incompleteStream(Int((coverage * 100).rounded())) : nil
+            print("cópia no Mac: som do iPhone com \(current.phoneFrames) quadros e \(current.silentFrames) de silêncio nos buracos")
+            if let incomplete { print("cópia no Mac: \(incomplete.errorDescription ?? "")") }
+            let report = { [self] (warning: String?) in
+                finished(failedWriter?.outputURL ?? current.url, error)
+                let warnings = [incomplete?.errorDescription, warning ?? audioError?.errorDescription].compactMap { $0 }
+                if error == nil, !warnings.isEmpty {
+                    DispatchQueue.main.async { [onWarning] in onWarning?(warnings.joined(separator: " ")) }
+                }
+                completion?()
+            }
+            guard error == nil, let mode = current.mode, mode != .separate, current.lastMicrophone.isNumeric else {
+                report(nil)
+                return
+            }
+            Task.detached { [queue] in
+                let warning = await Self.mergeMicrophone(into: current.url, keepPhoneAudio: mode == .both)
+                queue.async { report(warning) }
+            }
+        }
+    }
+
+    /// Junta o microfone do Mac ao vídeo do take, alinhado pelo som do iPhone. Os dois já estão
+    /// na mesma linha do tempo pelo relógio (`MicrophoneSync`); a comparação corrige o atraso
+    /// da rede, que o relógio não vê. Se não juntar, os dois arquivos ficam como estão.
+    static func mergeMicrophone(into movie: URL, keepPhoneAudio: Bool) async -> String? {
+        let microphone = microphoneURL(movie)
+        do {
+            let folder = try FileManager.default.url(
+                for: .itemReplacementDirectory, in: .userDomainMask, appropriateFor: movie, create: true)
+            let merged = folder.appendingPathComponent(movie.lastPathComponent)
+            defer { try? FileManager.default.removeItem(at: folder) }
+            let result = try await MacAudioMerger.merge(
+                video: movie, microphone: microphone, output: merged, keepPhoneAudio: keepPhoneAudio,
+                expectedOffset: 0, window: 1)
+            _ = try FileManager.default.replaceItemAt(movie, withItemAt: merged)
+            print("cópia no Mac: microfone em \(String(format: "%+.3f", result.offset)) s, confiança \(result.confidence.map { String(format: "%.1f", $0) } ?? "-")")
+            return result.synced
+                ? nil
+                : String(localized: "O som do Mac não pôde ser sincronizado pelo som do iPhone; valeu o atraso do microfone.")
+        } catch {
+            print("cópia no Mac: não juntou o microfone em \(movie.lastPathComponent): \(error)")
+            return String(localized: "O som do Mac ficou em um arquivo separado: \(error.localizedDescription)")
         }
     }
 
@@ -274,6 +542,18 @@ public final class TakeRecorder {
         let config: [UInt8] = [0x04, UInt8(13 + specific.count), 0x40, 0x15] + [UInt8](repeating: 0, count: 11) + specific
         let sl: [UInt8] = [0x06, 1, 0x02]
         return [0x03, UInt8(3 + config.count + sl.count), 0, 0, 0] + config + sl
+    }
+
+    /// O mesmo quadro em outro instante da linha.
+    static func retimed(_ sample: CMSampleBuffer, _ pts: CMTime) -> CMSampleBuffer? {
+        if pts == sample.presentationTimeStamp { return sample }
+        var timing = CMSampleTimingInfo(duration: .invalid, presentationTimeStamp: pts, decodeTimeStamp: .invalid)
+        var copy: CMSampleBuffer?
+        guard CMSampleBufferCreateCopyWithNewTiming(
+            allocator: kCFAllocatorDefault, sampleBuffer: sample, sampleTimingEntryCount: 1, sampleTimingArray: &timing,
+            sampleBufferOut: &copy) == noErr
+        else { return nil }
+        return copy
     }
 
     /// Quadro-chave pela marca de sincronia que `markSync` deixou.

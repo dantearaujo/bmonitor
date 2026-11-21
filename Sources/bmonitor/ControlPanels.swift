@@ -1,3 +1,4 @@
+import AVFoundation
 import MonitorCore
 import SwiftUI
 
@@ -518,6 +519,8 @@ struct FormatPanel: View {
 struct AudioPanel: View {
     @Bindable var model: AppModel
     @State private var confirmSilence = false
+    @State private var microphones: [MacMicrophone] = []
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         let current = model.state.audioInputs[0]
@@ -527,61 +530,135 @@ struct AudioPanel: View {
             PanelSection(title: String(localized: "Nível (dBFS)")) {
                 LiveAudioMeter(model: model, large: true)
             }
-            if let gain = model.state.audioGain {
-                // Logo abaixo do medidor: o efeito do ganho aparece enquanto se arrasta.
-                PanelSection(title: String(localized: "Ganho (\(Shortcut.gainDown.glyph) \(Shortcut.gainUp.glyph))")) {
-                    HStack(spacing: 10) {
-                        CameraSlider(value: gain, range: 0...1, step: 0.01) { model.setAudioGain($0) }
-                        Text(gain, format: .percent.precision(.fractionLength(0)))
-                            .font(.system(size: 13, weight: .semibold).monospacedDigit())
-                            .frame(width: 42, alignment: .trailing)
-                    }
-                    .disabled(!model.gainAdjustable)
-                    if let input = current, model.gainRefusedInput == input
-                        || model.state.audioGainRange.map({ $0.upperBound <= $0.lowerBound }) == true
-                    {
-                        Text("\(input) não aceita ajuste de ganho. Um microfone externo aceita.")
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .fixedSize(horizontal: false, vertical: true)
+            Picker("Microfone do monitor", selection: Binding(
+                get: { model.macMicrophone?.id },
+                set: { id in
+                    if let id {
+                        if let device = microphones.first(where: { $0.id == id }) { model.selectMicrophone(device) }
+                    } else {
+                        model.selectMicrophone(nil)
                     }
                 }
+            )) {
+                Text("iPhone").tag(nil as String?)
+                ForEach(microphones) { device in
+                    Text(device.name).tag(Optional(device.id))
+                }
+                if let selected = model.macMicrophone, !microphones.contains(where: { $0.id == selected.id }) {
+                    Text(selected.name).tag(Optional(selected.id))
+                }
             }
-            PanelSection(title: String(localized: "Origem de áudio no iPhone")) {
-                VStack(spacing: 6) {
-                    ForEach(inputs, id: \.self) { input in
-                        Button { model.setAudioInput(input) } label: {
-                            Text(input).frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        .buttonStyle(ChoiceStyle(isOn: input == current))
+            .disabled(!model.canChangeMicrophone)
+            if model.changingMicrophone { ProgressView().controlSize(.small) }
+            if let error = model.microphoneError {
+                Text(error).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
+            }
+            if let microphone = model.macMicrophone {
+                Picker("Gravação no Mac", selection: Binding(
+                    get: { model.microphoneMode },
+                    set: { model.configureMicrophone(mode: $0, delayMs: model.microphoneDelayMs) }
+                )) {
+                    Text("Substituir áudio do iPhone").tag(TakeRecorder.MicrophoneMode.replace)
+                    Text("Salvar microfone em arquivo separado").tag(TakeRecorder.MicrophoneMode.separate)
+                    Text("Manter duas trilhas no vídeo").tag(TakeRecorder.MicrophoneMode.both)
+                }
+                .disabled(!model.canChangeMicrophone)
+                Stepper(value: Binding(
+                    get: { model.microphoneDelayMs },
+                    set: { model.configureMicrophone(mode: model.microphoneMode, delayMs: $0) }
+                ), in: -1000...1500, step: 10) {
+                    Text("Atraso do microfone: \(Int(model.microphoneDelayMs)) ms")
+                }
+                .disabled(!model.canChangeMicrophone)
+                Text("Cada take sai no Mac num arquivo só, com o som do Mac sincronizado pelo som do iPhone: deixe o áudio do iPhone ligado. Para a imagem original, traga o clipe do iPhone e use Câmera › Juntar original do iPhone ao som do Mac.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button("Como funciona?") { openWindow(id: "microphone-guide") }
+                    .buttonStyle(.link)
+                if !microphones.contains(where: { $0.id == microphone.id }) {
+                    Text("O microfone do Mac foi desconectado.")
+                        .font(.callout)
+                        .foregroundStyle(.red)
+                }
+                DisclosureGroup("Áudio no iPhone") {
+                    VStack(alignment: .leading, spacing: 16) {
+                        phoneAudio(current: current, silent: silent, inputs: inputs)
                     }
+                    .padding(.top, 8)
                 }
+            } else {
+                phoneAudio(current: current, silent: silent, inputs: inputs)
             }
-            if model.state.availableAudioInputs.contains(silent) {
-                Divider()
-                // Separado no fim da lista: um clique aqui deixa a gravação sem som. Vermelho só
-                // quando escolhido, porque aí é o alarme.
-                Button {
-                    if model.state.recording { confirmSilence = true } else { model.setAudioInput(silent) }
-                } label: {
-                    Label("Sem áudio", systemImage: "mic.slash").frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(ChoiceStyle(isOn: current == silent, fill: Theme.rec))
-                .confirmationDialog("Gravar sem áudio?", isPresented: $confirmSilence) {
-                    Button("Desligar o áudio", role: .destructive) { model.setAudioInput(silent) }
-                } message: {
-                    Text("O clipe que está sendo gravado fica sem som a partir de agora.")
-                }
-            }
-            Text("Um microfone sem fio aparece aqui quando o iPhone o reconhece.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
             Divider()
-            // Local, não muda a câmera: com o iPhone na mesma sala, som no Mac dá microfonia.
             Toggle("Ouvir no Mac (\(Shortcut.mute.glyph))", isOn: Binding(get: { !model.muted }, set: { model.muted = !$0 }))
                 .toggleStyle(.switch)
         }
+        .onAppear { refreshMicrophones() }
+        .onReceive(NotificationCenter.default.publisher(for: AVCaptureDevice.wasConnectedNotification).receive(on: RunLoop.main)) { _ in
+            refreshMicrophones()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AVCaptureDevice.wasDisconnectedNotification).receive(on: RunLoop.main)) { _ in
+            refreshMicrophones()
+        }
+    }
+
+    private func refreshMicrophones() {
+        microphones = MacMicrophone.available()
+    }
+
+    @ViewBuilder
+    private func phoneAudio(current: String?, silent: String, inputs: [String]) -> some View {
+        if let gain = model.state.audioGain {
+            // Logo abaixo do medidor: o efeito do ganho aparece enquanto se arrasta.
+            PanelSection(title: String(localized: "Ganho (\(Shortcut.gainDown.glyph) \(Shortcut.gainUp.glyph))")) {
+                HStack(spacing: 10) {
+                    CameraSlider(value: gain, range: 0...1, step: 0.01) { model.setAudioGain($0) }
+                    Text(gain, format: .percent.precision(.fractionLength(0)))
+                        .font(.system(size: 13, weight: .semibold).monospacedDigit())
+                        .frame(width: 42, alignment: .trailing)
+                }
+                .disabled(!model.gainAdjustable)
+                if let input = current, model.gainRefusedInput == input
+                    || model.state.audioGainRange.map({ $0.upperBound <= $0.lowerBound }) == true
+                {
+                    Text("\(input) não aceita ajuste de ganho. Um microfone externo aceita.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+        }
+        PanelSection(title: String(localized: "Origem de áudio no iPhone")) {
+            VStack(spacing: 6) {
+                ForEach(inputs, id: \.self) { input in
+                    Button { model.setAudioInput(input) } label: {
+                        Text(input).frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .buttonStyle(ChoiceStyle(isOn: input == current))
+                }
+            }
+        }
+        if model.state.availableAudioInputs.contains(silent) {
+            Divider()
+            // Separado no fim da lista: um clique aqui deixa a gravação sem som. Vermelho só
+            // quando escolhido, porque aí é o alarme.
+            Button {
+                if model.state.recording { confirmSilence = true } else { model.setAudioInput(silent) }
+            } label: {
+                Label("Sem áudio", systemImage: "mic.slash").frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(ChoiceStyle(isOn: current == silent, fill: Theme.rec))
+            .confirmationDialog("Gravar sem áudio?", isPresented: $confirmSilence) {
+                Button("Desligar o áudio", role: .destructive) { model.setAudioInput(silent) }
+            } message: {
+                Text("O clipe que está sendo gravado fica sem som a partir de agora.")
+            }
+        }
+        Text("Um microfone sem fio aparece aqui quando o iPhone o reconhece.")
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 

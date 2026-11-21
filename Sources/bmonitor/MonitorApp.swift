@@ -45,9 +45,14 @@ struct MonitorApp: App {
                     .disabled(model.phase != .connected)
                 Button("Focar agora") { model.focusNow() }.keyboardShortcut(.focusNow, typing: model.script.editing)
                 Divider()
-                Toggle("Salvar cópia de cada take no Mac", isOn: $model.savesCopy)
+                Toggle("Salvar cópia de cada take no Mac", isOn: Binding(
+                    get: { model.recordsLocalCopy }, set: { model.savesCopy = $0 }
+                ))
+                .disabled(model.macMicrophone != nil)
                 Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
                 Button("Mostrar cópias no Finder") { model.showCopies() }
+                Button("Juntar original do iPhone ao som do Mac…") { model.mergeOriginals() }
+                    .disabled(model.mergingOriginals)
                 WebcamMenuItem(model: model)
                 Divider()
                 Button("ISO…") { model.togglePanel(.iso) }.keyboardShortcut(.iso, typing: model.script.editing)
@@ -87,11 +92,19 @@ struct MonitorApp: App {
             }
             CommandGroup(replacing: .help) {
                 Button("Atalhos do teclado") { model.toggleShortcuts() }.keyboardShortcut(.help, typing: model.script.editing)
+                MicrophoneGuideMenuItem()
             }
         }
 
         Window("Webcam", id: "webcam") {
             WebcamGuide()
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
+
+        Window("Gravar com o microfone do Mac", id: "microphone-guide") {
+            MicrophoneGuide(model: model)
         }
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
@@ -123,6 +136,14 @@ private struct WebcamMenuItem: View {
                     if on, WebcamStatus.shared.approval != .approved { openWindow(id: "webcam") }
                 }))
         }
+    }
+}
+
+private struct MicrophoneGuideMenuItem: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Gravar com o microfone do Mac") { openWindow(id: "microphone-guide") }
     }
 }
 

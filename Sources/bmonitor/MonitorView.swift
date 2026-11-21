@@ -373,7 +373,7 @@ struct HealthChip: View {
     @ViewBuilder private var copy: some View {
         if let failure = model.copyFailure {
             copyLabel("exclamationmark.triangle.fill").foregroundStyle(Theme.rec).help(failure)
-        } else if model.savesCopy, model.state.recording, model.signal != .cameraGone {
+        } else if model.recordsLocalCopy, model.state.recording, model.signal != .cameraGone {
             copyLabel("laptopcomputer.and.arrow.down")
                 .help("Copiando o stream para o Mac, na resolução da câmera e a 8 Mb/s, mais leve que o original. O arquivo original fica no iPhone.")
         }
@@ -526,12 +526,12 @@ struct ControlBar: View {
             // Círculo do tamanho do anel do gravar, ao lado dele. O ícone não muda com o estado,
             // então o estado é o círculo: anel apagado desligado, branco cheio e ícone preto ligado.
             ZStack {
-                Circle().fill(model.savesCopy ? Color.white.opacity(0.92) : .clear).frame(width: 36, height: 36)
-                Circle().strokeBorder(.white.opacity(model.savesCopy ? 0 : 0.35), lineWidth: 2).frame(width: 36, height: 36)
+                Circle().fill(model.recordsLocalCopy ? Color.white.opacity(0.92) : .clear).frame(width: 36, height: 36)
+                Circle().strokeBorder(.white.opacity(model.recordsLocalCopy ? 0 : 0.35), lineWidth: 2).frame(width: 36, height: 36)
                 // A base do notebook é a parte larga e fica embaixo: em 14 pt as quinas ficavam a 4 pt do
                 // anel e o topo a 9 pt. Menor e 1,4 pt acima, o peso fica no meio do círculo (medido).
                 Image(systemName: "laptopcomputer.and.arrow.down").font(.system(size: 13, weight: .semibold)).offset(y: -1.4)
-                    .foregroundStyle(model.savesCopy ? Color.black : .white.opacity(0.75))
+                    .foregroundStyle(model.recordsLocalCopy ? Color.black : .white.opacity(0.75))
             }
             // Grupo próprio: sem ele, a vibrancy do vidro tinge o branco e o preto.
             .compositingGroup()
@@ -539,14 +539,17 @@ struct ControlBar: View {
         }
         .buttonStyle(HUDItemStyle())
         .help(
-            model.savesCopy
+            model.recordsLocalCopy
                 ? String(localized: "Cada take também vai para o Mac, em \(model.copyFolder.lastPathComponent). Clique com o botão direito para trocar a pasta.")
                 : String(localized: "Salvar também no Mac uma cópia de cada take"))
-        .accessibilityLabel(model.savesCopy ? String(localized: "Cópia no Mac ligada") : String(localized: "Cópia no Mac desligada"))
+        .accessibilityLabel(model.recordsLocalCopy ? String(localized: "Cópia no Mac ligada") : String(localized: "Cópia no Mac desligada"))
         .contextMenu {
             Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
             Button("Mostrar cópias no Finder") { model.showCopies() }
+            Button("Juntar original do iPhone ao som do Mac…") { model.mergeOriginals() }
+                .disabled(model.mergingOriginals)
         }
+        .disabled(model.macMicrophone != nil)
     }
 
     private var separator: some View {
@@ -629,11 +632,11 @@ struct ControlBar: View {
         }
         ValueButton(model: model, panel: .audio) {
             ValueItem(
-                label: String(localized: "Áudio"), value: state.shortAudioName,
+                label: String(localized: "Áudio"), value: model.macMicrophone?.name ?? state.shortAudioName,
                 pending: model.pending.contains("/audio/channel/0/input"),
                 failed: model.failed.contains("/audio/channel/0/input"), tint: noAudio ? Theme.rec : nil,
                 compact: compact, tight: tight)
-                .help(String(localized: "Áudio: \(state.audioName)"))
+                .help(String(localized: "Áudio: \(model.macMicrophone?.name ?? state.audioName)"))
         } content: {
             AudioPanel(model: model)
         }
@@ -673,7 +676,7 @@ struct ControlBar: View {
         return state.focus.map { "\(Int(($0 * 100).rounded()))%" } ?? "MF"
     }
 
-    private var noAudio: Bool { state.isSilent(state.audioInputs[0]) }
+    private var noAudio: Bool { model.macMicrophone == nil && state.isSilent(state.audioInputs[0]) }
 }
 
 extension CameraState {
@@ -708,7 +711,7 @@ struct AudioStatus: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1 / 30)) { _ in
             let gone = model.signal == .cameraGone
-            let none = model.state.recordsSilence
+            let none = model.macMicrophone == nil && model.state.recordsSilence
             let missing = model.audioMissing
             let alarm = !gone && (none || missing)
             HStack(spacing: 6) {
@@ -728,7 +731,7 @@ struct AudioStatus: View {
                 alarm
                     ? (none
                         ? String(localized: "O iPhone está gravando sem áudio")
-                        : String(localized: "O som parou de chegar do iPhone"))
+                        : String(localized: "O som parou de chegar da origem selecionada"))
                     : String(localized: "Áudio: \(fullName)"))
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Áudio")
@@ -737,6 +740,7 @@ struct AudioStatus: View {
     }
 
     private var fullName: String {
+        if let microphone = model.macMicrophone { return microphone.name }
         let names = Set(model.state.audioInputs.values.filter { !model.state.isSilent($0) })
         return names.isEmpty ? "—" : names.sorted().joined(separator: " · ")
     }
@@ -781,7 +785,7 @@ struct AudioMeterView: View {
 
     var body: some View {
         Canvas { context, size in
-            let channels = max(meter?.peaks.count ?? 0, 2)
+            let channels = meter.map { max($0.peaks.count, 1) } ?? 2
             let labelWidth: CGFloat = large ? 14 : 0
             let scaleHeight: CGFloat = large ? 16 : 0
             let gap: CGFloat = large ? 4 : 2
@@ -793,10 +797,11 @@ struct AudioMeterView: View {
                 let y = CGFloat(channel) * (height + gap)
                 if large {
                     context.draw(
-                        Text(channel == 0 ? "L" : "R").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary),
+                        Text(channels == 1 ? "M" : channels == 2 ? (channel == 0 ? "L" : "R") : "\(channel + 1)").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary),
                         at: CGPoint(x: labelWidth / 2 - 2, y: y + height / 2))
                 }
-                let level = meter.map { $0.peaks[channel] } ?? -120
+                let reading = meter?.channel(at: channel)
+                let level = reading?.peak ?? -120
                 for zone in Self.zones {
                     let rect = CGRect(x: x(zone.from), y: y, width: x(zone.to) - x(zone.from), height: height)
                     context.fill(Path(rect), with: .color(zone.color.opacity(0.24)))
@@ -805,7 +810,7 @@ struct AudioMeterView: View {
                         context.fill(Path(CGRect(x: rect.minX, y: y, width: lit, height: height)), with: .color(zone.color))
                     }
                 }
-                if let hold = meter?.holds[channel], hold > -60 {
+                if let hold = reading?.hold, hold > -60 {
                     let color = Self.zones.first { hold < $0.to }?.color ?? Theme.rec
                     let mark = large ? 2.5 : 1.5
                     context.fill(

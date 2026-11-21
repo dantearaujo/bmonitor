@@ -94,3 +94,20 @@ private func recordedAudio() throws -> [AudioAccessUnit] {
     #expect(AudioScale.zone(-12) == .yellow)
     #expect(AudioScale.zone(-8) == .red)
 }
+
+@Test func meterChannelsFollowInputChanges() {
+    let monitor = AudioMonitor()
+    monitor.update(levels: [-10, -30], at: 1)
+    #expect(monitor.meter(at: 1).channel(at: 1)?.peak == -30)
+
+    monitor.reset()
+    #expect(monitor.meter(at: 2).channel(at: 0) == nil)
+    monitor.update(levels: [-15], at: 3)
+    let mono = monitor.meter(at: 3)
+    #expect(mono.channel(at: 0)?.peak == -15)
+    #expect(mono.channel(at: 0)?.hold == -15)
+    #expect(mono.channel(at: 1) == nil)
+
+    monitor.update(levels: [-20, -25], at: 4)
+    #expect(monitor.meter(at: 4).channel(at: 1)?.hold == -25)
+}

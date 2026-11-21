@@ -23,7 +23,7 @@ Live video and audio over Wi‑Fi, about 0.3 s behind real time.</p>
 
 <p align="center"><img src="docs/readme/mac-monitor-en.webp" width="880" alt="bmonitor on the Mac: the iPhone's live video with REC, timecode, audio meter and the control bar, and the script panel beside it"></p>
 
-The app speaks English and Brazilian Portuguese, following your Mac's language.
+The app speaks English, Brazilian Portuguese and Turkish, following your Mac's language.
 
 **On a handheld:** a test build for SteamOS turns a Lenovo Legion Go S into the same monitor and remote control, opened from the Steam library. See [bmonitor for SteamOS](#bmonitor-for-steamos-test-build).
 
@@ -118,6 +118,10 @@ Recording stays on the iPhone, in the quality you chose there. The stream to the
 ## Privacy
 
 bmonitor collects nothing: no accounts, no analytics. It talks to the iPhone on your local network and, to check for updates, to GitHub. The script's speech recognition runs on the Mac.
+
+## Recording with a Mac microphone
+
+Choose a Mac input (built-in or any connected microphone) in the Audio popover. Each take is saved on the Mac as one file: the iPhone image with the Mac audio, synced automatically against the iPhone's own audio. For the full-quality original, copy the clip from the iPhone and use **Camera → Merge iPhone Original with Mac Audio…**: the video is not re-encoded. See [recording with a Mac microphone](docs/mac-microphone.md).
 
 ## Build from source
 

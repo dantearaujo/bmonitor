@@ -14,6 +14,11 @@ public final class AudioMonitor: @unchecked Sendable {
         public var holds: [Float]
         /// Instante (relógio monotônico, ns) do último buffer; 0 se nenhum chegou.
         public var updatedAt: UInt64
+
+        public func channel(at index: Int) -> (peak: Float, hold: Float)? {
+            guard peaks.indices.contains(index), holds.indices.contains(index) else { return nil }
+            return (peaks[index], holds[index])
+        }
     }
 
     /// Contagem para conferir o critério "sem cortes por 10 minutos".
@@ -126,6 +131,18 @@ public final class AudioMonitor: @unchecked Sendable {
         }
         schedule(buffer)
         if !player.isPlaying { player.play() }
+    }
+
+    func reset() {
+        stop()
+        lock.withLock {
+            peaks.removeAll()
+            holds.removeAll()
+            holdAt.removeAll()
+            updatedAt = 0
+            queued = 0
+            primed = false
+        }
     }
 
     public func stop() {

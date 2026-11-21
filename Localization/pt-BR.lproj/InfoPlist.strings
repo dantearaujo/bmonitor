@@ -1,2 +1,3 @@
 "NSLocalNetworkUsageDescription" = "O bmonitor procura o iPhone com o Blackmagic Camera na rede local para mostrar o vídeo e controlar a câmera.";
 "NSSpeechRecognitionUsageDescription" = "O bmonitor reconhece a fala no áudio da câmera, no próprio Mac, para marcar onde você está no roteiro.";
+"NSMicrophoneUsageDescription" = "O bmonitor usa o microfone selecionado no Mac para o monitor, o roteiro e a cópia local do vídeo.";
