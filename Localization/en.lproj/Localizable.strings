@@ -296,3 +296,11 @@
 "Reabra o bmonitor para ligar a câmera" = "Reopen bmonitor to turn on the camera";
 "O macOS ativou a câmera com o app aberto, e ela só aparece para o bmonitor depois de reabrir." = "macOS turned on the camera while the app was open, and bmonitor only sees it after reopening.";
 "Reabrir" = "Reopen";
+
+/* Modo cinematográfico */
+"Cinematográfico" = "Cinematic";
+"Desfoque" = "Blur";
+"Abertura" = "Aperture";
+"Mais desfoque" = "More blur";
+"Mais nitidez" = "Sharper";
+"Modo cinematográfico: a abertura muda só o desfoque do fundo. Ligue e desligue o modo no iPhone; o Blackmagic Camera não o expõe ao controle remoto." = "Cinematic mode: the aperture only changes the background blur. Turn the mode on and off on the iPhone; Blackmagic Camera doesn't expose it to remote control.";

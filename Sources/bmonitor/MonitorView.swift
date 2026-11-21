@@ -622,7 +622,7 @@ struct ControlBar: View {
                     : state.zoomFocalLength.map { String(localized: "Lente · \(Int($0.rounded())) mm") } ?? String(localized: "Lente"),
                 value: model.activeLens?.shortName ?? state.lens ?? "—",
                 pending: model.pending.contains("/lens/cameras/active"),
-                failed: model.hasFailed("/lens/cameras/active", "/lens/zoom", "/lens/opticalImageStabilization"),
+                failed: model.hasFailed("/lens/cameras/active", "/lens/zoom", "/lens/opticalImageStabilization", "/lens/iris"),
                 compact: compact, tight: tight)
         } content: {
             LensPanel(model: model)

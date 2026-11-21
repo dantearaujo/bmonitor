@@ -187,3 +187,23 @@ private func recordedState() throws -> CameraState {
     #expect(body["frameRate"] as? String == "24")
     #expect((body["recordResolution"] as? [String: Int])?["width"] == 4032)
 }
+
+@Test func cinematicModeShowsAsLensesAndAperture() {
+    // Valores lidos do iPhone 14 com o modo cinematográfico ligado (Blackmagic Camera 3.5).
+    let state = CameraState()
+    state.apply(property: "/lens/cameras", value: ["cameras": [
+        ["index": 0, "id": "LensFrontTrueDepth", "facing": "front", "zoomFactor": "1x", "focalLength": 24, "isAvailable": true, "isActive": false],
+        ["index": 1, "id": "LensDualWide", "facing": "back", "zoomFactor": "0.5x", "focalLength": 13, "isAvailable": true, "isActive": true],
+    ]])
+    state.apply(property: "/lens/iris", value: ["apertureStop": 5.6, "normalised": 0.257])
+    state.apply(property: "/lens/iris/description", value: ["controllable": true, "apertureStop": ["min": 2, "max": 16]])
+    #expect(state.activeLensID == "LensDualWide")
+    #expect(state.lenses.filter { !$0.isCinematic }.isEmpty)
+    #expect(state.aperture == 5.6)
+    #expect(state.apertureRange == 2...16)
+    #expect(state.apertureControllable)
+    // Fora do modo, a abertura é a fixa da lente.
+    state.apply(property: "/lens/iris/description", value: ["controllable": false, "apertureStop": ["min": 1.5, "max": 1.5]])
+    #expect(!state.apertureControllable)
+    #expect(!Lens(id: "Lens24mm", zoomFactor: "1x", focalLength: 26, facing: "back", isAvailable: true).isCinematic)
+}

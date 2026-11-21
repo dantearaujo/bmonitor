@@ -45,6 +45,11 @@ public struct Lens: Equatable, Hashable, Identifiable {
         let factor = zoomFactor.replacingOccurrences(of: "x", with: "×")
         return facing == "front" ? "Frontal \(factor)" : factor
     }
+
+    /// Lentes que o Blackmagic Camera só lista no modo cinematográfico: a dupla traseira, que
+    /// mede a profundidade, e a frontal TrueDepth. O modo não tem chave na API: liga e desliga
+    /// no iPhone, e a lista de lentes troca junto (medido em 2026-11-21, app 3.5).
+    public var isCinematic: Bool { id == "LensDualWide" || id.hasSuffix("TrueDepth") }
 }
 
 /// Valor atual de cada propriedade da câmera que o app usa. Só muda com o que a câmera
@@ -61,6 +66,7 @@ public final class CameraState {
         "/video/supportedISOs", "/video/supportedShutters", "/video/flickerFreeShutters", "/video/autoExposure",
         "/video/whiteBalance/description", "/video/whiteBalanceTint/description",
         "/lens/cameras", "/lens/zoom", "/lens/zoom/description", "/lens/focus", "/lens/opticalImageStabilization",
+        "/lens/iris", "/lens/iris/description",
         "/audio/channel/0/supportedInputs", "/audio/channel/0/level", "/audio/channel/0/input/description",
         "/camera/power", "/system/product",
         "/system/format", "/system/supportedFormats", "/system/dynamicRange", "/system/supportedDynamicRanges",
@@ -98,6 +104,11 @@ public final class CameraState {
     public var zoomFocalLength: Double?
     public var zoomNormalized: Double = 0
     public var zoomRange: ClosedRange<Double>?
+    /// Abertura em f-stops. No modo cinematográfico é o desfoque simulado (f/2 a f/16); fora
+    /// dele o iPhone publica a abertura fixa da lente, sem controle.
+    public var aperture: Double?
+    public var apertureRange: ClosedRange<Double>?
+    public var apertureControllable = false
     public var focus: Double?
     /// Ganho da entrada de áudio, de 0 a 1 (`normalised`; o `gain` só repete o mesmo número).
     public var audioGain: Double?
@@ -219,6 +230,15 @@ public final class CameraState {
                 let hi = number(range["max"]), lo <= hi
             {
                 zoomRange = lo...hi
+            }
+        case "/lens/iris":
+            aperture = number(value["apertureStop"]) ?? aperture
+        case "/lens/iris/description":
+            apertureControllable = value["controllable"] as? Bool ?? false
+            if let range = value["apertureStop"] as? [String: Any], let lo = number(range["min"]),
+                let hi = number(range["max"]), lo <= hi
+            {
+                apertureRange = lo...hi
             }
         case "/lens/focus":
             focus = number(value["normalized"]) ?? number(value["normalised"])
