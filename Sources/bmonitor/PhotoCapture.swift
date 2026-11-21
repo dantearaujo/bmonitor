@@ -1,6 +1,7 @@
 import AppKit
 import CoreImage
 import ImageIO
+import SwiftUI
 import UniformTypeIdentifiers
 
 /// Mantém só o quadro decodificado mais recente, independente da renderização do monitor.
@@ -29,6 +30,98 @@ final class PhotoFrame: @unchecked Sendable {
                 of: image, colorSpace: colorSpace, options: [quality: 0.95])
         else { throw CocoaError(.fileWriteUnknown) }
         return jpeg
+    }
+}
+
+struct PhotoCaptureView: View {
+    let model: AppModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 8) {
+                Button("Salvar foto do Blackmagic…") { model.savePhotoFrame() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(!model.canSavePhotoFrame)
+                Text("Salva como JPEG o quadro recebido do iPhone.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Divider()
+            VStack(alignment: .leading, spacing: 8) {
+                ContinuityPhotoButton()
+                    .frame(height: 24)
+                    .disabled(model.state.recording)
+                Text("Escolha o iPhone no menu do macOS. Tire a foto e confirme no iPhone.")
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(22)
+        .frame(width: 390, alignment: .leading)
+    }
+}
+
+private struct ContinuityPhotoButton: NSViewRepresentable {
+    func makeNSView(context: Context) -> ContinuityButton {
+        let button = ContinuityButton()
+        button.title = String(localized: "Usar a Câmera de Continuidade…")
+        button.bezelStyle = .rounded
+        button.target = button
+        button.action = #selector(ContinuityButton.showDeviceMenu)
+        return button
+    }
+
+    func updateNSView(_ button: ContinuityButton, context: Context) {
+        button.isEnabled = context.environment.isEnabled
+    }
+}
+
+private final class ContinuityButton: NSButton, NSServicesMenuRequestor {
+    override var acceptsFirstResponder: Bool { true }
+
+    @objc func showDeviceMenu() {
+        guard let window, window.makeFirstResponder(self) else { return }
+        let menu = NSMenu()
+        // O serviço aparece no menu de contexto se houver um aparelho disponível.
+        let hint = NSMenuItem(title: String(localized: "Câmera de Continuidade"), action: nil, keyEquivalent: "")
+        menu.addItem(hint)
+        let event = NSApp.currentEvent
+        let eventLocation = convert(NSPoint(x: bounds.minX, y: bounds.maxY), to: nil)
+        guard let contextEvent = NSEvent.mouseEvent(
+            with: .rightMouseDown, location: eventLocation, modifierFlags: [], timestamp: event?.timestamp ?? 0,
+            windowNumber: window.windowNumber, context: nil, eventNumber: event?.eventNumber ?? 0, clickCount: 1, pressure: 1)
+        else { return }
+        NSMenu.popUpContextMenu(menu, with: contextEvent, for: self)
+    }
+
+    override func validRequestor(
+        forSendType sendType: NSPasteboard.PasteboardType?, returnType: NSPasteboard.PasteboardType?
+    ) -> Any? {
+        if isEnabled, let returnType, NSImage.imageTypes.contains(returnType.rawValue) { return self }
+        return super.validRequestor(forSendType: sendType, returnType: returnType)
+    }
+
+    func readSelection(from pasteboard: NSPasteboard) -> Bool {
+        guard pasteboard.canReadItem(withDataConformingToTypes: NSImage.imageTypes) else { return false }
+        let preferredTypes: [UTType] = [.jpeg, .heic, .png, .tiff]
+        for type in preferredTypes {
+            let pasteboardType = NSPasteboard.PasteboardType(type.identifier)
+            if let data = pasteboard.data(forType: pasteboardType), !data.isEmpty {
+                save(data, as: type)
+                return true
+            }
+        }
+        guard let data = NSImage(pasteboard: pasteboard)?.tiffRepresentation else { return false }
+        save(data, as: .tiff)
+        return true
+    }
+
+    private func save(_ data: Data, as type: UTType) {
+        DispatchQueue.main.async {
+            PhotoSavePanel.present(type: type) { url in
+                try data.write(to: url, options: .atomic)
+            }
+        }
     }
 }
 

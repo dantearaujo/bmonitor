@@ -49,6 +49,7 @@ struct MonitorApp: App {
                 Button("Escolher pasta das cópias…") { model.chooseCopyFolder() }
                 Button("Mostrar cópias no Finder") { model.showCopies() }
                 WebcamMenuItem(model: model)
+                PhotoCaptureMenuItem()
                 Divider()
                 Button("ISO…") { model.togglePanel(.iso) }.keyboardShortcut(.iso, typing: model.script.editing)
                 Button("Shutter…") { model.togglePanel(.shutter) }.keyboardShortcut(.shutter, typing: model.script.editing)
@@ -89,6 +90,12 @@ struct MonitorApp: App {
                 Button("Atalhos do teclado") { model.toggleShortcuts() }.keyboardShortcut(.help, typing: model.script.editing)
             }
         }
+
+        Window("Foto", id: "photoCapture") {
+            PhotoCaptureView(model: model)
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
 
         Window("Webcam", id: "webcam") {
             WebcamGuide()
@@ -271,5 +278,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         MainActor.assumeIsolated { Self.model?.shutdown() }
+    }
+}
+
+
+private struct PhotoCaptureMenuItem: View {
+    @Environment(\.openWindow) private var openWindow
+
+    var body: some View {
+        Button("Foto…") { openWindow(id: "photoCapture") }
     }
 }
