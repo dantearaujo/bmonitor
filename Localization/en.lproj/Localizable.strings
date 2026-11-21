@@ -296,3 +296,9 @@
 "Reabra o bmonitor para ligar a câmera" = "Reopen bmonitor to turn on the camera";
 "O macOS ativou a câmera com o app aberto, e ela só aparece para o bmonitor depois de reabrir." = "macOS turned on the camera while the app was open, and bmonitor only sees it after reopening.";
 "Reabrir" = "Reopen";
+
+"LUT de visualização no Mac" = "Mac LUT Preview";
+"Sem LUT" = "No LUT";
+"Importar LUT .cube…" = "Import .cube LUT…";
+"Este arquivo não é um LUT 3D .cube compatível." = "This file is not a supported 3D .cube LUT.";
+"Não foi possível abrir o LUT: %@" = "Couldn’t open the LUT: %@";

@@ -405,6 +405,8 @@ struct FrameRatePanel: View {
             Text("Trocar o formato reinicia o vídeo no Mac por um instante.")
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            Divider()
+            LUTPanel(library: model.lutLibrary)
         }
     }
 }
@@ -469,6 +471,8 @@ struct FormatPanel: View {
             Text("Trocar o formato reinicia o vídeo no Mac por um instante.")
                 .font(.callout).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+            Divider()
+            LUTPanel(library: model.lutLibrary)
         }
     }
 
