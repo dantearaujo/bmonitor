@@ -3,6 +3,7 @@ import SwiftUI
 /// Atalhos do teclado num lugar só: o menu os registra e a tela de atalhos os lista.
 enum Shortcut: CaseIterable {
     case record, focusNow, iso, shutter, frameRate, whiteBalance, tint, format, lens, audio, gainUp, gainDown, mute, grid, safeZone, rotate,
+        light,
         script, follow, help
 
     var keyboard: KeyboardShortcut {
@@ -26,6 +27,8 @@ enum Shortcut: CaseIterable {
         case .safeZone: KeyboardShortcut("z", modifiers: [])
         // Longe do ⌘R: girar a janela nunca pode parar uma gravação por um Shift esquecido.
         case .rotate: KeyboardShortcut(.rightArrow, modifiers: .command)
+        // E, de borda (edge): o L já é da lente.
+        case .light: KeyboardShortcut("e", modifiers: [])
         // Painel lateral, como o ⌘2 de outros apps que abrem uma área ao lado.
         case .script: KeyboardShortcut("2", modifiers: .command)
         case .follow: KeyboardShortcut("v", modifiers: [])
@@ -51,6 +54,7 @@ enum Shortcut: CaseIterable {
         case .grid: String(localized: "Mostrar ou esconder a grade")
         case .safeZone: String(localized: "Mostrar ou esconder a área segura")
         case .rotate: String(localized: "Girar 90°")
+        case .light: String(localized: "Acender ou apagar a luz de borda")
         case .script: String(localized: "Mostrar ou esconder o roteiro")
         case .follow: String(localized: "Seguir a fala no roteiro")
         case .help: String(localized: "Atalhos do teclado")
@@ -108,7 +112,7 @@ struct ShortcutsOverlay: View {
         (String(localized: "Abrir controle"), rows([.iso, .shutter, .frameRate, .whiteBalance, .tint, .format, .lens, .audio, .gainUp, .gainDown])),
         (
             String(localized: "No Mac"),
-            rows([.mute, .grid, .safeZone, .rotate]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]
+            rows([.mute, .grid, .safeZone, .rotate, .light]) + [Row(keys: "esc", title: String(localized: "Fechar o controle aberto"))]
                 + rows([.script, .follow])
                 + [Row(keys: "↑ ↓", title: String(localized: "Frase anterior ou próxima no roteiro"))]
                 + rows([.help])

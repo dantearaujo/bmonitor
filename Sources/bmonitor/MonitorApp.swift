@@ -79,6 +79,12 @@ struct MonitorApp: App {
                     ForEach(SafeZone.allCases) { Text($0.title).tag(Optional($0)) }
                 }
                 Button("Girar 90°") { model.rotate() }.keyboardShortcut(.rotate, typing: model.script.editing)
+                Divider()
+                Button(model.edgeLight.isOn ? String(localized: "Apagar a luz de borda") : String(localized: "Acender a luz de borda")) {
+                    model.edgeLight.toggle()
+                }
+                .keyboardShortcut(.light, typing: model.script.editing)
+                Button("Ajustar a luz de borda…") { model.togglePanel(.light) }
             }
             CommandGroup(replacing: .appInfo) {
                 AboutMenuItem()
