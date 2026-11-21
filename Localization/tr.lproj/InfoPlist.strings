@@ -1,0 +1,3 @@
+"NSLocalNetworkUsageDescription" = "bmonitor, görüntüsünü göstermek ve kamerayı kontrol etmek için yerel ağınızda Blackmagic Camera çalıştıran iPhone'u arar.";
+"NSSpeechRecognitionUsageDescription" = "bmonitor, metinde nerede olduğunuzu işaretlemek için kamera sesindeki konuşmayı Mac'in kendisinde tanır.";
+"NSMicrophoneUsageDescription" = "bmonitor, seçilen Mac mikrofonunu monitör, metin takibi ve videonun Mac'teki kopyası için kullanır.";

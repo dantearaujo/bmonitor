@@ -4,6 +4,7 @@ private enum ApplicationLanguage: String, CaseIterable, Identifiable {
     case automatic
     case english = "en"
     case portuguese = "pt-BR"
+    case turkish = "tr"
 
     var id: Self { self }
 
@@ -12,6 +13,7 @@ private enum ApplicationLanguage: String, CaseIterable, Identifiable {
         case .automatic: "Automático (idioma do Mac)"
         case .english: "English"
         case .portuguese: "Português (Brasil)"
+        case .turkish: "Türkçe"
         }
     }
 
@@ -26,6 +28,7 @@ private enum ApplicationLanguage: String, CaseIterable, Identifiable {
         switch Locale(identifier: first).language.languageCode?.identifier {
         case "en": return .english
         case "pt": return .portuguese
+        case "tr": return .turkish
         default: return .automatic
         }
     }

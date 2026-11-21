@@ -71,6 +71,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <array>
         <string>en</string>
         <string>pt-BR</string>
+        <string>tr</string>
     </array>
     <key>CFBundleShortVersionString</key><string>$VERSION</string>
     <key>CFBundleVersion</key><string>$BUILD</string>
