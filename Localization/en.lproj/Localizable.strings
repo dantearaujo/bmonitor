@@ -296,3 +296,7 @@
 "Reabra o bmonitor para ligar a câmera" = "Reopen bmonitor to turn on the camera";
 "O macOS ativou a câmera com o app aberto, e ela só aparece para o bmonitor depois de reabrir." = "macOS turned on the camera while the app was open, and bmonitor only sees it after reopening.";
 "Reabrir" = "Reopen";
+
+"Idioma do aplicativo" = "App Language";
+"Automático (idioma do Mac)" = "Automatic (Mac language)";
+"Feche e reabra o bmonitor para aplicar o idioma." = "Quit and reopen bmonitor to apply the language.";

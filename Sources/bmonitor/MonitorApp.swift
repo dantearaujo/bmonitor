@@ -90,6 +90,10 @@ struct MonitorApp: App {
             }
         }
 
+        Settings {
+            LanguageSettings()
+        }
+
         Window("Webcam", id: "webcam") {
             WebcamGuide()
         }
