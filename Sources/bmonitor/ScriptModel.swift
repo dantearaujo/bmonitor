@@ -189,15 +189,16 @@ final class ScriptModel {
         savePosition()
     }
 
-    /// Português ou inglês, pelo próprio texto; sem texto, o idioma do Mac.
+    /// Detecta o idioma pelo texto; com pouca informação, segue o idioma do Mac.
     static func language(of text: String) -> Locale {
         let recognizer = NLLanguageRecognizer()
-        recognizer.languageConstraints = [.portuguese, .english]
         recognizer.processString(text)
         switch recognizer.dominantLanguage {
         case .portuguese?: return Locale(identifier: "pt_BR")
         case .english?: return Locale(identifier: "en_US")
-        default: return Locale.current.language.languageCode == .portuguese ? Locale(identifier: "pt_BR") : Locale(identifier: "en_US")
+        case .turkish?: return Locale(identifier: "tr_TR")
+        case let language?: return Locale(identifier: language.rawValue)
+        case nil: return .current
         }
     }
 

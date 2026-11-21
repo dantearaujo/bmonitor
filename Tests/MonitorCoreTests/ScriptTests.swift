@@ -141,3 +141,23 @@ private let realTake = Bundle.module.url(forResource: "script", withExtension: "
     #expect(close >= 0.8)
     #expect(lost == 0)
 }
+
+@Test func revisedPartialDoesNotPullMarkerBack() {
+    var follower = ScriptFollower(script: sample)
+    let full = Script.keys(in: "hoje eu vou te mostrar três coisas sobre gravar com o iPhone")
+    follower.follow(full)
+    let before = follower.position
+    let acceptedRevision = follower.follow(Array(full.dropLast(4)))
+    let acceptedDuplicate = follower.follow(full)
+    #expect(!acceptedRevision)
+    #expect(!acceptedDuplicate)
+    #expect(follower.position == before)
+}
+
+@Test func repeatedTurkishPhraseUsesTheNearbyOccurrence() {
+    let script = Script(markdown: "Kamerayı şimdi çalıştır. Sonra mikrofonu kontrol et. Kamerayı şimdi çalıştır.")
+    var follower = ScriptFollower(script: script)
+    follower.move(to: 7)
+    follower.follow(Script.keys(in: "Kamerayı şimdi çalıştır"))
+    #expect(follower.position == 10)
+}

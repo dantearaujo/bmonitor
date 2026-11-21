@@ -23,9 +23,9 @@ public final class SpeechListener: @unchecked Sendable {
     private let lock = NSLock()
     private var backend: Backend?
     private var finalized: [String] = []
-    /// Depois de `forget()`, o trecho em reconhecimento ainda traz palavras de antes: ignora
-    /// até ele fechar.
-    private var skipsSegment = false
+    private var partialCount = 0
+    private var discardedPrefix = 0
+    private var deliveryRevision = 0
     private var generation = 0
 
     public init() {}
@@ -37,7 +37,7 @@ public final class SpeechListener: @unchecked Sendable {
             self.generation += 1
             return self.generation
         }
-        report(.preparing)
+        report(.preparing, generation: generation)
         Task { [weak self] in
             guard let self else { return }
             do {
@@ -51,37 +51,41 @@ public final class SpeechListener: @unchecked Sendable {
                     guard self.generation == generation else { return false }
                     self.backend = backend
                     self.finalized = []
+                    self.partialCount = 0
+                    self.discardedPrefix = 0
                     return true
                 }
                 guard current else { return backend.stop() }
                 backend.onText = { [weak self] text, isFinal in self?.received(text, isFinal: isFinal, generation: generation) }
                 backend.onFailure = { [weak self] message in
                     guard let self, self.lock.withLock({ self.generation == generation }) else { return }
-                    self.report(.unavailable(message))
+                    self.report(.unavailable(message), generation: generation)
                 }
-                report(.listening)
+                report(.listening, generation: generation)
             } catch {
                 guard lock.withLock({ self.generation == generation }) else { return }
-                report(.unavailable(Self.message(for: error)))
+                report(.unavailable(Self.message(for: error)), generation: generation)
             }
         }
     }
 
     public func stop() {
-        let backend = lock.withLock { () -> Backend? in
-            generation += 1
-            defer { self.backend = nil }
-            return self.backend
+        let (backend, generation) = lock.withLock {
+            self.generation += 1
+            let previous = self.backend
+            self.backend = nil
+            return (previous, self.generation)
         }
         backend?.stop()
-        report(.off)
+        report(.off, generation: generation)
     }
 
     /// Esquece o que já foi ouvido, quando o marcador muda de lugar à mão.
     public func forget() {
         lock.withLock {
             finalized = []
-            skipsSegment = true
+            discardedPrefix = partialCount
+            deliveryRevision += 1
         }
     }
 
@@ -92,24 +96,28 @@ public final class SpeechListener: @unchecked Sendable {
 
     private func received(_ text: String, isFinal: Bool, generation: Int) {
         let keys = Script.keys(in: text)
-        let heard = lock.withLock { () -> [String]? in
+        let update = lock.withLock { () -> ([String], Int)? in
             guard self.generation == generation else { return nil }
-            if skipsSegment {
-                if isFinal { skipsSegment = false }
-                return nil
-            }
-            if isFinal {
-                finalized = Array((finalized + keys).suffix(64))
-                return finalized
-            }
-            return finalized + keys
+            let newWords = keys.dropFirst(discardedPrefix)
+            partialCount = isFinal ? 0 : keys.count
+            if isFinal { discardedPrefix = 0 }
+            guard !newWords.isEmpty else { return nil }
+            let heard = Array((finalized + newWords).suffix(64))
+            if isFinal { finalized = heard }
+            return (heard, deliveryRevision)
         }
-        guard let heard else { return }
-        DispatchQueue.main.async { self.onHeard?(heard) }
+        guard let (heard, revision) = update else { return }
+        DispatchQueue.main.async {
+            guard self.lock.withLock({ self.generation == generation && self.deliveryRevision == revision }) else { return }
+            self.onHeard?(heard)
+        }
     }
 
-    private func report(_ state: State) {
-        DispatchQueue.main.async { self.onState?(state) }
+    private func report(_ state: State, generation: Int) {
+        DispatchQueue.main.async {
+            guard self.lock.withLock({ self.generation == generation }) else { return }
+            self.onState?(state)
+        }
     }
 
     static func message(for error: Error) -> String {
@@ -171,27 +179,37 @@ final class AnalyzerBackend: Backend {
     private var results: Task<Void, Never>?
 
     static func make(locale: Locale) async throws -> AnalyzerBackend {
-        guard let supported = await SpeechTranscriber.supportedLocale(equivalentTo: locale) else {
-            throw ListenerError(message: String(localized: "O reconhecimento de fala do Mac não tem esse idioma."))
+        if SpeechTranscriber.isAvailable, let supported = await SpeechTranscriber.supportedLocale(equivalentTo: locale) {
+            let transcriber = SpeechTranscriber(
+                locale: supported, transcriptionOptions: [], reportingOptions: [.volatileResults, .fastResults],
+                attributeOptions: [])
+            return try await make(module: transcriber, results: transcriber.results) { String($0.text.characters) }
         }
-        let transcriber = SpeechTranscriber(
-            locale: supported, transcriptionOptions: [], reportingOptions: [.volatileResults, .fastResults],
-            attributeOptions: [])
+        if let supported = await DictationTranscriber.supportedLocale(equivalentTo: locale) {
+            let transcriber = DictationTranscriber(locale: supported, preset: .progressiveLongDictation)
+            return try await make(module: transcriber, results: transcriber.results) { String($0.text.characters) }
+        }
+        throw ListenerError(message: String(localized: "O reconhecimento de fala do Mac não tem esse idioma."))
+    }
+
+    private static func make<Results: AsyncSequence>(
+        module: any SpeechModule, results: Results, text: @escaping (Results.Element) -> String
+    ) async throws -> AnalyzerBackend where Results.Element: SpeechModuleResult {
         // O modelo do idioma vem do sistema; na primeira vez o macOS baixa (uma vez só).
-        if let request = try await AssetInventory.assetInstallationRequest(supporting: [transcriber]) {
+        if let request = try await AssetInventory.assetInstallationRequest(supporting: [module]) {
             try await request.downloadAndInstall()
         }
-        guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else {
+        guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [module]) else {
             throw ListenerError(message: String(localized: "O reconhecimento de fala do Mac não abriu."))
         }
-        let analyzer = SpeechAnalyzer(modules: [transcriber])
+        let analyzer = SpeechAnalyzer(modules: [module])
         let (stream, input) = AsyncStream<AnalyzerInput>.makeStream(bufferingPolicy: .bufferingNewest(100))
         try await analyzer.start(inputSequence: stream)
         let backend = AnalyzerBackend(analyzer: analyzer, input: input, resampler: Resampler(to: format))
         backend.results = Task { [weak backend] in
             do {
-                for try await result in transcriber.results {
-                    backend?.onText?(String(result.text.characters), result.isFinal)
+                for try await result in results {
+                    backend?.onText?(text(result), result.isFinal)
                 }
             } catch {
                 backend?.onFailure?(error.localizedDescription)
@@ -274,6 +292,7 @@ final class RecognizerBackend: Backend {
                     }
                 }
             } else if error != nil {
+                self.onText?("", true)
                 self.restart()
             }
         }

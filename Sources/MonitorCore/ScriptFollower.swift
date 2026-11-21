@@ -15,6 +15,7 @@ public struct ScriptFollower {
     private let keys: [String]
     private let sentenceOf: [Int]
     private let sentences: [Range<Int>]
+    private var lastHeard: [String] = []
 
     /// Quantas palavras ouvidas entram na comparação.
     static let tail = 8
@@ -32,23 +33,33 @@ public struct ScriptFollower {
     /// Leva o marcador para uma palavra (clique, teclado ou começo do roteiro).
     public mutating func move(to index: Int) {
         position = min(max(index, 0), keys.count)
+        lastHeard.removeAll()
     }
 
     /// Processa o que foi ouvido até agora, mais recente por último. Devolve se o marcador mudou.
     @discardableResult
     public mutating func follow(_ heard: [String]) -> Bool {
+        guard !heard.isEmpty, !keys.isEmpty, heard != lastHeard else { return false }
+        // A hipótese pode encolher numa revisão do reconhecedor. Uma revisão do trecho
+        // já ouvido não é evidência de que a pessoa voltou no roteiro.
+        guard !(heard.count < lastHeard.count && lastHeard.starts(with: heard)) else { return false }
+        let previous = lastHeard
+        lastHeard = heard
         let heard = Array(heard.suffix(Self.tail))
-        guard !heard.isEmpty, !keys.isEmpty else { return false }
         // Para trás, a frase anterior inteira e pelo menos `lookbehind` palavras: frases curtas
         // ("E tem um bônus.") não podem esconder o começo de uma regravação.
         let current = sentenceOf[min(position, keys.count - 1)]
         let lower = max(min(sentences[max(current - 1, 0)].lowerBound, position - Self.lookbehind), 0)
         let upper = min(position + Self.lookahead, keys.count)
-        guard lower < upper, let match = Self.align(heard, Array(keys[lower..<upper])) else { return false }
+        guard lower < upper, let match = Self.align(heard, Array(keys[lower..<upper]), near: position - lower - 1) else { return false }
 
         let next = lower + match.end + 1
         // Voltar ou saltar longe pede mais evidência que seguir em frente.
-        let backwards = next < position - 1
+        if next == position - 1 { return false }
+        let backwards = next < position
+        if backwards, heard.count <= previous.count,
+            previous.suffix(heard.count).elementsEqual(heard)
+        { return false }
         let farAhead = next > position + 12
         let needed = backwards || farAhead ? 3 : 2
         guard match.matches >= needed, match.longMatches >= 1, next != position else { return false }
@@ -66,7 +77,7 @@ public struct ScriptFollower {
 
     /// Alinhamento local das palavras ouvidas contra o trecho do roteiro. O melhor alinhamento
     /// precisa casar uma das duas últimas palavras ouvidas: é o fim da fala que diz onde estamos.
-    static func align(_ heard: [String], _ script: [String]) -> Match? {
+    static func align(_ heard: [String], _ script: [String], near: Int) -> Match? {
         let m = heard.count
         let n = script.count
         guard m > 0, n > 0 else { return nil }
@@ -104,9 +115,12 @@ public struct ScriptFollower {
                 // O casamento tem de chegar ao que acabou de ser dito (no máximo uma palavra
                 // estranha no fim); um trecho antigo que casa bem não vale como posição atual.
                 guard cell.heard >= m - 2, cell.score >= 5 else { continue }
-                if best == nil || cell.score > best!.score {
-                    best = Match(score: cell.score, end: cell.end, matches: cell.matches, longMatches: cell.long)
+                if let best {
+                    let distance = abs(cell.end - near)
+                    let bestDistance = abs(best.end - near)
+                    if cell.score < best.score || (cell.score == best.score && distance >= bestDistance) { continue }
                 }
+                best = Match(score: cell.score, end: cell.end, matches: cell.matches, longMatches: cell.long)
             }
         }
         return best

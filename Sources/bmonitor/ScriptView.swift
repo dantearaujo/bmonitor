@@ -267,10 +267,12 @@ private struct ScriptReading: View {
         GeometryReader { geometry in
             ScrollViewReader { proxy in
                 ScrollView {
-                    VStack(alignment: .leading, spacing: model.fontSize * 0.7) {
+                    LazyVStack(alignment: .leading, spacing: model.fontSize * 0.7) {
                         ForEach(script.blocks) { block in
                             ScriptBlockView(
-                                block: block, script: script, position: model.position, sentence: current,
+                                block: block, script: script,
+                                position: min(max(model.position, block.words.lowerBound), block.words.upperBound),
+                                sentence: current,
                                 fontSize: model.fontSize
                             )
                             .id(block.id)
@@ -343,7 +345,6 @@ private struct ScriptBlockView: View {
                 Rectangle().fill(.secondary).frame(width: 3).padding(.vertical, 4)
             }
         }
-        .animation(.easeOut(duration: 0.25), value: position)
     }
 
     private var font: Font {
