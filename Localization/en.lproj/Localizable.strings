@@ -296,3 +296,6 @@
 "Reabra o bmonitor para ligar a câmera" = "Reopen bmonitor to turn on the camera";
 "O macOS ativou a câmera com o app aberto, e ela só aparece para o bmonitor depois de reabrir." = "macOS turned on the camera while the app was open, and bmonitor only sees it after reopening.";
 "Reabrir" = "Reopen";
+
+"Aguarde o vídeo ao vivo para salvar um quadro." = "Wait for live video before saving a frame.";
+"Salvar foto do Blackmagic…" = "Save Blackmagic Photo…";

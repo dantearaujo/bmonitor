@@ -457,6 +457,7 @@ struct ControlBar: View {
                     RecordButton(model: model).disabled(cameraGone)
                     HStack(spacing: 2) {
                         Group {
+                            photoButton
                             copyButton
                             separator
                             window
@@ -484,6 +485,7 @@ struct ControlBar: View {
             RecordButton(model: model).disabled(cameraGone)
             HStack(spacing: spacing) {
                 Group {
+                    photoButton
                     copyButton
                     separator
                     camera(compact: compact, tight: tight)
@@ -521,6 +523,18 @@ struct ControlBar: View {
 
     /// Cópia no Mac colada no gravar: aceso, cada take vai também para o Mac. O clique direito
     /// escolhe a pasta e abre as cópias no Finder.
+    private var photoButton: some View {
+        Button { model.savePhotoFrame() } label: {
+            Image(systemName: "camera")
+                .font(.system(size: 15, weight: .medium))
+                .frame(width: Theme.barItem, height: Theme.barItem)
+        }
+        .buttonStyle(HUDItemStyle(isOn: false))
+        .help("Salvar foto do Blackmagic…")
+        .accessibilityLabel("Salvar foto do Blackmagic…")
+        .disabled(!model.canSavePhotoFrame)
+    }
+
     private var copyButton: some View {
         Button { model.savesCopy.toggle() } label: {
             // Círculo do tamanho do anel do gravar, ao lado dele. O ícone não muda com o estado,
