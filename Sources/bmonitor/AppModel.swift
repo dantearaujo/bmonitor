@@ -876,6 +876,14 @@ final class AppModel {
             if let i = args.firstIndex(of: "--open-panel"), i + 1 < args.count, let panel = Panel(rawValue: args[i + 1]) {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { self.togglePanel(panel) }
             }
+            // Desenvolvimento: `--mac-microphone <nome>` escolhe o microfone do Mac ao conectar,
+            // para testar a cópia com o som do Mac sem passar pelo popover.
+            if let i = args.firstIndex(of: "--mac-microphone"), i + 1 < args.count {
+                let name = args[i + 1].lowercased()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                    self.selectMicrophone(MacMicrophone.available().first { $0.name.lowercased().contains(name) })
+                }
+            }
         }
     }
 

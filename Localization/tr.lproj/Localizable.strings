@@ -344,3 +344,53 @@
 "A cópia tem a qualidade do stream. Para a imagem original, traga o clipe do iPhone para o Mac (AirDrop, cabo ou Arquivos) e use Câmera › Juntar original do iPhone ao som do Mac. O bmonitor acha o som do take pelo nome do clipe e junta sem recodificar a imagem." = "Kopya, yayın kalitesindedir. Orijinal görüntü için klibi iPhone'dan Mac'e aktarın (AirDrop, kablo ya da Dosyalar) ve Kamera › iPhone Orijinalini Mac Sesiyle Birleştir'i kullanın. bmonitor çekimin sesini klip adından bulur ve görüntüyü yeniden kodlamadan birleştirir.";
 "Para conferir a sincronia" = "Senkronu kontrol etmek için";
 "Bata uma palma diante da câmera: o quadro em que as mãos se tocam deve cair junto com o som. O Atraso do microfone é só o ponto de partida; a sincronia fina é automática." = "Kameranın önünde el çırpın: ellerin birleştiği kare sesle aynı anda olmalı. Mikrofon gecikmesi yalnızca başlangıç noktasıdır; ince senkron otomatik yapılır.";
+
+/* Luz de borda */
+"Luz de borda" = "Kenar ışığı";
+"Luz de borda (%@)" = "Kenar ışığı (%@)";
+"A borda da tela acende e ilumina o rosto, como no Photo Booth." = "Ekranın kenarı yanar ve yüzünüzü aydınlatır, Photo Booth'taki gibi.";
+"Fixa" = "Sabit";
+"Respirar" = "Nefes";
+"Arco-íris" = "RGB geçişi";
+"Correr" = "Akan";
+"Efeito" = "Efekt";
+"Cor" = "Renk";
+"Branca" = "Beyaz";
+"Colorida" = "Renkli";
+"Temperatura" = "Sıcaklık";
+"Ajustes" = "Ayarlar";
+"Brilho" = "Parlaklık";
+"Espessura" = "Kalınlık";
+"Telas" = "Ekranlar";
+"Acender ou apagar a luz de borda" = "Kenar ışığını aç ya da kapat";
+"Acender a luz de borda" = "Kenar Işığını Aç";
+"Apagar a luz de borda" = "Kenar Işığını Kapat";
+"Ajustar a luz de borda…" = "Kenar Işığı Ayarları…";
+"O iPhone mandou só %lld%% do vídeo neste formato. A cópia saiu na velocidade certa, mas aos saltos; a 30 fps ela sai lisa. O original no iPhone não é afetado." = "iPhone bu formatta görüntünün yalnızca %%%lld kadarını gönderdi. Kopya doğru hızda ama kesik kesik; 30 fps'te akıcı olur. iPhone'daki orijinal kayıt etkilenmez.";
+
+/* Modo cinematográfico */
+"Cinematográfico" = "Sinematik";
+"Desfoque" = "Bulanıklık";
+"Abertura" = "Diyafram";
+"Mais desfoque" = "Daha bulanık";
+"Mais nitidez" = "Daha net";
+"Modo cinematográfico: a abertura muda só o desfoque do fundo. Ligue e desligue o modo no iPhone; o Blackmagic Camera não o expõe ao controle remoto." = "Sinematik mod: diyafram yalnızca arka plan bulanıklığını değiştirir. Modu iPhone'dan açıp kapatın; Blackmagic Camera bunu uzaktan kontrole açmıyor.";
+
+"LUT de visualização no Mac" = "Mac’te LUT önizleme";
+"Sem LUT" = "LUT yok";
+"Importar LUT .cube…" = ".cube LUT içe aktar…";
+"Este arquivo não é um LUT 3D .cube compatível." = "Bu dosya desteklenen bir 3B .cube LUT değil.";
+"Não foi possível abrir o LUT: %@" = "LUT açılamadı: %@";
+
+"Foto" = "Fotoğraf";
+"Foto…" = "Fotoğraf…";
+"Escolha o iPhone no menu do macOS. Tire a foto e confirme no iPhone." = "macOS menüsünden iPhone’unu seç. Fotoğrafı iPhone’da çekip onayla.";
+"Salva como JPEG o quadro recebido do iPhone." = "iPhone’dan gelen canlı yayın karesini JPEG olarak kaydeder.";
+"Câmera de Continuidade" = "Süreklilik Kamerası";
+"Aguarde o vídeo ao vivo para salvar um quadro." = "Kareyi kaydetmek için canlı görüntünün gelmesini bekle.";
+"Salvar foto do Blackmagic…" = "Blackmagic’ten fotoğraf kaydet…";
+"Usar a Câmera de Continuidade…" = "Süreklilik Kamerası’nı kullan…";
+
+"Idioma do aplicativo" = "Uygulama dili";
+"Automático (idioma do Mac)" = "Otomatik (Mac’in dili)";
+"Feche e reabra o bmonitor para aplicar o idioma." = "Dili uygulamak için bmonitor’u kapatıp yeniden aç.";
