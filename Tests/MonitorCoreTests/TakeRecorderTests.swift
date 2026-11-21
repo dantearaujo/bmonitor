@@ -462,3 +462,109 @@ private func pcmSample(_ values: [Float], pts: CMTime = .zero) throws -> CMSampl
         sampleBufferOut: &sample) == noErr)
     return try #require(sample)
 }
+
+// MARK: - Linha do tempo da cópia
+
+private func seconds(_ s: Double) -> CMTime { CMTime(seconds: s, preferredTimescale: 90_000) }
+
+@Test func timelineKeepsTheIPhonePTSWhenTheStreamIsWhole() {
+    var timeline = StreamTimeline()
+    var generator = SystemRandomNumberGenerator()
+    var host = 1000.0
+    for i in 0..<900 {
+        let pts = 3600 + Double(i) / 30
+        // Tremor de até 60 ms e, no meio, um engasgo de meio segundo que termina numa rajada.
+        let stall = (300..<315).contains(i) ? 0.5 - Double(i - 300) / 30 : 0
+        let arrival = host + Double(i) / 30 + Double.random(in: 0...0.06, using: &generator) + max(stall, 0)
+        let out = timeline.map(stream: seconds(pts), host: seconds(arrival))
+        #expect(abs(out.seconds - pts) < 0.0001, "quadro \(i)")
+    }
+}
+
+@Test func timelineFollowsTheMacClockWhenTheIPhoneSendsLess() {
+    // iPhone 14 a 60 fps gravando: 29 quadros por segundo, PTS de 1/60 em 1/60.
+    var timeline = StreamTimeline()
+    var previous = -Double.infinity
+    var first = 0.0
+    var last = 0.0
+    for i in 0..<(29 * 60) {
+        let out = timeline.map(stream: seconds(3600 + Double(i) / 60), host: seconds(1000 + Double(i) / 29)).seconds
+        #expect(out > previous)
+        previous = out
+        if i == 0 { first = out }
+        last = out
+    }
+    // 60 s de verdade; com o PTS como veio seriam 29 s.
+    #expect(abs((last - first) - 60) < 0.5)
+    #expect(timeline.streamSpan / timeline.outSpan < 0.55)
+}
+
+@Test func timelineRestartsWithTheStream() {
+    var timeline = StreamTimeline()
+    for i in 0..<120 { _ = timeline.map(stream: seconds(3600 + Double(i) / 60), host: seconds(1000 + Double(i) / 30)) }
+    let restarted = timeline.map(stream: seconds(10), host: seconds(1010))
+    #expect(restarted.seconds == 10)
+    #expect(timeline.position(of: seconds(10.5))?.seconds == 10.5)
+}
+
+@Test func phoneAudioKeepsItsPlaceAcrossGaps() async throws {
+    let url = temporaryMovie()
+    defer { try? FileManager.default.removeItem(at: url) }
+    let recorder = TakeRecorder(tail: 0)
+    let audio = try encodeADTS(seconds: 2)
+    recorder.appendAudio(audio[0])
+    recorder.begin(url: url, quarterTurns: 0)
+    let base = CMTime(seconds: 100, preferredTimescale: 90_000)
+    var a = 1
+    for frame in try encodeHEVC(frames: 60, keyframeEvery: 30) {
+        let time = frame.sample.presentationTimeStamp
+        while a < audio.count, CMTime(value: audio[a].pts!, timescale: 90_000) <= time {
+            // 0,4 s de som que o iPhone não mandou.
+            let at = Double(audio[a].pts!) / 90_000
+            if !(0.8..<1.2).contains(at) { recorder.appendAudio(audio[a]) }
+            a += 1
+        }
+        recorder.appendVideo(frame.sample, keyframe: frame.keyframe, hostTime: base + time)
+    }
+    recorder.endBlocking()
+
+    let track = try #require(try await AVURLAsset(url: url).loadTracks(withMediaType: .audio).first)
+    // Sem o silêncio no buraco, o som encolheria para ~1,5 s.
+    #expect(try await track.load(.timeRange).duration.seconds > 1.85)
+}
+
+@Test func silentAACFrameEncodes() {
+    #expect((TakeRecorder.silentAAC(sampleRate: 48_000, channels: 2)?.count ?? 0) > 0)
+    #expect((TakeRecorder.silentAAC(sampleRate: 48_000, channels: 1)?.count ?? 0) > 0)
+}
+
+@Test func halfSpeedStreamRecordsAtRealSpeedWithPhoneAudioInPlace() async throws {
+    // Como o iPhone 14 a 60 fps gravando: o PTS de imagem e som anda metade do relógio.
+    let url = temporaryMovie()
+    defer { try? FileManager.default.removeItem(at: url) }
+    let recorder = TakeRecorder(tail: 0)
+    let audio = try encodeADTS(seconds: 4)
+    let video = try encodeHEVC(frames: 120, keyframeEvery: 30)
+    recorder.appendAudio(audio[0])
+    recorder.begin(url: url, quarterTurns: 0)
+    let base = CMTime(seconds: 100, preferredTimescale: 90_000)
+    var a = 1
+    for frame in video {
+        let time = frame.sample.presentationTimeStamp
+        while a < audio.count, CMTime(value: audio[a].pts!, timescale: 90_000) <= time {
+            recorder.appendAudio(audio[a])
+            a += 1
+        }
+        recorder.appendVideo(frame.sample, keyframe: frame.keyframe, hostTime: base + CMTimeMultiply(time, multiplier: 2))
+    }
+    recorder.endBlocking()
+
+    let movie = AVURLAsset(url: url)
+    let picture = try #require(try await movie.loadTracks(withMediaType: .video).first)
+    let sound = try #require(try await movie.loadTracks(withMediaType: .audio).first)
+    let videoSeconds = try await picture.load(.timeRange).duration.seconds
+    let audioSeconds = try await sound.load(.timeRange).duration.seconds
+    // 4 s de PTS chegando em 8 s: o arquivo tem que durar perto de 8 s, imagem e som juntos.
+    #expect(videoSeconds > 6.5, "vídeo \(videoSeconds)")
+    #expect(abs(audioSeconds - videoSeconds) < 0.3, "som \(audioSeconds), vídeo \(videoSeconds)")
+}
