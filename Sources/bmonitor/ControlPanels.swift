@@ -268,7 +268,7 @@ struct LensPanel: View {
                                 Text(lens.facing == "front" ? String(localized: "Frontal") : lens.shortName)
                                     .font(.system(size: 12, weight: .semibold))
                                     .lineLimit(1)
-                                Text(verbatim: lens.isWideFront ? String(localized: "ampla \(lens.focalLength) mm") : "\(lens.focalLength) mm")
+                                Text(verbatim: subtitle(lens))
                                     .font(.system(size: 10))
                                     .foregroundStyle(.secondary)
                                     .lineLimit(1)
@@ -280,10 +280,30 @@ struct LensPanel: View {
                     }
                 }
             }
-            PanelSection(title: zoomTitle) {
-                CameraSlider(value: model.state.zoomNormalized, range: 0...1, step: 0.005) {
-                    model.set("/lens/zoom", ["normalised": $0], awaitsEvent: false)
+            // No cinematográfico o zoom fica preso em 26 mm (faixa 26–26): sem slider.
+            if model.state.zoomRange.map({ $0.upperBound > $0.lowerBound }) ?? true {
+                PanelSection(title: zoomTitle) {
+                    CameraSlider(value: model.state.zoomNormalized, range: 0...1, step: 0.005) {
+                        model.set("/lens/zoom", ["normalised": $0], awaitsEvent: false)
+                    }
                 }
+            }
+            if model.state.apertureControllable, let range = model.state.apertureRange, range.upperBound > range.lowerBound {
+                PanelSection(title: apertureTitle) {
+                    CameraSlider(value: model.state.aperture, range: range, step: 0.1) {
+                        model.set("/lens/iris", ["apertureStop": $0], awaitsEvent: false)
+                    }
+                    HStack {
+                        Text("Mais desfoque")
+                        Spacer()
+                        Text("Mais nitidez")
+                    }
+                    .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            if model.activeLens?.isCinematic == true {
+                Text("Modo cinematográfico: a abertura muda só o desfoque do fundo. Ligue e desligue o modo no iPhone; o Blackmagic Camera não o expõe ao controle remoto.")
+                    .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
             Toggle(
                 "Estabilização óptica",
@@ -293,6 +313,17 @@ struct LensPanel: View {
             )
             .toggleStyle(.switch)
         }
+    }
+
+    private var apertureTitle: String {
+        let label = model.activeLens?.isCinematic == true ? String(localized: "Desfoque") : String(localized: "Abertura")
+        guard let f = model.state.aperture else { return label }
+        return "\(label) · f/\(String(format: "%.1f", f))"
+    }
+
+    private func subtitle(_ lens: Lens) -> String {
+        if lens.isCinematic, lens.facing != "front", let focal = model.state.zoomFocalLength { return "\(Int(focal.rounded())) mm" }
+        return lens.isWideFront ? String(localized: "ampla \(lens.focalLength) mm") : "\(lens.focalLength) mm"
     }
 
     private var zoomTitle: String {
@@ -331,6 +362,7 @@ extension Lens {
 
     /// Rótulo curto da barra, sem quebra: "0.5×", "4×", "Frontal", "Frontal ampla".
     var shortName: String {
+        if isCinematic && facing != "front" { return String(localized: "Cinematográfico") }
         if facing == "front" { return isWideFront ? String(localized: "Frontal ampla") : String(localized: "Frontal") }
         return zoomFactor.replacingOccurrences(of: "x", with: "×")
     }
