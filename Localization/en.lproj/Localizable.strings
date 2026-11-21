@@ -296,3 +296,12 @@
 "Reabra o bmonitor para ligar a câmera" = "Reopen bmonitor to turn on the camera";
 "O macOS ativou a câmera com o app aberto, e ela só aparece para o bmonitor depois de reabrir." = "macOS turned on the camera while the app was open, and bmonitor only sees it after reopening.";
 "Reabrir" = "Reopen";
+
+"Aguarde o vídeo ao vivo para salvar um quadro." = "Wait for live video before saving a frame.";
+"Salvar foto do Blackmagic…" = "Save Blackmagic Photo…";
+"Foto" = "Photo";
+"Foto…" = "Photo…";
+"Escolha o iPhone no menu do macOS. Tire a foto e confirme no iPhone." = "Choose your iPhone in the macOS menu. Take the photo and confirm it on your iPhone.";
+"Salva como JPEG o quadro recebido do iPhone." = "Save the frame received from the iPhone as a JPEG.";
+"Câmera de Continuidade" = "Continuity Camera";
+"Usar a Câmera de Continuidade…" = "Use Continuity Camera…";
