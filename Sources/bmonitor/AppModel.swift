@@ -121,6 +121,7 @@ final class AppModel {
     @ObservationIgnored let displayLayer = AVSampleBufferDisplayLayer()
     /// O roteiro da janela ao lado; ouve a fala no áudio da câmera.
     let script = ScriptModel()
+    let lutLibrary = LUTLibrary()
     /// A janela própria do roteiro, quando ele está destacado da janela da câmera.
     @ObservationIgnored private var scriptWindow: ScriptWindow?
     @ObservationIgnored private let discovery = Discovery()
@@ -245,8 +246,9 @@ final class AppModel {
         // que o iPhone pede, para Wi-Fi que perde muito pacote.
         let session = StreamSession(api: api, tsbpd: UserDefaults.standard.bool(forKey: "srtBuffer"))
         let layer = displayLayer
+        let preview = lutLibrary.preview
         session.onFrame = {
-            VideoEnqueue.enqueue($0, into: layer)
+            preview.enqueue($0, into: layer)
             VirtualCamera.shared.send($0)
         }
         session.audio.isMuted = muted
