@@ -23,7 +23,7 @@ Vídeo e áudio ao vivo pela Wi‑Fi, com cerca de 0,3 s de atraso.</p>
 
 <p align="center"><img src="docs/readme/mac-monitor-pt.webp" width="880" alt="O bmonitor no Mac: o vídeo ao vivo do iPhone com REC, timecode, medidor de áudio e a barra de controles, e o painel do roteiro ao lado"></p>
 
-O app fala português do Brasil e inglês, seguindo o idioma do seu Mac.
+O app segue o idioma do Mac quando há tradução e usa inglês nos demais casos. Você também pode escolher inglês ou português do Brasil nos ajustes do bmonitor. Feche e reabra o app para aplicar a mudança.
 
 **No console portátil:** uma versão de teste para SteamOS transforma o Lenovo Legion Go S no mesmo monitor e controle remoto, aberto pela biblioteca do Steam. Veja o [bmonitor para SteamOS](#bmonitor-para-steamos-versão-de-teste).
 

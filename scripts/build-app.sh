@@ -41,7 +41,7 @@ cp .build/icon/AppIcon.icns "$APP/Contents/Resources/"
 cp LICENSE THIRD_PARTY_NOTICES.md "$APP/Contents/Resources/"
 # Ícone do Blackmagic Camera no guia da busca (ver Trademarks em THIRD_PARTY_NOTICES.md).
 cp assets/blackmagic-camera.png "$APP/Contents/Resources/"
-# Traduções: português é a base (chaves no código); en.lproj traduz para inglês.
+# O código usa chaves em português. O pacote usa inglês quando o idioma do Mac não é compatível.
 cp -R Localization/*.lproj "$APP/Contents/Resources/"
 
 # Bibliotecas para dentro do pacote; build-deps.sh já as deixou com nomes @rpath.
@@ -66,7 +66,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
     <key>CFBundleExecutable</key><string>bmonitor</string>
     <key>CFBundleIconFile</key><string>AppIcon</string>
     <key>CFBundlePackageType</key><string>APPL</string>
-    <key>CFBundleDevelopmentRegion</key><string>pt-BR</string>
+    <key>CFBundleDevelopmentRegion</key><string>en</string>
     <key>CFBundleLocalizations</key>
     <array>
         <string>en</string>
