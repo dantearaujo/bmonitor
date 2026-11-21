@@ -83,7 +83,9 @@ ln -sf libsrt.1.5.dylib "$U/lib/libsrt.dylib"
 ln -sf libssl.4.dylib "$U/lib/libssl.dylib"
 ln -sf libcrypto.4.dylib "$U/lib/libcrypto.dylib"
 for pc in "$DEPS/arm64/lib/pkgconfig/"*.pc; do
-    sed "s#$DEPS/arm64#$U#g" "$pc" > "$U/lib/pkgconfig/$(basename "$pc")"
+    # Qualquer caminho até deps/arm64: o CMake grava o caminho real, que pode diferir do $PWD
+    # só na caixa (~/desktop e ~/Desktop são a mesma pasta), e aí o x86_64 linkava no arm64.
+    sed -E "s#[^=[:space:]]*/\.build/deps/arm64#$U#g" "$pc" > "$U/lib/pkgconfig/$(basename "$pc")"
 done
 touch "$U/.done-$OPENSSL_VERSION-$SRT_VERSION"
 
