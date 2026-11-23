@@ -296,3 +296,25 @@
 "Reabra o bmonitor para ligar a câmera" = "Reopen bmonitor to turn on the camera";
 "O macOS ativou a câmera com o app aberto, e ela só aparece para o bmonitor depois de reabrir." = "macOS turned on the camera while the app was open, and bmonitor only sees it after reopening.";
 "Reabrir" = "Reopen";
+
+/* Luz de borda */
+"Luz de borda" = "Edge light";
+"Luz de borda (%@)" = "Edge light (%@)";
+"A borda da tela acende e ilumina o rosto, como no Photo Booth." = "The edge of the screen lights up your face, like in Photo Booth.";
+"Fixa" = "Steady";
+"Respirar" = "Breathe";
+"Arco-íris" = "Rainbow";
+"Correr" = "Flow";
+"Efeito" = "Effect";
+"Cor" = "Color";
+"Branca" = "White";
+"Colorida" = "Color";
+"Temperatura" = "Temperature";
+"Ajustes" = "Adjust";
+"Brilho" = "Brightness";
+"Espessura" = "Thickness";
+"Telas" = "Displays";
+"Acender ou apagar a luz de borda" = "Turn the edge light on or off";
+"Acender a luz de borda" = "Turn On Edge Light";
+"Apagar a luz de borda" = "Turn Off Edge Light";
+"Ajustar a luz de borda…" = "Edge Light Settings…";

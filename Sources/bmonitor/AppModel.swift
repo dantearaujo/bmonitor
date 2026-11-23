@@ -17,7 +17,7 @@ final class AppModel {
 
     enum Signal { case waiting, ok, lossy, lost, cameraGone }
 
-    enum Panel: String { case iso, shutter, frameRate, whiteBalance, tint, focus, format, lens, audio, grid }
+    enum Panel: String { case iso, shutter, frameRate, whiteBalance, tint, focus, format, lens, audio, grid, light }
 
     enum GridStyle: String, CaseIterable, Identifiable {
         case off, thirds, thirdsCenter, phi, cross, dot, eyeLine
@@ -121,6 +121,8 @@ final class AppModel {
     @ObservationIgnored let displayLayer = AVSampleBufferDisplayLayer()
     /// O roteiro da janela ao lado; ouve a fala no áudio da câmera.
     let script = ScriptModel()
+    /// Luz de borda nas telas do Mac; independe da câmera.
+    let edgeLight = EdgeLight()
     /// A janela própria do roteiro, quando ele está destacado da janela da câmera.
     @ObservationIgnored private var scriptWindow: ScriptWindow?
     @ObservationIgnored private let discovery = Discovery()

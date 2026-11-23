@@ -462,6 +462,7 @@ struct ControlBar: View {
                             window
                         }
                         .disabled(cameraGone)
+                        lightButton
                         scriptToggle
                     }
                 }
@@ -491,6 +492,7 @@ struct ControlBar: View {
                     window
                 }
                 .disabled(cameraGone)
+                lightButton
                 scriptToggle
             }
         }
@@ -500,6 +502,23 @@ struct ControlBar: View {
     /// clique: errar um botão por pouco não pode virar foco no vídeo embaixo.
     private var glass: some View {
         Color.clear.hudGlass(Capsule()).contentShape(Capsule())
+    }
+
+    /// Luz de borda: o clique abre os ajustes, a chave fica dentro. Funciona sem câmera.
+    private var lightButton: some View {
+        ValueButton(model: model, panel: .light, isOn: model.edgeLight.isOn) {
+            Image(systemName: model.edgeLight.isOn ? "sun.max.fill" : "sun.max")
+                .font(.system(size: 15, weight: .medium)).frame(width: Theme.barItem, height: Theme.barItem)
+                .accessibilityLabel(String(localized: "Luz de borda"))
+        } content: {
+            EdgeLightPanel(light: model.edgeLight)
+        }
+        .help(String(localized: "Luz de borda (\(Shortcut.light.glyph))"))
+        .contextMenu {
+            Button(model.edgeLight.isOn ? String(localized: "Apagar a luz de borda") : String(localized: "Acender a luz de borda")) {
+                model.edgeLight.toggle()
+            }
+        }
     }
 
     /// Abre e fecha o roteiro ao lado do vídeo; os controles dele ficam no próprio painel.
